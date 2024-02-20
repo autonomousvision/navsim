@@ -1,0 +1,9 @@
+name: navsim
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pip=23.3.1
+  - nb_conda_kernels
+  - pip:
+    - -r requirements.txt

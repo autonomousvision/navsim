@@ -1,0 +1,5 @@
+_target_: nuplan.planning.simulation.observation.ego_centric_ml_agents.EgoCentricMLAgents
+_convert_: 'all'
+
+model_config: ???  # Dictionary key from existing planner model config (e.g. reactive_agents_model)
+checkpoint_path: ???  # Path to trained model checkpoint

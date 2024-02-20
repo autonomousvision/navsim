@@ -1,0 +1,23 @@
+hydra:
+  run:
+    dir: ${output_dir}
+  output_subdir: ${output_dir}/code/hydra           # Store hydra's config breakdown here for debugging
+  searchpath:                                       # Only <exp_dir> in these paths are discoverable
+    - pkg://navsim.planning.script.config.common 
+    - pkg://navsim.planning.script.experiments  
+
+
+defaults:
+  - default_common
+  - default_experiment
+  - override /worker: ray_distributed
+
+# Cache parameters
+cache:
+  cache_path: ${oc.env:NUPLAN_EXP_ROOT}/metric_cache         
+  use_cache_without_dataset: false                    
+  force_feature_computation: false
+  use_open_scene: true               
+
+output_dir: ${cache.cache_path}/metadata
+navsim_log_path: null

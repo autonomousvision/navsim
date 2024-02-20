@@ -1,0 +1,11 @@
+planner_expert_final_heading_error_within_bound_statistics:
+  _target_: nuplan.planning.metrics.evaluation_metrics.common.planner_expert_final_heading_error_within_bound.PlannerExpertFinalHeadingErrorStatistics
+  _convert_: 'all'
+  name: 'planner_expert_final_heading_error_within_bound'
+  category: 'Planning'
+  metric_score_unit: 'float'
+  max_final_heading_error_threshold: 0.8 #radian
+
+  required_metrics:
+    # Parameter: base metric name and other high level metrics used in this metric
+    planner_expert_average_l2_error_within_bound_metric: planner_expert_average_l2_error_within_bound_statistics

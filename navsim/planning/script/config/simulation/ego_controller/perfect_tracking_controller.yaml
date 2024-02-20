@@ -1,0 +1,2 @@
+_target_: nuplan.planning.simulation.controller.perfect_tracking.PerfectTrackingController
+_convert_: 'all'

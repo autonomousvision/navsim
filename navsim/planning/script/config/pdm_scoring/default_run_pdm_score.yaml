@@ -1,0 +1,15 @@
+hydra:
+  run:
+    dir: ${output_dir}
+  output_subdir: ${output_dir}/code/hydra           # Store hydra's config breakdown here for debugging
+  searchpath:                                       # Only <exp_dir> in these paths are discoverable
+    - pkg://navsim.planning.script.config.common 
+    - pkg://navsim.planning.script.experiments  
+
+defaults:
+  - agent: constant_velocity_agent
+
+# Cache parameters
+navsim_log_path: ??? # path to log annotations
+metric_cache_path: ??? # path to metric cache
+output_dir: ??? # path where output csv is saved

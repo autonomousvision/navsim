@@ -1,0 +1,16 @@
+open_loop_boxes_weighted_average:
+  _target_: nuplan.planning.metrics.aggregator.weighted_average_metric_aggregator.WeightedAverageMetricAggregator
+  name: 'open_loop_boxes_weighted_average'
+  metric_weights:  # Below we list the metrics used in the scenario scoring function and their corresponsing weights to calculate a weighted average score for each scenario,
+  # if not specified, the weight is set as default.
+    # metric name : metric weight in the weighted average function
+    planner_expert_average_l2_error_within_bound: 1 # Default is also 1, keeping here for easier understanding of the structure
+    planner_expert_average_heading_error_within_bound: 2
+    planner_expert_final_l2_error_within_bound: 1 # Default is also 1, keeping here for easier understanding of the structure
+    planner_expert_final_heading_error_within_bound: 2
+    default: 1.0
+  file_name: open_loop_boxes_weighted_average_metrics_${now:${date_format}}
+  # The scenario score is defined as the weighted average score of the metrics listed above, multiplied by the score of the multiple_metrics below.
+  multiple_metrics:
+    - planner_miss_rate_within_bound
+  challenge_name: open_loop_boxes

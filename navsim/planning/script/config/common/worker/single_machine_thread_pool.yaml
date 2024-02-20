@@ -1,0 +1,4 @@
+_target_: nuplan.planning.utils.multithreading.worker_parallel.SingleMachineParallelExecutor
+_convert_: 'all'
+use_process_pool: False  # If true, use ProcessPoolExecutor as the backend, otherwise uses ThreadPoolExecutor
+max_workers: null        # Number of CPU workers (threads/processes) to use per node, "null" means all available

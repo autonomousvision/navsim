@@ -1,0 +1,3 @@
+timing_callback:
+  _target_: nuplan.planning.simulation.callback.timing_callback.TimingCallback
+  _convert_: 'all'

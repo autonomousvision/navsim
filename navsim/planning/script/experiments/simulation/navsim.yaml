@@ -1,0 +1,10 @@
+# @package _global_
+job_name: navsim_open_loop_boxes
+
+defaults:
+  - override /observation: box_observation
+  - override /ego_controller: log_play_back_controller
+  - override /planner: log_future_planner
+  - override /simulation_metric: simulation_navsim_open_loop_boxes
+  - override /metric_aggregator:
+      - open_loop_boxes_weighted_average

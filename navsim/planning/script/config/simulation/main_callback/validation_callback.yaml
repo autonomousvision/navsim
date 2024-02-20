@@ -1,0 +1,6 @@
+validation_callback:
+  _target_: nuplan.planning.simulation.main_callback.validation_callback.ValidationCallback
+  _convert_: 'all'
+
+  output_dir: ${output_dir}
+  validation_dir_name: 'validation-results'

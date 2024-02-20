@@ -1,0 +1,5 @@
+metric_aggregator_callback:
+  _target_: nuplan.planning.simulation.main_callback.metric_aggregator_callback.MetricAggregatorCallback
+  _convert_: 'all'
+
+  metric_save_path:   ${output_dir}/${metric_dir}           # Path of a folder in which the metrics are saved

@@ -1,0 +1,4 @@
+_target_: nuplan.planning.scenario_builder.test.mock_abstract_scenario_builder.MockAbstractScenarioBuilder
+_convert_: 'all'
+
+num_scenarios: 5  # The number of scenarios to return from get_scenarios()

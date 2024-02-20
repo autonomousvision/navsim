@@ -1,0 +1,13 @@
+planner_miss_rate_within_bound_statistics:
+  _target_: nuplan.planning.metrics.evaluation_metrics.common.planner_miss_rate_within_bound.PlannerMissRateStatistics
+  _convert_: 'all'
+  name: 'planner_miss_rate_within_bound'
+  category: 'Planning'
+  metric_score_unit: 'bool'
+
+  max_displacement_threshold: [6.0, 8.0, 16.0] #meter
+  max_miss_rate_threshold: 0.3
+
+  required_metrics:
+    # Parameter: base metric name and other high level metrics used in this metric
+    planner_expert_average_l2_error_within_bound_metric: planner_expert_average_l2_error_within_bound_statistics

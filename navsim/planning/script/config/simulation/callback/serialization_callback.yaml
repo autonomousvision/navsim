@@ -1,0 +1,8 @@
+serialization_callback:
+  _target_: nuplan.planning.simulation.callback.serialization_callback.SerializationCallback
+  _convert_: 'all'
+
+  folder_name: simulation            # Name of a folder in which the serialization will take place
+  serialize_into_single_file: false  # If true, the output will be a single file, if False, the data will be serialized
+                                     # into one file per time step
+  serialization_type: "json"         # A way to serialize output, options: ["json", "pickle", "msgpack"]

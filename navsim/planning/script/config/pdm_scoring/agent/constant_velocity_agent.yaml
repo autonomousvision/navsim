@@ -1,0 +1,2 @@
+_target_: navsim.agents.constant_velocity_agent.ConstantVelocityAgent
+_convert_: 'all'

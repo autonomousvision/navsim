@@ -1,0 +1,4 @@
+_target_: nuplan.planning.simulation.controller.motion_model.kinematic_bicycle.KinematicBicycleModel
+_convert_: 'all'
+
+vehicle: ${scenario_builder.vehicle_parameters}

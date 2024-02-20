@@ -1,0 +1,10 @@
+_target_: nuplan.common.actor_state.vehicle_parameters.VehicleParameters
+_convert_: 'all'
+width: 2.297
+front_length: 4.049
+rear_length: 1.127
+cog_position_from_rear_axle: 1.67
+height: 1.777
+wheel_base: 3.089
+vehicle_name: "pacifica"
+vehicle_type: "gen1"

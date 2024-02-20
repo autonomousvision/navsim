@@ -1,0 +1,7 @@
+simulation_log_callback:
+  _target_: nuplan.planning.simulation.callback.simulation_log_callback.SimulationLogCallback
+  _convert_: 'all'
+
+  output_directory: ${output_dir}
+  simulation_log_dir: simulation_log      # Simulation log dir
+  serialization_type: "msgpack"           # A way to serialize output, options: ["pickle", "msgpack"]

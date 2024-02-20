@@ -1,0 +1,25 @@
+# Common experiment configs
+
+group: ${oc.env:NUPLAN_EXP_ROOT}/exp               # This is where results, logs, config, etc. are saved
+experiment_name: ???                                # Experiment name, by default 'simulation' or 'training'
+job_name: ???                                       # Job name, as defined in the specific yaml files.
+
+# Directory structure
+date_format: '%Y.%m.%d.%H.%M.%S'
+experiment_uid: ${now:${date_format}}              # Unique Id of the experiment, default to timestamp
+experiment: ${experiment_name}/${job_name}/${experiment_uid}      # Unique name of the experiment
+output_dir: ${group}/${experiment}                  # Output directory to save all training artifacts
+metric_dir: metrics                                 # Metric dir name to save metric results.
+aggregator_metric_dir: aggregator_metric            # Aggregator metric dir name to save aggregated metrics.
+runner_report_file: runner_report.parquet           # Name of the parquet file the RunnerReport will be stored to
+log_config: false                                   # Whether to log the final config after all overrides and interpolations
+
+# Execution
+max_number_of_workers: null                         # Set null to disable threading for simulation execution
+seed: 0                                             # Random seed value.
+enable_profiling: false                             # Whether to enable profiler which will be dumped to "profiling" folder
+gpu: true                                           # Whether to use available GPUs during training/simulation
+
+# Logger
+logger_level: info                                  # Level of logger
+logger_format_string: null                          # Logger format string, set null to use the default format string

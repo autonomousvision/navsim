@@ -1,0 +1,8 @@
+metric_file_callback:
+  _target_: nuplan.planning.simulation.main_callback.metric_file_callback.MetricFileCallback
+  _convert_: 'all'
+
+  metric_file_output_path: ${output_dir}/${metric_dir}       # Path to save metric files
+  scenario_metric_paths:                                     # A list of paths in which scenario metrics are saved
+    - ${output_dir}/${metric_dir}
+  delete_scenario_metric_files: True                         # Delete previous scenario metric files

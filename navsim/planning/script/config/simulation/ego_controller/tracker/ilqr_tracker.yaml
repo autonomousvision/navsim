@@ -1,0 +1,44 @@
+_target_: nuplan.planning.simulation.controller.tracker.ilqr_tracker.ILQRTracker
+_convert_: all
+
+n_horizon: 40  # Maximum time horizon (number of discrete time steps) that we should plan ahead.
+
+ilqr_solver:
+  _target_: nuplan.planning.simulation.controller.tracker.ilqr.ilqr_solver.ILQRSolver
+  _convert_: all
+
+  solver_params:
+    _target_: nuplan.planning.simulation.controller.tracker.ilqr.ilqr_solver.ILQRSolverParameters
+    _convert_: all
+
+    discretization_time: 0.2  # [s] Time discretization used for integration.
+
+    # Cost weights for state variables [x, y, heading, velocity, steering angle]
+    state_cost_diagonal_entries: [1.0, 1.0, 10.0, 0.0, 0.0]
+
+    # Cost weights for input variables [acceleration, steering rate]
+    input_cost_diagonal_entries: [1.0, 10.0]
+
+    # Trust region cost weights for states and inputs.
+    state_trust_region_entries: [1.0, 1.0, 1.0, 1.0, 1.0]
+    input_trust_region_entries: [1.0, 1.0]
+
+    max_ilqr_iterations: 20  # Maximum number of iterations to run iLQR before timeout.
+    convergence_threshold: 1e-6  # Threshold for delta inputs below which we can terminate iLQR early.
+    max_solve_time: 0.05  # [s] If defined, sets a maximum time to run a solve call of iLQR before terminating.
+
+    max_acceleration: 3.0  # [m/s^2] Absolute value threshold on acceleration input.
+    max_steering_angle: 1.047197  # [rad] Absolute value threshold on steering angle.
+    max_steering_angle_rate: 0.5  # [rad/s] Absolute value threshold on steering rate input.
+    min_velocity_linearization: 0.01  # [m/s] Absolute value threshold below which linearization velocity is modified.
+
+  warm_start_params:
+    _target_: nuplan.planning.simulation.controller.tracker.ilqr.ilqr_solver.ILQRWarmStartParameters
+    _convert_: all
+
+    k_velocity_error_feedback: 0.5  # Gain for initial velocity error for warm start acceleration.
+    k_steering_angle_error_feedback: 0.05  # Gain for initial steering angle error for warm start steering rate.
+    lookahead_distance_lateral_error: 15.0  # [m] Distance ahead for which we estimate lateral error.
+    k_lateral_error: 0.1  # Gain for lateral error to compute steering angle feedback.
+    jerk_penalty_warm_start_fit: 1e-4  # Penalty for jerk in velocity profile estimation.
+    curvature_rate_penalty_warm_start_fit: 1e-2  # Penalty for curvature rate in curvature profile estimation.

@@ -1,0 +1,18 @@
+_target_: nuplan.planning.simulation.controller.tracker.lqr.LQRTracker
+_convert_: 'all'
+
+# LQR tuning
+q_longitudinal: [10.0]      # velocity tracking cost gain
+r_longitudinal: [1.0]       # acceleration tracking cost gain
+q_lateral: [1.0, 10.0, 0.0] # [lateral_error, heading_error, steering_angle] tracking cost gains
+r_lateral: [1.0]            # steering_rate tracking cost gain
+discretization_time: 0.1    # [s] The time interval used for discretizing the continuous time dynamics.
+tracking_horizon: 10        # The number of time steps (at discretization_time interval) ahead we consider for LQR.
+
+# Parameters for velocity and curvature estimation.
+jerk_penalty: 1e-4            # Penalty for jerk in velocity profile estimation.
+curvature_rate_penalty: 1e-2  # Penalty for curvature rate in curvature profile estimation.
+
+# Stopping logic
+stopping_proportional_gain: 0.5 # Proportional controller tuning for stopping controller
+stopping_velocity: 0.2          # [m/s] Velocity threshold for stopping

@@ -1,0 +1,6 @@
+completion_callback:
+  _target_: nuplan.planning.simulation.main_callback.completion_callback.CompletionCallback
+  _convert_: 'all'
+
+  output_dir: ${output_dir}
+  challenge_name: ${job_name}

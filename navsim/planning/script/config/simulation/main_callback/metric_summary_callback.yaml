@@ -1,0 +1,9 @@
+metric_summary_callback:
+  _target_: nuplan.planning.simulation.main_callback.metric_summary_callback.MetricSummaryCallback
+  _convert_: 'all'
+
+  metric_save_path: ${output_dir}/${metric_dir}       # Path to saved metric files
+  metric_aggregator_save_path: ${aggregator_save_path} # Path to saved aggregated files
+  summary_output_path: ${output_dir}/summary
+  num_bins: 20
+  pdf_file_name: 'summary.pdf'

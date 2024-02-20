@@ -1,0 +1,42 @@
+publisher_callback:
+  _target_: nuplan.planning.simulation.main_callback.publisher_callback.PublisherCallback
+  _convert_: 'all'
+
+  s3_client: null
+  s3_bucket: null
+  remote_prefix: null
+
+  # Path to the directories
+  uploads:
+    metrics:
+        upload: True
+        save_path: ${output_dir}/${metric_dir}             # Path of a folder in which the metrics are saved
+        remote_path: ${job_name}/${metric_dir}             # Path of a folder in which the metrics are saved
+    aggregator_metric:
+        upload: True
+        save_path: ${output_dir}/${aggregator_metric_dir}  # Path of a folder in which the aggregated metrics are saved
+        remote_path: ${aggregator_metric_dir}  # Path of a folder in which the aggregated metrics are saved
+    simulation:
+        upload: False
+        save_path: ${output_dir}/simulation_log             # Path of a folder in which the simulation output is saved
+        remote_path: ${job_name}/simulation_log             # Path of a folder in which the simulation output is saved
+    runner_report:
+        upload: True
+        save_path: ${output_dir}/runner_report.parquet             # Path of a folder in which the simulation output is saved
+        remote_path: ${job_name}            # Path of a folder in which the simulation output is saved
+    passed:
+        upload: True
+        save_path: ${output_dir}/validation-results/passed.txt             # Path of a folder in which the validation result is saved
+        remote_path: validation-results              # Path of a folder in which the simulation output is saved
+    failed:
+        upload: True
+        save_path: ${output_dir}/validation-results/failed.txt            # Path of a folder in which the validation result is saved
+        remote_path: validation-results            # Path of a folder in which the simulation output is saved
+    completed:
+        upload: True
+        save_path: ${output_dir}/simulation-results            # Path of a folder in which the validation result is saved
+        remote_path: simulation-results            # Path of a folder in which the simulation output is saved
+    submission_logs:
+        upload: True
+        save_path: /tmp/submission.log            # Path of a folder in which the validation result is saved
+        remote_path: ${job_name}/submission.log            # Path of a folder in which the simulation output is saved

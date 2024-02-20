@@ -1,0 +1,6 @@
+_target_: nuplan.planning.simulation.controller.two_stage_controller.TwoStageController
+_convert_: 'all'
+
+defaults:
+  - tracker: lqr_tracker
+  - motion_model: kinematic_bicycle_model

@@ -1,0 +1,18 @@
+# Default common configs
+
+defaults:
+  # Add common items
+  - scenario_builder: nuplan
+  - scenario_filter: val14
+  - model: null
+  # Worker that is used to run simulations
+  - worker: ray_distributed_no_torch
+
+distribute_by_scenario: true
+
+distributed_timeout_seconds: 7200 # Sets how long to wait while synchronizing across worker nodes in a distributed context.
+
+selected_simulation_metrics: null
+
+# Sets verbosity level, in particular determines if progress bars are shown or not.
+verbose: false

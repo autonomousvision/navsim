@@ -1,0 +1,9 @@
+planner_expert_average_l2_error_within_bound_statistics:
+  _target_: nuplan.planning.metrics.evaluation_metrics.common.planner_expert_average_l2_error_within_bound.PlannerExpertAverageL2ErrorStatistics
+  _convert_: 'all'
+  name: 'planner_expert_average_l2_error_within_bound'
+  category: 'Planning'
+  metric_score_unit: 'float'
+  comparison_horizon: [3, 5, 8] #seconds
+  comparison_frequency: 1 #Hz
+  max_average_l2_error_threshold: 8 #meter
