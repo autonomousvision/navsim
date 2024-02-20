@@ -9,4 +9,4 @@ OpenScene is a compact redistribution of the large-scale [nuPlan dataset](https:
 cd $NAVSIM_DEVKIT_ROOT/scripts/
 ./run_metric_caching.sh
 ```
-Note that you have to set the `LOG_PATH` and `METRIC_CACHE_PATH` first. `LOG_PATH` has to point to the OpenScene annotations. The cache will be saved under the `METRIC_CACHE_PATH` which you can chose freely.
+Note that you have to set the `LOG_PATH` and `METRIC_CACHE_PATH` first. `LOG_PATH` has to point to the [OpenScene annotations](https://github.com/autonomousvision/navsim/blob/main/docs/install.md#1-download-the-demo-data). The cache will be saved under the `METRIC_CACHE_PATH` which you can chose freely.
