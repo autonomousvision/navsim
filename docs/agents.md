@@ -17,6 +17,4 @@ Let’s dig deeper into this class.
 Given this input, you will need to override the `compute_trajectory()` method and output a `Trajectory`. This is an array of BEV poses (with x, y and heading in local coordinates), as well as a `TrajectorySampling` config object that indicates the duration and frequency of the trajectory. The PDM score is evaluated for a horizon of 4 seconds at a frequency of 10Hz. The `TrajectorySampling` config facilitates interpolation when the output frequency is different from the one used during evaluation.
 
 We provide a naive constant velocity agent as part of our demo, for reference:
-
 https://github.com/autonomousvision/navsim/blob/51cecd51aa70b0e6bcfb3541b91ae88f2a78a25e/navsim/agents/constant_velocity_agent.py#L9
-

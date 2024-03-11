@@ -171,6 +171,7 @@ def cache_data(cfg: DictConfig, worker: WorkerPool) -> None:
         
         # TODO: add scene filter settings to config
         scene_loader = SceneLoader(
+            sensor_blobs_path=None,
             data_path=Path(cfg.navsim_log_path),
             scene_filter=SceneFilter(),
             sensor_modalities=[],

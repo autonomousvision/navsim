@@ -16,10 +16,11 @@ i.e., `PDM Score = NC * DAC * DDC * (5*TTC + 2*C + 5*EP) / 12`
 To evaluate the PDM score for an agent you can run:
 ```
 cd $NAVSIM_DEVKIT_ROOT/scripts/
-./run_pdm_score_evaluation.sh
+./run_cv_pdm_score_evaluation.sh
 ```
-**Note: You have to adapt the variables `LOG_PATH` so that it points to the [logs (annotations)](https://github.com/autonomousvision/navsim/blob/main/docs/install.md#1-download-the-demo-data), `METRIC_CACHE_PATH` so that it points to the [metric cache](https://github.com/autonomousvision/navsim/blob/main/docs/cache.md#understanding-the-data-format-and-classes) and `OUTPUT_DIR` so that it points to a directory where the evaluation csv will be stored**
 
 By default, this will generate an evaluation csv for a simple constant velocity [planning baseline](https://github.com/autonomousvision/navsim/blob/main/docs/agents.md#output). You can modify the script to evaluate your own planning agent.
+
 For instance, you can add a new config for your agent under `$NAVSIM_DEVKIT_ROOT/navsim/navsim/planning/script/config/pdm_scoring/agent/my_new_agent.yaml`. 
 Then, running your own agent is as simple as adding an override `agent=my_new_agent` to the script.
+You can find an example in `run_human_agent_pdm_score_evaluation.sh`

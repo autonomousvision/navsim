@@ -2,36 +2,59 @@
 
 To get started with NAVSIM: 
 
-### 1. Download the demo data
-First, you need to download the OpenScene mini logs and sensor blobs, as well as the nuPlan maps.
+### 1. Clone the navsim-devkit
+Clone the repository
+```
+git clone https://github.com/autonomousvision/navsim.git
+cd navsim
+```
+### 2. Download the demo data
+You need to download the OpenScene logs and sensor blobs, as well as the nuPlan maps.
+We provide scripts to download the nuplan maps, the mini split and the test split.
+Navigate to the download directory and download the maps
 
 **NOTE: Please check the [LICENSE file](https://motional-nuplan.s3-ap-northeast-1.amazonaws.com/LICENSE) before downloading the data.**
 
 ```
-wget https://motional-nuplan.s3-ap-northeast-1.amazonaws.com/public/nuplan-v1.1/nuplan-maps-v1.1.zip && unzip nuplan-maps-v1.1.zip
-wget https://s3.eu-central-1.amazonaws.com/avg-projects-2/navsim/navsim_logs.zip && unzip navsim_logs.zip
-wget https://s3.eu-central-1.amazonaws.com/avg-projects-2/navsim/sensor_blobs.zip && unzip sensor_blobs.zip
+cd download && ./download_maps
 ```
-The `sensor_blobs` file is fairly large (90 GB). For understanding the metrics and testing the naive baselines in the demo, this is not strictly necessary.
 
-### 2. Install the navsim-devkit
-Next, setup the environment and install navsim.
-Clone the repository
+Next download the mini split and the test split
 ```
-git clone https://github.com/kashyap7x/navsim.git
-cd navsim
+./download_mini
+./download_test
 ```
-Then create a new environment and install the required dependencies:
+
+**The mini split and the test split take around ~160GB and ~220GB of memory respectively**
+
+This will download the splits into the download directory. From there, move it to create the following structure.
+```angular2html
+~/navsim_workspace
+├── navsim (containing the devkit)
+├── exp
+└── dataset
+    ├── maps
+    ├── navsim_logs
+    |    ├── test
+    │    └── mini
+    └── sensor_blobs
+         ├── test
+         └── mini
+```
+Set the required environment variables, by adding the following to your `~/.bashrc` file
+Based on the structure above, the environment variables need to be defined as:
+```
+export NUPLAN_MAPS_ROOT="$HOME/navsim_workspace/dataset/maps"
+export NUPLAN_EXP_ROOT="$HOME/navsim_workspace/exp"
+export NAVSIM_DEVKIT_ROOT="$HOME/navsim_workspace/navsim"
+export OPENSCENE_DATA_ROOT="$HOME/navsim_workspace/dataset"
+```
+
+### 3. Install the navsim-devkit
+Finally, install navsim.
+To this end, create a new environment and install the required dependencies:
 ```
 conda env create --name navsim -f environment.yml
 conda activate navsim
 pip install -e .
-```
-
-Set the required environment variables, by adding the following to your `~/.bashrc` file
-```
-export NAVSIM_DEVKIT_ROOT=/path/to/navsim/devkit
-export NUPLAN_EXP_ROOT=/path/to/navsim/exp
-export NUPLAN_MAPS_ROOT=/path/to/nuplan/maps
-export OPENSCENE_DATA_ROOT=/path/to/openscene
 ```

@@ -47,7 +47,10 @@
 
 
 ## Changelog <a name="changelog"></a>
-
+- **`[2024/03/11]`** NAVSIM v0.2 release
+  - Easier installation and download
+  - mini and test split integration
+  - Privileged `Human` agent
 - **`[2024/02/20]`** NAVSIM v0.1 release (initial demo)
   - OpenScene-mini sensor blobs and annotation logs
   - Naive `ConstantVelocity` agent

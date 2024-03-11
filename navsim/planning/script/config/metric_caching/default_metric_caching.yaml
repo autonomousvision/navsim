@@ -19,5 +19,6 @@ cache:
   force_feature_computation: false
   use_open_scene: true               
 
+split: mini
 output_dir: ${cache.cache_path}/metadata
-navsim_log_path: null
+navsim_log_path: ${oc.env:OPENSCENE_DATA_ROOT}/navsim_logs/${split} # path to log annotations

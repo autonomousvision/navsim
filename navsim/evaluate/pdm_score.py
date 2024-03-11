@@ -13,7 +13,6 @@ from navsim.planning.simulation.planner.pdm_planner.simulation.pdm_simulator imp
 )
 from navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer import (
     PDMScorer,
-    PDMScorerConfig,
 )
 from navsim.planning.simulation.planner.pdm_planner.utils.pdm_array_representation import (
     ego_states_to_state_array,
@@ -96,18 +95,19 @@ def get_trajectory_as_array(
     return ego_states_to_state_array(trajectory_ego_states)
 
 
-def pdm_score(metric_cache: MetricCache, model_trajectory: Trajectory) -> PDMResults:
+def pdm_score(
+    metric_cache: MetricCache,
+    model_trajectory: Trajectory,
+    future_sampling: TrajectorySampling,
+    simulator: PDMSimulator,
+    scorer: PDMScorer
+) -> PDMResults:
     """
     Runs PDM-Score and saves results in dataclass.
     :param metric_cache: Metric cache dataclass
     :param model_trajectory: Predicted trajectory in ego frame.
     :return: Dataclass of PDM-Subscores.
     """
-
-    # TODO: add to some config
-    future_sampling = TrajectorySampling(num_poses=40, interval_length=0.1)
-    simulator = PDMSimulator(future_sampling)
-    scorer = PDMScorer(future_sampling, config=PDMScorerConfig(progress_distance_threshold=5.0))
 
     initial_ego_state = metric_cache.ego_state
 
