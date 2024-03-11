@@ -45,14 +45,13 @@ class Cameras:
     b0: Camera
 
     @classmethod
-    def from_camera_dict(cls, camera_dict: Dict[str, Any]) -> Cameras:
+    def from_camera_dict(cls, sensor_blobs_path: Path, camera_dict: Dict[str, Any]) -> Cameras:
 
         data_dict: Dict[str, Camera] = {}
         for camera_name in camera_dict.keys():
             # TODO: adapt for complete OpenScenes data
             image_path = (
-                Path(OPENSCENE_DATA_ROOT)
-                / "sensor_blobs/mini"
+                sensor_blobs_path
                 / camera_dict[camera_name]["data_path"]
             )
             data_dict[camera_name] = Camera(
@@ -108,6 +107,7 @@ class AgentInput:
     def from_scene_dict_list(
         cls,
         scene_dict_list: List[Dict],
+        sensor_blobs_path: Path,
         num_history_frames: int,
         sensor_modalities: List[str] = ["lidar", "camera"],
     ) -> AgentInput:
@@ -139,7 +139,7 @@ class AgentInput:
             ego_statuses.append(ego_status)
 
             if include_cameras:
-                cameras.append(Cameras.from_camera_dict(scene_dict_list[frame_idx]["cams"]))
+                cameras.append(Cameras.from_camera_dict(sensor_blobs_path, scene_dict_list[frame_idx]["cams"]))
 
             if include_lidar:
                 # TODO: Add lidar data
@@ -302,6 +302,7 @@ class Scene:
     def from_scene_dict_list(
         cls,
         scene_dict_list: List[Dict],
+        sensor_blobs_path: Path,
         num_history_frames: int,
         num_future_frames: int,
         sensor_modalities: List[str] = ["lidar", "camera"],
@@ -345,7 +346,7 @@ class Scene:
             )
 
             if "camera" in sensor_modalities:
-                cameras = Cameras.from_camera_dict(scene_dict_list[frame_idx]["cams"])
+                cameras = Cameras.from_camera_dict(sensor_blobs_path, scene_dict_list[frame_idx]["cams"])
             else:
                 cameras = None
 

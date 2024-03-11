@@ -82,7 +82,7 @@ class PDMScorer:
         Constructor of PDMScorer
         :param proposal_sampling: Sampling parameters for proposals
         """
-        self._proposal_sampling = proposal_sampling
+        self.proposal_sampling = proposal_sampling
         self._config = config
         self._vehicle_parameters = vehicle_parameters
 
@@ -112,7 +112,7 @@ class PDMScorer:
         :param proposal_idx: index for proposal
         :return: time to infraction
         """
-        return self._collision_time_idcs[proposal_idx] * self._proposal_sampling.interval_length
+        return self._collision_time_idcs[proposal_idx] * self.proposal_sampling.interval_length
 
     def time_to_ttc_infraction(self, proposal_idx: int) -> float:
         """
@@ -120,7 +120,7 @@ class PDMScorer:
         :param proposal_idx: index for proposal
         :return: time to infraction
         """
-        return self._ttc_time_idcs[proposal_idx] * self._proposal_sampling.interval_length
+        return self._ttc_time_idcs[proposal_idx] * self.proposal_sampling.interval_length
 
     def score_proposals(
         self,
@@ -213,7 +213,7 @@ class PDMScorer:
         :param drivable_area_map: Occupancy map of drivable are polygons
         """
         assert states.ndim == 3
-        assert states.shape[1] == self._proposal_sampling.num_poses + 1
+        assert states.shape[1] == self.proposal_sampling.num_poses + 1
         assert states.shape[2] == StateIndex.size()
 
         self._observation = observation
@@ -236,7 +236,7 @@ class PDMScorer:
         self._ego_areas = np.zeros(
             (
                 self._num_proposals,
-                self._proposal_sampling.num_poses + 1,
+                self.proposal_sampling.num_poses + 1,
                 len(EgoAreaIndex),
             ),
             dtype=np.bool_,
@@ -331,7 +331,7 @@ class PDMScorer:
             for proposal_idx in range(self._num_proposals)
         }
 
-        for time_idx in range(self._proposal_sampling.num_poses + 1):
+        for time_idx in range(self.proposal_sampling.num_poses + 1):
             ego_polygons = self._ego_polygons[:, time_idx]
             intersecting = self._observation[time_idx].query(ego_polygons, predicate="intersects")
 
@@ -401,7 +401,7 @@ class PDMScorer:
         """
         center_coordinates = self._ego_coords[:, :, BBCoordsIndex.CENTER]
         oncoming_progress = np.zeros(
-            (self._num_proposals, self._proposal_sampling.num_poses + 1),
+            (self._num_proposals, self.proposal_sampling.num_poses + 1),
             dtype=np.float64,
         )
         oncoming_progress[:, 1:] = (
@@ -416,7 +416,7 @@ class PDMScorer:
         driving_direction_compliance_scores = np.ones(self._num_proposals, dtype=np.float64)
 
         horizon = int(
-            self._config.driving_direction_horizon / self._proposal_sampling.interval_length
+            self._config.driving_direction_horizon / self.proposal_sampling.interval_length
         )
 
         oncoming_progress_over_horizon = np.array(
@@ -491,7 +491,7 @@ class PDMScorer:
         )
 
         for idx, future_time_idx in enumerate(future_time_idcs):
-            delta_t = float(future_time_idx) * self._proposal_sampling.interval_length
+            delta_t = float(future_time_idx) * self.proposal_sampling.interval_length
             coords_exterior_time_steps[:, :, idx] = (
                 coords_exterior_time_steps[:, :, idx] + dxy_per_s[:, :, None] * delta_t
             )
@@ -499,7 +499,7 @@ class PDMScorer:
         polygons = creation.polygons(coords_exterior_time_steps)
 
         # check collision for each proposal and projection
-        for time_idx in range(self._proposal_sampling.num_poses + 1):
+        for time_idx in range(self.proposal_sampling.num_poses + 1):
             for step_idx, future_time_idx in enumerate(future_time_idcs):
                 current_time_idx = time_idx + future_time_idx
                 polygons_at_time_step = polygons[:, time_idx, step_idx]
@@ -555,8 +555,8 @@ class PDMScorer:
         Re-implementation of nuPlan's comfortability metric.
         """
         time_point_s: npt.NDArray[np.float64] = (
-            np.arange(0, self._proposal_sampling.num_poses + 1).astype(np.float64)
-            * self._proposal_sampling.interval_length
+            np.arange(0, self.proposal_sampling.num_poses + 1).astype(np.float64)
+            * self.proposal_sampling.interval_length
         )
         is_comfortable = ego_is_comfortable(self._states, time_point_s)
         self._weighted_metrics[WeightedMetricIndex.COMFORTABLE] = np.all(is_comfortable, axis=-1)

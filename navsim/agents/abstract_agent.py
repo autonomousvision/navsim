@@ -12,6 +12,7 @@ class AbstractAgent(abc.ABC):
     """
     Interface for a generic end-to-end agent.
     """
+    requires_scene = False
 
     def __new__(cls, *args: Any, **kwargs: Any) -> AbstractAgent:
         """

@@ -11,7 +11,7 @@ from navsim.planning.metric_caching.metric_cache import MetricCache
 
 
 def filter_scenes(
-    data_path: Path, scene_filter: SceneFilter, sensor_modalities: List[str] = ["lidar", "camera"]
+    data_path: Path, sensor_blobs_path: Path, scene_filter: SceneFilter, sensor_modalities: List[str] = ["lidar", "camera"]
 ) -> Dict[str, Scene]:
 
     def split_list(input_list: List[Any], n: int) -> List[List[Any]]:
@@ -44,6 +44,7 @@ def filter_scenes(
                 token = frame_list[scene_filter.num_history_frames - 1]["token"]
                 filtered_scenes[token] = Scene.from_scene_dict_list(
                     frame_list,
+                    sensor_blobs_path,
                     num_history_frames=scene_filter.num_history_frames,
                     num_future_frames=scene_filter.num_future_frames,
                     sensor_modalities=sensor_modalities,
@@ -69,11 +70,12 @@ class SceneLoader:
     def __init__(
         self,
         data_path: Path,
+        sensor_blobs_path: Path,
         scene_filter: SceneFilter = SceneFilter(),
         sensor_modalities: List[str] = ["lidar", "camera"],
     ):
 
-        self._filtered_scenes = filter_scenes(data_path, scene_filter, sensor_modalities)
+        self._filtered_scenes = filter_scenes(data_path, sensor_blobs_path, scene_filter, sensor_modalities)
         self._scene_filter = scene_filter
         self._sensor_modalities = sensor_modalities
 
@@ -98,11 +100,12 @@ class AgentInputLoader:
     def __init__(
         self,
         data_path: Path,
+        sensor_blobs_path: Path,
         scene_filter: SceneFilter = SceneFilter(),
         sensor_modalities: List[str] = ["lidar", "camera"],
     ):
 
-        self._filtered_scenes = filter_scenes(data_path, scene_filter, sensor_modalities)
+        self._filtered_scenes = filter_scenes(data_path, sensor_blobs_path, scene_filter, sensor_modalities)
         self._scene_filter = scene_filter
         self._sensor_modalities = sensor_modalities
 

@@ -30,7 +30,7 @@ class PDMSimulator:
         """
 
         # time parameters
-        self._proposal_sampling = proposal_sampling
+        self.proposal_sampling = proposal_sampling
 
         # simulation objects
         self._motion_model = BatchKinematicBicycleModel()
@@ -49,9 +49,9 @@ class PDMSimulator:
         # TODO: find cleaner way to load parameters
         # set parameters of motion model and tracker
         self._motion_model._vehicle = initial_ego_state.car_footprint.vehicle_parameters
-        self._tracker._discretization_time = self._proposal_sampling.interval_length
+        self._tracker._discretization_time = self.proposal_sampling.interval_length
 
-        proposal_states = states[:, : self._proposal_sampling.num_poses + 1]
+        proposal_states = states[:, : self.proposal_sampling.num_poses + 1]
         self._tracker.update(proposal_states)
 
         # state array representation for simulated vehicle states
@@ -60,12 +60,12 @@ class PDMSimulator:
 
         # timing objects
         current_time_point = initial_ego_state.time_point
-        delta_time_point = TimeDuration.from_s(self._proposal_sampling.interval_length)
+        delta_time_point = TimeDuration.from_s(self.proposal_sampling.interval_length)
 
         current_iteration = SimulationIteration(current_time_point, 0)
         next_iteration = SimulationIteration(current_time_point + delta_time_point, 1)
 
-        for time_idx in range(1, self._proposal_sampling.num_poses + 1):
+        for time_idx in range(1, self.proposal_sampling.num_poses + 1):
             sampling_time: TimePoint = (
                 next_iteration.time_point - current_iteration.time_point
             )

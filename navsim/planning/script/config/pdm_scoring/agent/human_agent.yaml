@@ -1,0 +1,2 @@
+_target_: navsim.agents.human_agent.HumanAgent
+_convert_: 'all'
