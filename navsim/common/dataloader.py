@@ -5,6 +5,7 @@ import pickle
 
 from pathlib import Path
 from typing import Any, Dict, List
+from tqdm import tqdm
 
 from navsim.common.dataclasses import Scene, AgentInput, SceneFilter
 from navsim.planning.metric_caching.metric_cache import MetricCache
@@ -20,43 +21,33 @@ def filter_scenes(
     filtered_scenes: Dict[str, Scene] = {}
     stop_loading: bool = False
 
-    for log_pickle_path in data_path.iterdir():
+    for log_pickle_path in tqdm(list(data_path.iterdir()), desc="Loading logs"):
         
-        log_dict = pickle.load(open(log_pickle_path, "rb"))
-        log_name = log_pickle_path.name[:-4]
+        scene_dict_list = pickle.load(open(log_pickle_path, "rb"))
+        for frame_list in split_list(scene_dict_list, scene_filter.num_frames):
+            # Filter scenes which are too short
+            if len(frame_list) < scene_filter.num_frames:
+                continue
 
-        if (scene_filter.log_names is not None) and (log_name not in scene_filter.log_names):
-            continue
+            # Filter scenes with no route
+            if scene_filter.has_route and len(frame_list[0]["roadblock_ids"]) == 0:
+                continue
 
-        for scene_token, scene_dict_list in log_dict.items():
+            # TODO: Filter by token
+            # TODO: Implement temporally overlapping scenes
+            token = frame_list[scene_filter.num_history_frames - 1]["token"]
+            filtered_scenes[token] = Scene.from_scene_dict_list(
+                frame_list,
+                sensor_blobs_path,
+                num_history_frames=scene_filter.num_history_frames,
+                num_future_frames=scene_filter.num_future_frames,
+                sensor_modalities=sensor_modalities,
+            )
 
-            for frame_list in split_list(scene_dict_list, scene_filter.num_frames):
-                # Filter scenes which are too short
-                if len(frame_list) < scene_filter.num_frames:
-                    continue
-
-                # Filter scenes with no route
-                if scene_filter.has_route and len(frame_list[0]["roadblock_ids"]) == 0:
-                    continue
-
-                # TODO: Filter by token
-                # TODO: Implement temporally overlapping scenes
-                token = frame_list[scene_filter.num_history_frames - 1]["token"]
-                filtered_scenes[token] = Scene.from_scene_dict_list(
-                    frame_list,
-                    sensor_blobs_path,
-                    num_history_frames=scene_filter.num_history_frames,
-                    num_future_frames=scene_filter.num_future_frames,
-                    sensor_modalities=sensor_modalities,
-                )
-
-                if (scene_filter.max_scenes is not None) and (
-                    len(filtered_scenes) >= scene_filter.max_scenes
-                ):
-                    stop_loading = True
-                    break
-
-            if stop_loading:
+            if (scene_filter.max_scenes is not None) and (
+                len(filtered_scenes) >= scene_filter.max_scenes
+            ):
+                stop_loading = True
                 break
 
         if stop_loading:
