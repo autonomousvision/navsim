@@ -297,6 +297,39 @@ class Scene:
                 lidars = None
 
         return AgentInput(ego_statuses, cameras, lidars)
+    
+    @classmethod
+    def _build_annotations(
+        cls,
+        scene_frame: Dict,
+    ) -> Annotations:
+        return Annotations(
+            boxes=scene_frame["anns"]["gt_boxes"],
+            names=scene_frame["anns"]["gt_names"],
+            velocity_3d=scene_frame["anns"]["gt_velocity_3d"],
+            instance_tokens=scene_frame["anns"]["instance_tokens"],
+            track_tokens=scene_frame["anns"]["track_tokens"],
+        )
+    
+    @classmethod
+    def _build_ego_status(
+        cls,
+        scene_frame: Dict,
+    ) -> EgoStatus:
+        ego_translation = scene_frame["ego2global_translation"]
+        ego_quaternion = Quaternion(*scene_frame["ego2global_rotation"])
+        global_ego_pose = np.array(
+            [ego_translation[0], ego_translation[1], ego_quaternion.yaw_pitch_roll[0]],
+            dtype=np.float64,
+        )
+        ego_dynamic_state = scene_frame["ego_dynamic_state"]
+        return EgoStatus(
+            ego_pose=global_ego_pose,
+            ego_velocity=np.array(ego_dynamic_state[:2], dtype=np.float32),
+            ego_acceleration=np.array(ego_dynamic_state[2:], dtype=np.float32),
+            driving_command=scene_frame["driving_command"],
+            in_global_frame=True,
+        )
 
     @classmethod
     def from_scene_dict_list(
@@ -321,29 +354,8 @@ class Scene:
 
         frames: List[Frame] = []
         for frame_idx in range(len(scene_dict_list)):
-
-            ego_translation = scene_dict_list[frame_idx]["ego2global_translation"]
-            ego_quaternion = Quaternion(*scene_dict_list[frame_idx]["ego2global_rotation"])
-            global_ego_pose = np.array(
-                [ego_translation[0], ego_translation[1], ego_quaternion.yaw_pitch_roll[0]],
-                dtype=np.float64,
-            )
-            ego_dynamic_state = scene_dict_list[frame_idx]["ego_dynamic_state"]
-            global_ego_status = EgoStatus(
-                ego_pose=global_ego_pose,
-                ego_velocity=np.array(ego_dynamic_state[:2], dtype=np.float32),
-                ego_acceleration=np.array(ego_dynamic_state[2:], dtype=np.float32),
-                driving_command=scene_dict_list[frame_idx]["driving_command"],
-                in_global_frame=True,
-            )
-
-            annotations = Annotations(
-                boxes=scene_dict_list[frame_idx]["anns"]["gt_boxes"],
-                names=scene_dict_list[frame_idx]["anns"]["gt_names"],
-                velocity_3d=scene_dict_list[frame_idx]["anns"]["gt_velocity_3d"],
-                instance_tokens=scene_dict_list[frame_idx]["anns"]["instance_tokens"],
-                track_tokens=scene_dict_list[frame_idx]["anns"]["track_tokens"],
-            )
+            global_ego_status = cls._build_ego_status(scene_dict_list[frame_idx])
+            annotations = cls._build_annotations(scene_dict_list[frame_idx])
 
             if "camera" in sensor_modalities:
                 cameras = Cameras.from_camera_dict(sensor_blobs_path, scene_dict_list[frame_idx]["cams"])

@@ -12,8 +12,9 @@ from navsim.planning.metric_caching.metric_cache import MetricCache
 
 
 def filter_scenes(
-    data_path: Path, sensor_blobs_path: Path, scene_filter: SceneFilter, sensor_modalities: List[str] = ["lidar", "camera"]
-) -> Dict[str, Scene]:
+    data_path: Path, 
+    scene_filter: SceneFilter
+) -> Dict[str, List[Dict[str, Any]]]:
 
     def split_list(input_list: List[Any], n: int) -> List[List[Any]]:
         return [input_list[i : i + n] for i in range(0, len(input_list), n)]
@@ -36,13 +37,7 @@ def filter_scenes(
             # TODO: Filter by token
             # TODO: Implement temporally overlapping scenes
             token = frame_list[scene_filter.num_history_frames - 1]["token"]
-            filtered_scenes[token] = Scene.from_scene_dict_list(
-                frame_list,
-                sensor_blobs_path,
-                num_history_frames=scene_filter.num_history_frames,
-                num_future_frames=scene_filter.num_future_frames,
-                sensor_modalities=sensor_modalities,
-            )
+            filtered_scenes[token] = frame_list
 
             if (scene_filter.max_scenes is not None) and (
                 len(filtered_scenes) >= scene_filter.max_scenes
@@ -66,7 +61,16 @@ class SceneLoader:
         sensor_modalities: List[str] = ["lidar", "camera"],
     ):
 
-        self._filtered_scenes = filter_scenes(data_path, sensor_blobs_path, scene_filter, sensor_modalities)
+        filtered_tokens = filter_scenes(data_path, scene_filter)
+        self._filtered_scenes: Dict[str, Scene] = {}
+        for token, scene_dict_list in tqdm(filtered_tokens.items(), desc="Building Scenes"):
+            self._filtered_scenes[token] = Scene.from_scene_dict_list(
+                scene_dict_list,
+                sensor_blobs_path,
+                num_history_frames=scene_filter.num_history_frames,
+                num_future_frames=scene_filter.num_future_frames,
+                sensor_modalities=sensor_modalities,
+            )
         self._scene_filter = scene_filter
         self._sensor_modalities = sensor_modalities
 
