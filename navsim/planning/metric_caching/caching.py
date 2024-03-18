@@ -1,55 +1,27 @@
 import gc
-import itertools
 import logging
 import os
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Union
-
-
-import pickle
+from hydra.utils import instantiate
 
 from omegaconf import DictConfig
-
-from nuplan.common.utils.distributed_scenario_filter import (
-    DistributedMode,
-    DistributedScenarioFilter,
-)
 from nuplan.planning.scenario_builder.abstract_scenario import AbstractScenario
-from nuplan.planning.scenario_builder.abstract_scenario_builder import (
-    AbstractScenarioBuilder,
-    RepartitionStrategy,
-)
-from nuplan.planning.script.builders.scenario_building_builder import build_scenario_builder
-from nuplan.planning.script.builders.scenario_filter_builder import build_scenario_filter
 from nuplan.planning.training.experiments.cache_metadata_entry import (
     CacheMetadataEntry,
     CacheResult,
     save_cache_metadata,
 )
 from nuplan.planning.utils.multithreading.worker_pool import WorkerPool
-from nuplan.planning.utils.multithreading.worker_utils import chunk_list, worker_map
+from nuplan.planning.utils.multithreading.worker_utils import worker_map
 
 from navsim.planning.metric_caching.metric_cache_processor import MetricCacheProcessor
 from navsim.planning.scenario_builder.navsim_scenario import NavSimScenario
 from navsim.common.dataloader import SceneLoader
-from navsim.common.dataclasses import SceneFilter
+from navsim.common.dataclasses import SensorConfig
 
 logger = logging.getLogger(__name__)
-
-
-def build_scenarios_from_config(
-    cfg: DictConfig, scenario_builder: AbstractScenarioBuilder, worker: WorkerPool
-) -> List[AbstractScenario]:
-    """
-    Build scenarios from config file.
-    :param cfg: Omegaconf dictionary
-    :param scenario_builder: Scenario builder.
-    :param worker: Worker to submit tasks which can be executed in parallel
-    :return: A list of scenarios
-    """
-    scenario_filter = build_scenario_filter(cfg.scenario_filter)
-    return scenario_builder.get_scenarios(scenario_filter, worker)  # type: ignore
 
 
 def cache_scenarios(args: List[Dict[str, Union[List[str], DictConfig]]]) -> List[CacheResult]:
@@ -130,60 +102,26 @@ def cache_data(cfg: DictConfig, worker: WorkerPool) -> None:
         cfg.cache.cache_path is not None
     ), f"Cache path cannot be None when caching, got {cfg.cache.cache_path}"
 
-    if not cfg.cache.use_open_scene:
-        scenario_builder = build_scenario_builder(cfg)
-        if int(os.environ.get("NUM_NODES", 1)) > 1 and cfg.distribute_by_scenario:
-            # Partition differently based on how the scenario builder loads the data
-            repartition_strategy = scenario_builder.repartition_strategy
-            if repartition_strategy == RepartitionStrategy.REPARTITION_FILE_DISK:
-                scenario_filter = DistributedScenarioFilter(
-                    cfg=cfg,
-                    worker=worker,
-                    node_rank=int(os.environ.get("NODE_RANK", 0)),
-                    num_nodes=int(os.environ.get("NUM_NODES", 1)),
-                    synchronization_path=cfg.cache.cache_path,
-                    timeout_seconds=cfg.get("distributed_timeout_seconds", 3600),
-                    distributed_mode=cfg.get("distributed_mode", DistributedMode.LOG_FILE_BASED),
-                )
-                scenarios = scenario_filter.get_scenarios()
-            elif repartition_strategy == RepartitionStrategy.INLINE:
-                scenarios = build_scenarios_from_config(cfg, scenario_builder, worker)
-                num_nodes = int(os.environ.get("NUM_NODES", 1))
-                node_id = int(os.environ.get("NODE_RANK", 0))
-                scenarios = chunk_list(scenarios, num_nodes)[node_id]
-            else:
-                expected_repartition_strategies = [e.value for e in RepartitionStrategy]
-                raise ValueError(
-                    f"Expected repartition strategy to be in {expected_repartition_strategies}, got {repartition_strategy}."
-                )
-        else:
-            logger.debug(
-                "Building scenarios without distribution, if you're running on a multi-node system, make sure you aren't"
-                "accidentally caching each scenario multiple times!"
-            )
-            scenarios = build_scenarios_from_config(cfg, scenario_builder, worker)
-    else:
-        
-        NUPLAN_MAPS_ROOT = os.environ["NUPLAN_MAPS_ROOT"]
-        NUPLAN_MAP_VERSION = "nuplan-maps-v1.0"
+    NUPLAN_MAPS_ROOT = os.environ["NUPLAN_MAPS_ROOT"]
+    NUPLAN_MAP_VERSION = "nuplan-maps-v1.0"
 
-        scenarios: List[AbstractScenario] = []
-        
-        # TODO: add scene filter settings to config
-        scene_loader = SceneLoader(
-            sensor_blobs_path=None,
-            data_path=Path(cfg.navsim_log_path),
-            scene_filter=SceneFilter(),
-            sensor_modalities=[],
+    scenarios: List[AbstractScenario] = []
+    
+    # TODO: add scene filter settings to config
+    scene_loader = SceneLoader(
+        sensor_blobs_path=None,
+        data_path=Path(cfg.navsim_log_path),
+        scene_filter=instantiate(cfg.scene_filter),
+        sensor_config=SensorConfig.build_no_sensors(),
+    )
+
+    for token in scene_loader:
+        scene = scene_loader.get_scene_from_token(token)
+
+        scenario = NavSimScenario(
+            scene, map_root=NUPLAN_MAPS_ROOT, map_version=NUPLAN_MAP_VERSION
         )
-
-        for idx in range(len(scene_loader)):
-            scene = scene_loader[idx]
-
-            scenario = NavSimScenario(
-                scene, map_root=NUPLAN_MAPS_ROOT, map_version=NUPLAN_MAP_VERSION
-            )
-            scenarios.append(scenario)
+        scenarios.append(scenario)
 
     data_points = [{"scenario": scenario, "cfg": cfg} for scenario in scenarios]
     logger.info("Starting metric caching of %s files...", str(len(data_points)))

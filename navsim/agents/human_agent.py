@@ -1,7 +1,7 @@
 from typing import List
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
 from navsim.agents.abstract_agent import AbstractAgent
-from navsim.common.dataclasses import AgentInput, Trajectory, Scene
+from navsim.common.dataclasses import AgentInput, Trajectory, Scene, SensorConfig
 
 class HumanAgent(AbstractAgent):
 
@@ -24,9 +24,9 @@ class HumanAgent(AbstractAgent):
         """Inherited, see superclass."""
         pass
 
-    def get_sensor_modalities(self) -> List[str]:
+    def get_sensor_config(self) -> SensorConfig:
         """Inherited, see superclass."""
-        return []
+        return SensorConfig.build_no_sensors()
 
     def compute_trajectory(self, agent_input: AgentInput, scene: Scene) -> Trajectory:
         """

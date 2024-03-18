@@ -1,0 +1,11 @@
+_target_: navsim.common.dataclasses.SceneFilter
+_convert_: 'all'
+
+num_history_frames: 4
+num_future_frames: 10
+has_route: True
+
+max_scenes: Null 
+log_names: Null
+
+tokens: Null

@@ -18,7 +18,7 @@ setuptools.setup(
     description="TODO",
     url="TODO",
     python_requires=">=3.9",
-    packages=["navsim"],
+    packages=setuptools.find_packages(script_folder),
     package_dir={"": "."},
     classifiers=[
         "Programming Language :: Python :: 3.9",

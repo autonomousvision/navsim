@@ -48,7 +48,8 @@ def transform_trajectory(
         initial_ego_state, future_sampling.time_horizon, future_sampling.interval_length
     )
 
-    relative_states = [StateSE2.deserialize(pose) for pose in pred_trajectory.poses]
+    relative_poses = np.array(pred_trajectory.poses, dtype=np.float64)
+    relative_states = [StateSE2.deserialize(pose) for pose in relative_poses]
     absolute_states = relative_to_absolute_poses(initial_ego_state.rear_axle, relative_states)
 
     # NOTE: velocity and acceleration ignored by LQR + bicycle model

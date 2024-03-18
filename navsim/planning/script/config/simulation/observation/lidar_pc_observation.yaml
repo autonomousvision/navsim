@@ -1,2 +1,0 @@
-_target_: nuplan.planning.simulation.observation.lidar_pc.LidarPcObservation
-_convert_: 'all'

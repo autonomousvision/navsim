@@ -142,7 +142,7 @@ class MetricCacheProcessor:
                 token = tracked_object.track_token
 
                 # extract states for dynamic and static objects
-                tracked_state = np.zeros(state_size, dtype=np.float32)
+                tracked_state = np.zeros(state_size, dtype=np.float64)
                 tracked_state[:4] = (
                     time_s,
                     tracked_object.center.x,
@@ -169,7 +169,7 @@ class MetricCacheProcessor:
         # create time interpolators
         detection_interpolators: Dict[str, StateInterpolator] = {}
         for token, states_list in detection_tracks_states.items():
-            states = np.array(states_list, dtype=np.float32)
+            states = np.array(states_list, dtype=np.float64)
             detection_interpolators[token] = StateInterpolator(states)
 
         # interpolate at 10Hz

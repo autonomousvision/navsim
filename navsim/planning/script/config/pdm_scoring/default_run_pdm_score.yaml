@@ -4,47 +4,11 @@ hydra:
   output_subdir: ${output_dir}/code/hydra           # Store hydra's config breakdown here for debugging
   searchpath:                                       # Only <exp_dir> in these paths are discoverable
     - pkg://navsim.planning.script.config.common 
-    - pkg://navsim.planning.script.experiments  
 
 defaults:
+  - default_common
+  - default_evaluation
+  - default_scoring_parameters
   - agent: constant_velocity_agent
 
-# Cache parameters
-split: mini
-experiment_name: ???
-navsim_log_path: ${oc.env:OPENSCENE_DATA_ROOT}/navsim_logs/${split} # path to log annotations
-sensor_blobs_path: ${oc.env:OPENSCENE_DATA_ROOT}/sensor_blobs/${split} # path to sensor blobs
-metric_cache_path: ${oc.env:NUPLAN_EXP_ROOT}/metric_cache # path to metric cache
-date_format: '%Y.%m.%d.%H.%M.%S'
-experiment_uid: ${now:${date_format}}
-output_dir: ${oc.env:NUPLAN_EXP_ROOT}/pdm_score/${experiment_name}/${experiment_uid} # path where output csv is saved
-
-proposal_sampling:
-  _target_: nuplan.planning.simulation.trajectory.trajectory_sampling.TrajectorySampling
-  _convert_: 'all'
-  num_poses: 40
-  interval_length: 0.1
-
-simulator:
-  _target_: navsim.planning.simulation.planner.pdm_planner.simulation.pdm_simulator.PDMSimulator
-  _convert_: 'all'
-  proposal_sampling: ${proposal_sampling}
-
-scorer: 
-  _target_: navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer.PDMScorer
-  _convert_: 'all'
-  proposal_sampling: ${proposal_sampling}
-  config: 
-    _target_: navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer.PDMScorerConfig
-    _convert_: 'all'
-    # weighted metric weights
-    progress_weight: 5.0
-    ttc_weight: 5.0
-    comfortable_weight: 2.0
-
-    # thresholds
-    driving_direction_horizon: 1.0  # [s] (driving direction)
-    driving_direction_compliance_threshold: 2.0  # [m] (driving direction)
-    driving_direction_violation_threshold: 6.0  # [m] (driving direction)
-    stopped_speed_threshold: 5e-03  # [m/s] (ttc)
-    progress_distance_threshold: 5.0  # [m] (progress)
+metric_cache_path: ${oc.env:NAVSIM_EXP_ROOT}/metric_cache # path to metric cache

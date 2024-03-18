@@ -5,7 +5,7 @@ import abc
 from abc import abstractmethod
 from typing import Any, List
 
-from navsim.common.dataclasses import AgentInput, Trajectory
+from navsim.common.dataclasses import AgentInput, Trajectory, SensorConfig
 
 
 class AbstractAgent(abc.ABC):
@@ -33,9 +33,9 @@ class AbstractAgent(abc.ABC):
         pass
     
     @abstractmethod
-    def get_sensor_modalities(self) -> List[str]:
+    def get_sensor_config(self) -> SensorConfig:
         """
-        :return: List of strings describing the required sensors, e.g. ["lidar", "camera"].
+        :return: Dataclass defining the sensor configuration for lidar and cameras.
         """
         pass
 

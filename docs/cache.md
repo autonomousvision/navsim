@@ -10,4 +10,4 @@ cd $NAVSIM_DEVKIT_ROOT/scripts/
 ./run_metric_caching.sh
 ```
 
-This will create the meric cache under `$NUPLAN_EXP_ROOT/metric_cache`, where `$NUPLAN_EXP_ROOT` is defined by the environment variable set during installation.
+This will create the meric cache under `$NAVSIM_EXP_ROOT/metric_cache`, where `$NAVSIM_EXP_ROOT` is defined by the environment variable set during installation.

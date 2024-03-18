@@ -21,11 +21,11 @@
 >   - Official leaderboard on HuggingFace that remains open and prevents ambiguity in metric definitions between projects
 > 
 > 2. **Maintaining ease of use** (by emulating nuScenes)
->   - Simple data format and reasonably-sized download (<nuPlan’s 5+ TB)
+>   - Simple data format and reasonably-sized download (<nuPlan’s 20+ TB)
 >   - Large-scale publicly available test split for internal benchmarking
 >   - Continually-maintained devkit
 
-🏁 **NAVSIM** will serve as a main track in the **`CVPR 2024 Autonomous Grand Challenge`**. For further details, please [stay tuned](https://opendrivelab.com/challenge2024/)!
+🏁 **NAVSIM** will serve as a main track in the **`CVPR 2024 Autonomous Grand Challenge`**. The warm-up phase of the challenge has begun! For further details, please [check the challenge website](https://opendrivelab.com/challenge2024/)!
 
 
 ## Table of Contents
@@ -42,11 +42,16 @@
 - [Understanding and creating agents](docs/agents.md) 
 - [Understanding the data format and classes](docs/cache.md)
 - [Understanding the PDM Score](docs/metrics.md)
+- [Submitting to the Leaderboard](docs/submission.md)
   
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ## Changelog <a name="changelog"></a>
+- **`[2024/03/25]`** NAVSIM v0.3 release (official devkit version for warm-up phase)
+  - Changes env variable NUPLAN_EXP_ROOT to NAVSIM_EXP_ROOT
+  - Adds code for Leaderboard submission
+  - Major refactoring of dataloading and configs
 - **`[2024/03/11]`** NAVSIM v0.2 release
   - Easier installation and download
   - mini and test split integration

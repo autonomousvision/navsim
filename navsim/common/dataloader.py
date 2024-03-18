@@ -7,13 +7,11 @@ from pathlib import Path
 from typing import Any, Dict, List
 from tqdm import tqdm
 
-from navsim.common.dataclasses import Scene, AgentInput, SceneFilter
+from navsim.common.dataclasses import AgentInput, Scene, SceneFilter, SensorConfig
 from navsim.planning.metric_caching.metric_cache import MetricCache
 
 
-def filter_scenes(
-    data_path: Path, sensor_blobs_path: Path, scene_filter: SceneFilter, sensor_modalities: List[str] = ["lidar", "camera"]
-) -> Dict[str, Scene]:
+def filter_scenes(data_path: Path, scene_filter: SceneFilter) -> Dict[str, List[Dict[str, Any]]]:
 
     def split_list(input_list: List[Any], n: int) -> List[List[Any]]:
         return [input_list[i : i + n] for i in range(0, len(input_list), n)]
@@ -21,8 +19,17 @@ def filter_scenes(
     filtered_scenes: Dict[str, Scene] = {}
     stop_loading: bool = False
 
-    for log_pickle_path in tqdm(list(data_path.iterdir()), desc="Loading logs"):
-        
+    # filter logs
+    log_files = list(data_path.iterdir())
+    if scene_filter.log_names is not None:
+        log_files = [
+            log_file
+            for log_file in log_files
+            if log_file.name.replace(".pkl", "") in scene_filter.log_names
+        ]
+
+    for log_pickle_path in tqdm(log_files, desc="Loading logs"):
+
         scene_dict_list = pickle.load(open(log_pickle_path, "rb"))
         for frame_list in split_list(scene_dict_list, scene_filter.num_frames):
             # Filter scenes which are too short
@@ -30,19 +37,22 @@ def filter_scenes(
                 continue
 
             # Filter scenes with no route
-            if scene_filter.has_route and len(frame_list[scene_filter.num_history_frames - 1]["roadblock_ids"]) == 0:
+            if (
+                scene_filter.has_route
+                and len(frame_list[scene_filter.num_history_frames - 1]["roadblock_ids"]) == 0
+            ):
                 continue
 
-            # TODO: Filter by token
-            # TODO: Implement temporally overlapping scenes
+            # Filter by token
+            if (
+                scene_filter.tokens is not None
+                and frame_list[scene_filter.num_history_frames - 1]["token"]
+                not in scene_filter.tokens
+            ):
+                continue
+
             token = frame_list[scene_filter.num_history_frames - 1]["token"]
-            filtered_scenes[token] = Scene.from_scene_dict_list(
-                frame_list,
-                sensor_blobs_path,
-                num_history_frames=scene_filter.num_history_frames,
-                num_future_frames=scene_filter.num_future_frames,
-                sensor_modalities=sensor_modalities,
-            )
+            filtered_scenes[token] = frame_list
 
             if (scene_filter.max_scenes is not None) and (
                 len(filtered_scenes) >= scene_filter.max_scenes
@@ -62,58 +72,43 @@ class SceneLoader:
         self,
         data_path: Path,
         sensor_blobs_path: Path,
-        scene_filter: SceneFilter = SceneFilter(),
-        sensor_modalities: List[str] = ["lidar", "camera"],
+        scene_filter: SceneFilter,
+        sensor_config: SensorConfig = SensorConfig.build_no_sensors(),
     ):
 
-        self._filtered_scenes = filter_scenes(data_path, sensor_blobs_path, scene_filter, sensor_modalities)
+        self._filtered_tokens = filter_scenes(data_path, scene_filter)
+        self._sensor_blobs_path = sensor_blobs_path
         self._scene_filter = scene_filter
-        self._sensor_modalities = sensor_modalities
+        self._sensor_config = sensor_config
 
     @property
     def tokens(self) -> List[str]:
-        return list(self._filtered_scenes.keys())
+        return list(self._filtered_tokens.keys())
 
     def __len__(self):
         return len(self.tokens)
 
-    def __getitem__(self, idx) -> Scene:
-        token = self.tokens[idx]
-        return self.get_from_token(token)
+    def __getitem__(self, idx) -> str:
+        return self.tokens[idx]
 
-    def get_from_token(self, token: str) -> Scene:
+    def get_scene_from_token(self, token: str) -> Scene:
         assert token in self.tokens
-        return self._filtered_scenes[token]
+        return Scene.from_scene_dict_list(
+            self._filtered_tokens[token],
+            self._sensor_blobs_path,
+            num_history_frames=self._scene_filter.num_history_frames,
+            num_future_frames=self._scene_filter.num_future_frames,
+            sensor_config=self._sensor_config,
+        )
 
-
-class AgentInputLoader:
-
-    def __init__(
-        self,
-        data_path: Path,
-        sensor_blobs_path: Path,
-        scene_filter: SceneFilter = SceneFilter(),
-        sensor_modalities: List[str] = ["lidar", "camera"],
-    ):
-
-        self._filtered_scenes = filter_scenes(data_path, sensor_blobs_path, scene_filter, sensor_modalities)
-        self._scene_filter = scene_filter
-        self._sensor_modalities = sensor_modalities
-
-    @property
-    def tokens(self) -> List[str]:
-        return list(self._filtered_scenes.keys())
-
-    def __len__(self):
-        return len(self.tokens)
-
-    def __getitem__(self, idx) -> AgentInput:
-        token = self.tokens[idx]
-        return self.get_from_token(token)
-
-    def get_from_token(self, token: str) -> AgentInput:
+    def get_agent_input_from_token(self, token: str) -> AgentInput:
         assert token in self.tokens
-        return self._filtered_scenes[token].get_agent_input(self._sensor_modalities)
+        return AgentInput.from_scene_dict_list(
+            self._filtered_tokens[token],
+            self._sensor_blobs_path,
+            num_history_frames=self._scene_filter.num_history_frames,
+            sensor_config=self._sensor_config,
+        )
 
 
 class MetricCacheLoader:
@@ -150,7 +145,7 @@ class MetricCacheLoader:
         return list(self._metric_cache_paths.keys())
 
     def __len__(self):
-        return len(self._pickle_dict_keys)
+        return len(self._metric_cache_paths)
 
     def __getitem__(self, idx: int) -> MetricCache:
         return self.get_from_token(self.tokens[idx])
@@ -161,3 +156,10 @@ class MetricCacheLoader:
             metric_cache: MetricCache = pickle.load(f)
 
         return metric_cache
+
+    def to_pickle(self, path: Path) -> None:
+        full_metric_cache = {}
+        for token in tqdm(self.tokens):
+            full_metric_cache[token] = self.get_from_token(token)
+        with open(path, "wb") as f:
+            pickle.dump(full_metric_cache, f)
