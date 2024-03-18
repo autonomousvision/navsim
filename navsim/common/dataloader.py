@@ -30,7 +30,7 @@ def filter_scenes(
                 continue
 
             # Filter scenes with no route
-            if scene_filter.has_route and len(frame_list[0]["roadblock_ids"]) == 0:
+            if scene_filter.has_route and len(frame_list[scene_filter.num_history_frames - 1]["roadblock_ids"]) == 0:
                 continue
 
             # TODO: Filter by token
