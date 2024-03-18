@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 from tqdm import tqdm
 
-from navsim.common.dataclasses import Scene, AgentInput, SceneFilter
+from navsim.common.dataclasses import Scene, SceneFilter
 from navsim.planning.metric_caching.metric_cache import MetricCache
 
 
@@ -84,37 +84,6 @@ class SceneLoader:
     def get_from_token(self, token: str) -> Scene:
         assert token in self.tokens
         return self._filtered_scenes[token]
-
-
-class AgentInputLoader:
-
-    def __init__(
-        self,
-        data_path: Path,
-        sensor_blobs_path: Path,
-        scene_filter: SceneFilter = SceneFilter(),
-        sensor_modalities: List[str] = ["lidar", "camera"],
-    ):
-
-        self._filtered_scenes = filter_scenes(data_path, sensor_blobs_path, scene_filter, sensor_modalities)
-        self._scene_filter = scene_filter
-        self._sensor_modalities = sensor_modalities
-
-    @property
-    def tokens(self) -> List[str]:
-        return list(self._filtered_scenes.keys())
-
-    def __len__(self):
-        return len(self.tokens)
-
-    def __getitem__(self, idx) -> AgentInput:
-        token = self.tokens[idx]
-        return self.get_from_token(token)
-
-    def get_from_token(self, token: str) -> AgentInput:
-        assert token in self.tokens
-        return self._filtered_scenes[token].get_agent_input(self._sensor_modalities)
-
 
 class MetricCacheLoader:
 

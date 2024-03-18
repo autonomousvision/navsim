@@ -12,7 +12,7 @@ from dataclasses import asdict
 from datetime import datetime
 import logging
 
-from navsim.common.dataloader import AgentInputLoader, MetricCacheLoader
+from navsim.common.dataloader import MetricCacheLoader
 from navsim.agents.abstract_agent import AbstractAgent
 from navsim.evaluate.pdm_score import pdm_score
 from navsim.planning.simulation.planner.pdm_planner.simulation.pdm_simulator import (
@@ -65,19 +65,12 @@ def run_pdm_score(
     :param metric_cache_path: pathlib path to metric cache
     :param save_path: pathlib path to folder where scores are stored as .csv
     """    
-    logger.info("Building Agent Input Loader")
-    agent_input_loader = AgentInputLoader(
-        data_path=data_path,
+    logger.info("Building SceneLoader")
+    scene_loader = SceneLoader(
         sensor_blobs_path=sensor_blobs_path,
-        sensor_modalities=agent.get_sensor_modalities()
+        data_path=data_path,
+        sensor_modalities=agent.get_sensor_modalities(),
     )
-    if agent.requires_scene:
-        logger.info("Building SceneLoader")
-        scene_loader = SceneLoader(
-            sensor_blobs_path=sensor_blobs_path,
-            data_path=data_path,
-            sensor_modalities=[],
-        )
     metric_cache_loader = MetricCacheLoader(metric_cache_path)
     agent.initialize()
 
@@ -87,7 +80,8 @@ def run_pdm_score(
         score_row: Dict[str, Any] = {"token": token, "valid": True}
 
         try:
-            agent_input = agent_input_loader.get_from_token(token)
+            scene = scene_loader.get_from_token(token)
+            agent_input = scene.get_agent_input(agent.get_sensor_modalities())
             metric_cache = metric_cache_loader.get_from_token(token)
             if agent.requires_scene:
                 scene = scene_loader.get_from_token(token)
