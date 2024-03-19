@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 from tqdm import tqdm
 
-from navsim.common.dataclasses import Scene, SceneFilter
+from navsim.common.dataclasses import AgentInput, Scene, SceneFilter
 from navsim.planning.metric_caching.metric_cache import MetricCache
 
 
@@ -61,33 +61,39 @@ class SceneLoader:
         sensor_modalities: List[str] = ["lidar", "camera"],
     ):
 
-        filtered_tokens = filter_scenes(data_path, scene_filter)
-        self._filtered_scenes: Dict[str, Scene] = {}
-        for token, scene_dict_list in tqdm(filtered_tokens.items(), desc="Building Scenes"):
-            self._filtered_scenes[token] = Scene.from_scene_dict_list(
-                scene_dict_list,
-                sensor_blobs_path,
-                num_history_frames=scene_filter.num_history_frames,
-                num_future_frames=scene_filter.num_future_frames,
-                sensor_modalities=sensor_modalities,
-            )
+        self._filtered_tokens = filter_scenes(data_path, scene_filter)
         self._scene_filter = scene_filter
         self._sensor_modalities = sensor_modalities
+        self._sensor_blobs_path = sensor_blobs_path
 
     @property
     def tokens(self) -> List[str]:
-        return list(self._filtered_scenes.keys())
+        return list(self._filtered_tokens.keys())
 
     def __len__(self):
         return len(self.tokens)
 
-    def __getitem__(self, idx) -> Scene:
-        token = self.tokens[idx]
-        return self.get_from_token(token)
-
-    def get_from_token(self, token: str) -> Scene:
+    def __getitem__(self, idx) -> str:
+        return self.tokens[idx]
+    
+    def get_scene_from_token(self, token: str) -> Scene:
         assert token in self.tokens
-        return self._filtered_scenes[token]
+        return Scene.from_scene_dict_list(
+            self._filtered_tokens[token],
+            self._sensor_blobs_path,
+            num_history_frames=self._scene_filter.num_history_frames,
+            num_future_frames=self._scene_filter.num_future_frames,
+            sensor_modalities=self._sensor_modalities,
+        )
+    
+    def get_agent_input_from_token(self, token: str) -> AgentInput:
+        assert token in self.tokens
+        return AgentInput.from_scene_dict_list(
+            self._filtered_tokens[token],
+            self._sensor_blobs_path,
+            num_history_frames=self._scene_filter.num_history_frames,
+            sensor_modalities=self._sensor_modalities,
+        )
 
 class MetricCacheLoader:
 

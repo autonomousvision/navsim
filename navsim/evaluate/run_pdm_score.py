@@ -80,11 +80,10 @@ def run_pdm_score(
         score_row: Dict[str, Any] = {"token": token, "valid": True}
 
         try:
-            scene = scene_loader.get_from_token(token)
-            agent_input = scene.get_agent_input(agent.get_sensor_modalities())
+            agent_input = scene_loader.get_agent_input_from_token(token)
             metric_cache = metric_cache_loader.get_from_token(token)
             if agent.requires_scene:
-                scene = scene_loader.get_from_token(token)
+                scene = scene_loader.get_scene_from_token(token)
                 trajectory = agent.compute_trajectory(agent_input, scene)
             else:
                 trajectory = agent.compute_trajectory(agent_input)
