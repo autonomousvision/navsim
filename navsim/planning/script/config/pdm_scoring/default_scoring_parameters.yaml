@@ -1,0 +1,29 @@
+proposal_sampling:
+  _target_: nuplan.planning.simulation.trajectory.trajectory_sampling.TrajectorySampling
+  _convert_: 'all'
+  num_poses: 40
+  interval_length: 0.1
+
+simulator:
+  _target_: navsim.planning.simulation.planner.pdm_planner.simulation.pdm_simulator.PDMSimulator
+  _convert_: 'all'
+  proposal_sampling: ${proposal_sampling}
+
+scorer: 
+  _target_: navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer.PDMScorer
+  _convert_: 'all'
+  proposal_sampling: ${proposal_sampling}
+  config: 
+    _target_: navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer.PDMScorerConfig
+    _convert_: 'all'
+    # weighted metric weights
+    progress_weight: 5.0
+    ttc_weight: 5.0
+    comfortable_weight: 2.0
+
+    # thresholds
+    driving_direction_horizon: 1.0  # [s] (driving direction)
+    driving_direction_compliance_threshold: 2.0  # [m] (driving direction)
+    driving_direction_violation_threshold: 6.0  # [m] (driving direction)
+    stopped_speed_threshold: 5e-03  # [m/s] (ttc)
+    progress_distance_threshold: 5.0  # [m] (progress)
