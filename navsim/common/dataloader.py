@@ -43,7 +43,6 @@ def filter_scenes(
             if scene_filter.tokens is not None and frame_list[scene_filter.num_history_frames - 1]["token"] not in scene_filter.tokens:
                 continue
 
-            # TODO: Implement temporally overlapping scenes
             token = frame_list[scene_filter.num_history_frames - 1]["token"]
             filtered_scenes[token] = frame_list
 
