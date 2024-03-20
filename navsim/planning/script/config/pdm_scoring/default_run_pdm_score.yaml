@@ -4,20 +4,13 @@ hydra:
   output_subdir: ${output_dir}/code/hydra           # Store hydra's config breakdown here for debugging
   searchpath:                                       # Only <exp_dir> in these paths are discoverable
     - pkg://navsim.planning.script.config.common 
-    - pkg://navsim.planning.script.experiments  
 
 defaults:
   - default_common
+  - default_evaluation
   - agent: constant_velocity_agent
 
-# Cache parameters
-experiment_name: ???
-navsim_log_path: ${oc.env:OPENSCENE_DATA_ROOT}/navsim_logs/${split} # path to log annotations
-sensor_blobs_path: ${oc.env:OPENSCENE_DATA_ROOT}/sensor_blobs/${split} # path to sensor blobs
 metric_cache_path: ${oc.env:NUPLAN_EXP_ROOT}/metric_cache # path to metric cache
-date_format: '%Y.%m.%d.%H.%M.%S'
-experiment_uid: ${now:${date_format}}
-output_dir: ${oc.env:NUPLAN_EXP_ROOT}/pdm_score/${experiment_name}/${experiment_uid} # path where output csv is saved
 
 proposal_sampling:
   _target_: nuplan.planning.simulation.trajectory.trajectory_sampling.TrajectorySampling
