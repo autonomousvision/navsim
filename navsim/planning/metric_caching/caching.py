@@ -4,7 +4,7 @@ import os
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Union
-
+from hydra.utils import instantiate
 
 from omegaconf import DictConfig
 from nuplan.planning.scenario_builder.abstract_scenario import AbstractScenario
@@ -19,7 +19,6 @@ from nuplan.planning.utils.multithreading.worker_utils import worker_map
 from navsim.planning.metric_caching.metric_cache_processor import MetricCacheProcessor
 from navsim.planning.scenario_builder.navsim_scenario import NavSimScenario
 from navsim.common.dataloader import SceneLoader
-from navsim.common.dataclasses import SceneFilter
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +110,7 @@ def cache_data(cfg: DictConfig, worker: WorkerPool) -> None:
     scene_loader = SceneLoader(
         sensor_blobs_path=None,
         data_path=Path(cfg.navsim_log_path),
-        scene_filter=SceneFilter(),
+        scene_filter=instantiate(cfg.scene_filter),
         sensor_modalities=[],
     )
 

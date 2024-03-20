@@ -7,10 +7,10 @@ hydra:
     - pkg://navsim.planning.script.experiments  
 
 defaults:
+  - default_common
   - agent: constant_velocity_agent
 
 # Cache parameters
-split: mini
 experiment_name: ???
 navsim_log_path: ${oc.env:OPENSCENE_DATA_ROOT}/navsim_logs/${split} # path to log annotations
 sensor_blobs_path: ${oc.env:OPENSCENE_DATA_ROOT}/sensor_blobs/${split} # path to sensor blobs

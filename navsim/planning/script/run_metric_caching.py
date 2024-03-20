@@ -35,13 +35,6 @@ def main(cfg: DictConfig) -> None:
     Main entrypoint for training/validation experiments.
     :param cfg: omegaconf dictionary
     """
-    if cfg.enable_profiling:
-        raise ValueError("Profiling is not supported to remove pytorch-lightning dependency")
-
-    # Fix random seed
-    # pl.seed_everything(cfg.seed, workers=True)
-
-
     # Configure logger
     build_logger(cfg)
     

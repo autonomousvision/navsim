@@ -12,6 +12,8 @@ from dataclasses import asdict
 from datetime import datetime
 import logging
 
+from nuplan.planning.script.builders.logging_builder import build_logger
+
 from navsim.common.dataloader import MetricCacheLoader
 from navsim.agents.abstract_agent import AbstractAgent
 from navsim.evaluate.pdm_score import pdm_score
@@ -20,6 +22,7 @@ from navsim.planning.simulation.planner.pdm_planner.simulation.pdm_simulator imp
 )
 from navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer import PDMScorer
 from navsim.common.dataloader import SceneLoader
+from navsim.common.dataclasses import SceneFilter
 
 logger = logging.getLogger(__name__)
 
@@ -37,12 +40,15 @@ def main(cfg: DictConfig) -> None:
     save_path = Path(cfg.output_dir)
     simulator: PDMSimulator = instantiate(cfg.simulator)
     scorer: PDMScorer = instantiate(cfg.scorer)
+    scene_filter: SceneFilter = instantiate(cfg.scene_filter)
+    build_logger(cfg)
     assert simulator.proposal_sampling == scorer.proposal_sampling, "Simulator and scorer proposal sampling has to be identical"
 
     run_pdm_score(
         agent=agent,
         simulator=simulator,
         scorer=scorer,
+        scene_filter=scene_filter,
         data_path=data_path,
         sensor_blobs_path=sensor_blobs_path,
         metric_cache_path=metric_cache_path,
@@ -53,6 +59,7 @@ def run_pdm_score(
     agent: AbstractAgent,
     simulator: PDMSimulator,
     scorer: PDMScorer,
+    scene_filter: SceneFilter,
     data_path: Path,
     sensor_blobs_path: Path,
     metric_cache_path: Path,
@@ -69,6 +76,7 @@ def run_pdm_score(
     scene_loader = SceneLoader(
         sensor_blobs_path=sensor_blobs_path,
         data_path=data_path,
+        scene_filter=scene_filter,
         sensor_modalities=agent.get_sensor_modalities(),
     )
     metric_cache_loader = MetricCacheLoader(metric_cache_path)

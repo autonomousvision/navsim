@@ -396,7 +396,6 @@ class SceneFilter:
     
     # NOTE: Not implemented
     tokens: Optional[List[str]] = None
-    map_names: Optional[List[str]] = None
     
     @property
     def num_frames(self):

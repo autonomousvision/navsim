@@ -22,7 +22,12 @@ def filter_scenes(
     filtered_scenes: Dict[str, Scene] = {}
     stop_loading: bool = False
 
-    for log_pickle_path in tqdm(list(data_path.iterdir()), desc="Loading logs"):
+    # filter logs
+    log_files = list(data_path.iterdir())
+    if scene_filter.log_names is not None:
+        log_files = [log_file for log_file in log_files if log_file.name.replace(".pkl","") in scene_filter.log_names]
+
+    for log_pickle_path in tqdm(log_files, desc="Loading logs"):
         
         scene_dict_list = pickle.load(open(log_pickle_path, "rb"))
         for frame_list in split_list(scene_dict_list, scene_filter.num_frames):
@@ -34,7 +39,10 @@ def filter_scenes(
             if scene_filter.has_route and len(frame_list[scene_filter.num_history_frames - 1]["roadblock_ids"]) == 0:
                 continue
 
-            # TODO: Filter by token
+            # Filter by token
+            if scene_filter.tokens is not None and frame_list[scene_filter.num_history_frames - 1]["token"] not in scene_filter.tokens:
+                continue
+
             # TODO: Implement temporally overlapping scenes
             token = frame_list[scene_filter.num_history_frames - 1]["token"]
             filtered_scenes[token] = frame_list
@@ -57,7 +65,7 @@ class SceneLoader:
         self,
         data_path: Path,
         sensor_blobs_path: Path,
-        scene_filter: SceneFilter = SceneFilter(),
+        scene_filter: SceneFilter,
         sensor_modalities: List[str] = ["lidar", "camera"],
     ):
 
