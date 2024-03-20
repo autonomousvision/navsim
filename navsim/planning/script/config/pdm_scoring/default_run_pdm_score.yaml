@@ -11,4 +11,4 @@ defaults:
   - default_scoring_parameters
   - agent: constant_velocity_agent
 
-metric_cache_path: ${oc.env:NUPLAN_EXP_ROOT}/metric_cache # path to metric cache
+metric_cache_path: ${oc.env:NAVSIM_EXP_ROOT}/metric_cache # path to metric cache

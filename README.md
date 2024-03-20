@@ -47,6 +47,11 @@
 
 
 ## Changelog <a name="changelog"></a>
+- **`[DATE TBA]`** NAVSIM v0.3 release
+  - Official devkit version for warmup-phase
+  - Changes env variable NUPLAN_EXP_ROOT to NAVSIM_EXP_ROOT
+  - Adds code for submission
+  - major refactoring of dataloading and configs
 - **`[2024/03/11]`** NAVSIM v0.2 release
   - Easier installation and download
   - mini and test split integration

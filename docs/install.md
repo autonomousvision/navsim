@@ -45,7 +45,7 @@ Set the required environment variables, by adding the following to your `~/.bash
 Based on the structure above, the environment variables need to be defined as:
 ```
 export NUPLAN_MAPS_ROOT="$HOME/navsim_workspace/dataset/maps"
-export NUPLAN_EXP_ROOT="$HOME/navsim_workspace/exp"
+export NAVSIM_EXP_ROOT="$HOME/navsim_workspace/exp"
 export NAVSIM_DEVKIT_ROOT="$HOME/navsim_workspace/navsim"
 export OPENSCENE_DATA_ROOT="$HOME/navsim_workspace/dataset"
 ```

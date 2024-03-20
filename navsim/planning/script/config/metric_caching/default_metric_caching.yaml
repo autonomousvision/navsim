@@ -12,7 +12,7 @@ defaults:
 
 # Cache parameters
 cache:
-  cache_path: ${oc.env:NUPLAN_EXP_ROOT}/metric_cache         
+  cache_path: ${oc.env:NAVSIM_EXP_ROOT}/metric_cache         
   use_cache_without_dataset: false                    
   force_feature_computation: false
 
