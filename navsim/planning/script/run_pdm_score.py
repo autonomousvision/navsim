@@ -26,10 +26,8 @@ from navsim.common.dataclasses import SceneFilter
 
 logger = logging.getLogger(__name__)
 
-CONFIG_PATH = "../../navsim/planning/script/config/pdm_scoring"
+CONFIG_PATH = "config/pdm_scoring"
 CONFIG_NAME = "default_run_pdm_score"
-
-
 
 @hydra.main(config_path=CONFIG_PATH, config_name=CONFIG_NAME)
 def main(cfg: DictConfig) -> None:
