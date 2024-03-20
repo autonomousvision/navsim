@@ -73,7 +73,7 @@ def run_test_evaluation(
         try:
             agent_input = input_loader.get_agent_input_from_token(token)
             trajectory = agent.compute_trajectory(agent_input)
-            output.update({"token": trajectory})
+            output.update({token: trajectory})
         except Exception as e:
             logger.warning(f"----------- Agent failed for token {token}:")
             traceback.print_exc()
