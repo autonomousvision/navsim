@@ -16,6 +16,7 @@ joblib
 matplotlib  # Used for rendering
 nest_asyncio  # Used to nest event loops when running nuBoard/jupyter
 numpy==1.23.4
+opencv-python==4.9.0.80
 pandas    # Used widely
 Pillow    # Used widely to render images
 psutil  # Used widely to get the number of CPUs
