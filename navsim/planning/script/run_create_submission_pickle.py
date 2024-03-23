@@ -17,9 +17,8 @@ from navsim.common.dataloader import SceneLoader
 
 logger = logging.getLogger(__name__)
 
-# TODO: provide a separate config
 CONFIG_PATH = "config/pdm_scoring"
-CONFIG_NAME = "default_run_submission_evaluation"
+CONFIG_NAME = "default_run_create_submission_pickle"
 
 
 @hydra.main(config_path=CONFIG_PATH, config_name=CONFIG_NAME)
@@ -30,21 +29,34 @@ def main(cfg: DictConfig) -> None:
     save_path = Path(cfg.output_dir)
     scene_filter = instantiate(cfg.scene_filter)
 
-    run_test_evaluation(
+    output = run_test_evaluation(
         agent=agent,
         scene_filter=scene_filter,
         data_path=data_path,
         sensor_blobs_path=sensor_blobs_path,
-        save_path=save_path,
     )
+
+    submission = {
+        "team_name": cfg.team_name,
+        "authors": cfg.authors,
+        "email": cfg.email,
+        "institution": cfg.institution,
+        "country / region": cfg.country,
+        "predictions": output,
+    }
+    
+    # pickle and save dict
+    filename = os.path.join(save_path, "submission.pkl")
+    with open(filename, 'wb') as file:
+        pickle.dump(submission, file)
+    logger.info(f"Your submission filed was saved to {filename}")
 
 def run_test_evaluation(
     agent: AbstractAgent,
     scene_filter: SceneFilter,
     data_path: Path,
     sensor_blobs_path: Path,
-    save_path: Path
-) -> None:
+) -> Dict[str, Trajectory]:
     """
     Function to create the output file for evaluation of an agent on the testserver
     :param agent: Agent object
@@ -78,12 +90,7 @@ def run_test_evaluation(
             logger.warning(f"----------- Agent failed for token {token}:")
             traceback.print_exc()
 
-    # pickle and save dict
-    filename = os.path.join(save_path, "submission.pkl")
-    with open(filename, 'wb') as file:
-        pickle.dump(output, file)
-    logger.info(f"Your submission filed was saved to {filename}")
-
+    return output
 
 if __name__ == "__main__":
     main()

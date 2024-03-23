@@ -59,7 +59,7 @@ def run_pdm_score(
     logger.info("Building SceneLoader")
     metric_cache_loader = MetricCacheLoader(metric_cache_path)
     with open(submission_file_path, "rb") as f:
-        agent_output: Dict[str, Trajectory] = pickle.load(f)
+        agent_output: Dict[str, Trajectory] = pickle.load(f)["predictions"]
     
     score_rows: List[Dict[str, Any]] = []
     for token in tqdm(metric_cache_loader.tokens, desc="Compute PDM-Score"):

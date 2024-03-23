@@ -11,3 +11,9 @@ defaults:
   - agent: constant_velocity_agent
 
   - override scene_filter: warmup_test
+
+"team_name": ??? # The team name
+"authors": ??? # The team members
+"email": ??? # email of the corresponding team member
+"institution": ??? # affiliation of the team
+"country": ??? # country or region of the team, e.g. China
