@@ -136,7 +136,7 @@ class MetricCacheLoader:
         return list(self._metric_cache_paths.keys())
 
     def __len__(self):
-        return len(self._pickle_dict_keys)
+        return len(self._metric_cache_paths)
 
     def __getitem__(self, idx: int) -> MetricCache:
         return self.get_from_token(self.tokens[idx])
@@ -147,3 +147,10 @@ class MetricCacheLoader:
             metric_cache: MetricCache = pickle.load(f)
 
         return metric_cache
+    
+    def to_pickle(self, path: Path) -> None:
+        full_metric_cache = {}
+        for token in tqdm(self.tokens):
+            full_metric_cache[token] = self.get_from_token(token)
+        with open(path, "wb") as f:
+            pickle.dump(full_metric_cache, f)
