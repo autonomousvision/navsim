@@ -7,6 +7,8 @@ Navsim provides a script to create such a pickle file.
 Have a look at `run_cv_submission_evaluation.sh`: this file creates the pickle file for a simplistic Constant-Velocity agent.
 You can run it for your agent, by replacing the `agent` override.
 
+**NOTE that you have to set the variables `TEAM_NAME`, `AUTHORS`, `EMAIL`, `INSTITUTION`, and `COUNTRY` for a valid submission**
+
 ### Warm-up phase
 During the warm-up phase the evaluation on the submission server is based on the `mini` split.
 This allows you to test your method and get familiar with the devkit and the submisison procedure.
