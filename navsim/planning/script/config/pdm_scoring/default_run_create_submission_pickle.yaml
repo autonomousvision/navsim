@@ -9,9 +9,9 @@ defaults:
   - default_common
   - default_evaluation
   - agent: constant_velocity_agent
-  - override scene_filter: competition_test
+  - override scene_filter: private_test_e2e
 
-split: competition_test
+split: private_test_e2e
 
 "team_name": ??? # The team name
 "authors": ??? # The team members

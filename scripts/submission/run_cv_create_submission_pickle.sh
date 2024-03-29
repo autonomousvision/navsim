@@ -6,7 +6,7 @@ COUNTRY="MUST_SET"
 
 python $NAVSIM_DEVKIT_ROOT/navsim/planning/script/run_create_submission_pickle.py \
 agent=constant_velocity_agent \
-split=competition_test \
+split=private_test_e2e \
 experiment_name=submission_cv_agent \
 team_name=$TEAM_NAME \
 authors=$AUTHORS \

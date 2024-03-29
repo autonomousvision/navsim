@@ -1,11 +1,12 @@
 _target_: navsim.common.dataclasses.SceneFilter
 _convert_: 'all'
 
-num_history_frames: 4
-num_future_frames: 10
-has_route: True
+num_history_frames: 4 # number of past frames to be extracted, frames are at 2Hz (1=ony current frame, 2=1 second)
+num_future_frames: 10 # number of future frames to be extracted, frames are at 2Hz (10=5 seconds)
+frame_interval: null # number of frames to skip between each scene, if null, extracted scenes are non-overlapping
 
-max_scenes: Null 
-log_names: Null
+has_route: true # only extract scenes with valid route information
 
-tokens: Null
+max_scenes: null # maximum number of scenes to extract, if null, all scenes are extracted. If integer, scene loading stops when reaching it
+log_names: null # list of log names to extract scenes from, if null, all logs are extracted
+tokens: null # list of tokens to extract scenes from, if null, all tokens are extracted

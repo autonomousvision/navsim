@@ -14,6 +14,9 @@ from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils imp
 
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
 from nuplan.common.actor_state.state_representation import StateSE2
+from nuplan.common.maps.abstract_map import AbstractMap
+from nuplan.common.maps.nuplan_map.map_factory import get_maps_api
+from nuplan.database.maps_db.gpkg_mapsdb import MAP_LOCATIONS
 from nuplan.database.utils.pointclouds.lidar import LidarPointCloud
 
 from pyquaternion import Quaternion
@@ -23,6 +26,7 @@ from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Union
 
 NAVSIM_INTERVAL_LENGTH: float = 0.5
 OPENSCENE_DATA_ROOT = os.environ.get("OPENSCENE_DATA_ROOT")
+NUPLAN_MAPS_ROOT = os.environ.get("NUPLAN_MAPS_ROOT")
 
 
 @dataclass
@@ -85,8 +89,9 @@ class Cameras:
 @dataclass
 class Lidar:
 
+    # NOTE:
     # merged lidar point cloud as (6,n) float32 array with n points
-    # first axis: (x, y, z, intensity, ring, lidar_id)
+    # first axis: (x, y, z, intensity, ring, lidar_id), see LidarIndex
     lidar_pc: Optional[npt.NDArray[np.float32]] = None
 
     @staticmethod
@@ -126,10 +131,6 @@ class AgentInput:
     ego_statuses: List[EgoStatus]
     cameras: List[Cameras]
     lidars: List[Lidar]
-
-    def __post_init__(self):
-        # TODO: add assertions
-        pass
 
     @classmethod
     def from_scene_dict_list(
@@ -255,6 +256,7 @@ class Scene:
 
     # Ground truth information
     scene_metadata: SceneMetadata
+    map_api: AbstractMap
     frames: List[Frame]
 
     def get_future_trajectory(self, num_trajectory_frames: Optional[int] = None) -> Trajectory:
@@ -303,10 +305,8 @@ class Scene:
         )
 
     def get_agent_input(self) -> AgentInput:
-        # NOTE: this function is unused and might be removed.
 
         local_ego_poses = self.get_history_trajectory().poses
-
         ego_statuses: List[EgoStatus] = []
         cameras: List[Cameras] = []
         lidars: List[Lidar] = []
@@ -326,6 +326,13 @@ class Scene:
             lidars.append(self.frames[frame_idx].lidar)
 
         return AgentInput(ego_statuses, cameras, lidars)
+
+    @classmethod
+    def _build_map_api(cls, map_name: str) -> AbstractMap:
+        assert (
+            map_name in MAP_LOCATIONS
+        ), f"The map name {map_name} is invalid, must be in {MAP_LOCATIONS}"
+        return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
 
     @classmethod
     def _build_annotations(
@@ -379,6 +386,7 @@ class Scene:
             num_history_frames=num_history_frames,
             num_future_frames=num_future_frames,
         )
+        map_api = cls._build_map_api(scene_metadata.map_name)
 
         frames: List[Frame] = []
         for frame_idx in range(len(scene_dict_list)):
@@ -411,7 +419,7 @@ class Scene:
             )
             frames.append(frame)
 
-        return Scene(scene_metadata=scene_metadata, frames=frames)
+        return Scene(scene_metadata=scene_metadata, map_api=map_api, frames=frames)
 
 
 @dataclass
@@ -419,12 +427,26 @@ class SceneFilter:
 
     num_history_frames: int = 4
     num_future_frames: int = 10
+    frame_interval: Optional[int] = None
     has_route: bool = True
 
     max_scenes: Optional[int] = None
     log_names: Optional[List[str]] = None
     tokens: Optional[List[str]] = None
     # TODO: expand filter options
+
+    def __post_init__(self):
+
+        if self.frame_interval is None:
+            self.frame_interval = self.num_frames
+
+        assert (
+            self.num_history_frames >= 1
+        ), "SceneFilter: num_history_frames must greater equal one."
+        assert (
+            self.num_future_frames >= 0
+        ), "SceneFilter: num_future_frames must greater equal zero."
+        assert self.frame_interval >= 1, "SceneFilter: frame_interval must greater equal one."
 
     @property
     def num_frames(self) -> int:

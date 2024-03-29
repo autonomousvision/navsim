@@ -243,6 +243,9 @@ class MetricCacheProcessor:
             / "metric_cache.pkl"
         )
 
+        if file_name.exists() and not self._force_feature_computation:
+            return CacheMetadataEntry(file_name)
+
         # init and run PDM-Closed
         planner_input, planner_initialization = self._get_planner_inputs(scenario)
         self._pdm_closed.initialize(planner_initialization)

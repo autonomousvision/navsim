@@ -3,11 +3,11 @@ _convert_: 'all'
 
 num_history_frames: 4
 num_future_frames: 0
-has_route: False
+frame_interval: null
+has_route: false
 
-max_scenes: Null 
-log_names: Null
-
+max_scenes: null 
+log_names: null
 tokens:
   - "4adc4d31c899590a"
   - "b781a9dd05b35138"

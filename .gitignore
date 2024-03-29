@@ -13,3 +13,5 @@
 # files
 *.log
 *.pkl
+*.jpg
+*.pcd

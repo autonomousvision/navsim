@@ -4,7 +4,7 @@ hydra:
   output_subdir: ${output_dir}/code/hydra           # Store hydra's config breakdown here for debugging
   searchpath:                                       # Only <exp_dir> in these paths are discoverable
     - pkg://navsim.planning.script.config.common 
-    - pkg://navsim.planning.script.config.pdm_scoring
+    # - pkg://navsim.planning.script.config.pdm_scoring
     # - pkg://navsim.planning.script.config.training
 
 defaults:
@@ -13,7 +13,10 @@ defaults:
   - default_train_val_test_log_split
   - agent: ego_status_mlp_agent
 
-split: mini
+split: trainval
+cache_path: ${oc.env:NAVSIM_EXP_ROOT}/training_cache
+use_cache_without_dataset: false # load the training samples from the cache. scene-filter will be ignored
+force_cache_computation: false
 
 dataloader:
   params:

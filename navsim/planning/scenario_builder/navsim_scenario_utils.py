@@ -20,10 +20,9 @@ from nuplan.planning.simulation.observation.observation_type import DetectionsTr
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
 
 from navsim.common.dataclasses import Annotations
+from navsim.common.enums import BoundingBoxIndex
 
 # TODO: Refactor this file
-
-# TODO: should be available somewhere in the nuplan-devkit
 tracked_object_types: Dict[str, TrackedObjectType] = {
     "vehicle": TrackedObjectType.VEHICLE,
     "pedestrian": TrackedObjectType.PEDESTRIAN,
@@ -93,7 +92,11 @@ def gt_boxes_oriented_box(
     oriented_boxes: List[OrientedBox] = []
     for gt_box in gt_boxes:
         # gt_box = (x, y, z, length, width, height, yaw) TODO: add intenum
-        local_box_x, local_box_y, local_box_heading = gt_box[0], gt_box[1], gt_box[-1]
+        local_box_x, local_box_y, local_box_heading = (
+            gt_box[BoundingBoxIndex.X],
+            gt_box[BoundingBoxIndex.Y],
+            gt_box[BoundingBoxIndex.HEADING],
+        )
         local_box_se2 = rotate_state_se2(
             StateSE2(local_box_x, local_box_y, local_box_heading),
             angle=ego_state.rear_axle.heading,

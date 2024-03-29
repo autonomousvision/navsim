@@ -1,6 +1,7 @@
 from abc import abstractmethod, ABC
 from typing import Dict, Union, List
 import torch
+import pytorch_lightning as pl
 
 from navsim.common.dataclasses import AgentInput, Trajectory, SensorConfig
 from navsim.planning.training.abstract_feature_target_builder import AbstractFeatureBuilder, AbstractTargetBuilder
@@ -62,6 +63,7 @@ class AbstractAgent(torch.nn.Module, ABC):
         :param current_input: Dataclass with agent inputs.
         :return: Trajectory representing the predicted ego's position in future
         """
+        self.eval()
         features : Dict[str, torch.Tensor] = {}
         # build features
         for builder in self.get_feature_builders():
@@ -103,3 +105,12 @@ class AbstractAgent(torch.nn.Module, ABC):
         Has to be either a single optimizer or a dict of optimizer and lr scheduler.
         """
         raise NotImplementedError("No optimizers. Agent does not support training.")
+    
+    def get_training_callbacks(
+        self
+    ) -> List[pl.Callback]:
+        """
+        Returns a list of pytorch-lightning callbacks that are used during training.
+        See navsim.planning.training.callbacks for examples.
+        """
+        return []

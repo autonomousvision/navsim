@@ -13,8 +13,8 @@ from navsim.planning.metric_caching.metric_cache import MetricCache
 
 def filter_scenes(data_path: Path, scene_filter: SceneFilter) -> Dict[str, List[Dict[str, Any]]]:
 
-    def split_list(input_list: List[Any], n: int) -> List[List[Any]]:
-        return [input_list[i : i + n] for i in range(0, len(input_list), n)]
+    def split_list(input_list: List[Any], num_frames: int, frame_interval: int) -> List[List[Any]]:
+        return [input_list[i : i + num_frames] for i in range(0, len(input_list), frame_interval)]
 
     filtered_scenes: Dict[str, Scene] = {}
     stop_loading: bool = False
@@ -28,10 +28,18 @@ def filter_scenes(data_path: Path, scene_filter: SceneFilter) -> Dict[str, List[
             if log_file.name.replace(".pkl", "") in scene_filter.log_names
         ]
 
+    if scene_filter.tokens is not None:
+        filter_tokens = True
+        tokens = set(scene_filter.tokens)
+    else:
+        filter_tokens = False
+
     for log_pickle_path in tqdm(log_files, desc="Loading logs"):
 
         scene_dict_list = pickle.load(open(log_pickle_path, "rb"))
-        for frame_list in split_list(scene_dict_list, scene_filter.num_frames):
+        for frame_list in split_list(
+            scene_dict_list, scene_filter.num_frames, scene_filter.frame_interval
+        ):
             # Filter scenes which are too short
             if len(frame_list) < scene_filter.num_frames:
                 continue
@@ -44,14 +52,10 @@ def filter_scenes(data_path: Path, scene_filter: SceneFilter) -> Dict[str, List[
                 continue
 
             # Filter by token
-            if (
-                scene_filter.tokens is not None
-                and frame_list[scene_filter.num_history_frames - 1]["token"]
-                not in scene_filter.tokens
-            ):
+            token = frame_list[scene_filter.num_history_frames - 1]["token"]
+            if filter_tokens and token not in tokens:
                 continue
 
-            token = frame_list[scene_filter.num_history_frames - 1]["token"]
             filtered_scenes[token] = frame_list
 
             if (scene_filter.max_scenes is not None) and (
@@ -76,14 +80,14 @@ class SceneLoader:
         sensor_config: SensorConfig = SensorConfig.build_no_sensors(),
     ):
 
-        self._filtered_tokens = filter_scenes(data_path, scene_filter)
+        self.scene_frames_dicts = filter_scenes(data_path, scene_filter)
         self._sensor_blobs_path = sensor_blobs_path
         self._scene_filter = scene_filter
         self._sensor_config = sensor_config
 
     @property
     def tokens(self) -> List[str]:
-        return list(self._filtered_tokens.keys())
+        return list(self.scene_frames_dicts.keys())
 
     def __len__(self):
         return len(self.tokens)
@@ -94,7 +98,7 @@ class SceneLoader:
     def get_scene_from_token(self, token: str) -> Scene:
         assert token in self.tokens
         return Scene.from_scene_dict_list(
-            self._filtered_tokens[token],
+            self.scene_frames_dicts[token],
             self._sensor_blobs_path,
             num_history_frames=self._scene_filter.num_history_frames,
             num_future_frames=self._scene_filter.num_future_frames,
@@ -104,12 +108,22 @@ class SceneLoader:
     def get_agent_input_from_token(self, token: str) -> AgentInput:
         assert token in self.tokens
         return AgentInput.from_scene_dict_list(
-            self._filtered_tokens[token],
+            self.scene_frames_dicts[token],
             self._sensor_blobs_path,
             num_history_frames=self._scene_filter.num_history_frames,
             sensor_config=self._sensor_config,
         )
 
+    def get_tokens_list_per_log(self) -> Dict[str, List[str]]:
+        # generate a dict that contains a list of tokens for each log-name
+        tokens_per_logs: Dict[str, List[str]] = {}
+        for token, scene_dict_list in self.scene_frames_dicts.items():
+            log_name = scene_dict_list[0]["log_name"]
+            if tokens_per_logs.get(log_name):
+                tokens_per_logs[log_name].append(token)
+            else:
+                tokens_per_logs.update({log_name: [token]})
+        return tokens_per_logs
 
 class MetricCacheLoader:
 
@@ -120,39 +134,32 @@ class MetricCacheLoader:
     ):
 
         self._file_name = file_name
-        self._metric_cache_paths = self._load_metric_cache_paths(cache_path)
+        self.metric_cache_paths = self._load_metric_cache_paths(cache_path)
 
     def _load_metric_cache_paths(self, cache_path: Path) -> Dict[str, Path]:
-
-        # This is ugly lol
-        metric_cache_dict: Dict[str, Path] = {}
-        for log_path in cache_path.iterdir():
-            if "metadata" in str(log_path):
-                continue
-            for scenario_path in log_path.iterdir():
-                for token_path in scenario_path.iterdir():
-                    metric_cache_path = token_path / self._file_name
-                    assert (
-                        metric_cache_path.is_file()
-                    ), f"Metric cache at {metric_cache_path} is missing!"
-                    token = str(token_path).split("/")[-1]
-                    metric_cache_dict[token] = metric_cache_path
-
+        metadata_dir = cache_path / "metadata"
+        metadata_file = [file for file in metadata_dir.iterdir() if ".csv" in str(file)][0]
+        with open(str(metadata_file), "r") as f:
+            cache_paths=f.read().splitlines()[1:]
+        metric_cache_dict = {
+            cache_path.split("/")[-2]: cache_path
+            for cache_path in cache_paths
+        }
         return metric_cache_dict
 
     @property
     def tokens(self) -> List[str]:
-        return list(self._metric_cache_paths.keys())
+        return list(self.metric_cache_paths.keys())
 
     def __len__(self):
-        return len(self._metric_cache_paths)
+        return len(self.metric_cache_paths)
 
     def __getitem__(self, idx: int) -> MetricCache:
         return self.get_from_token(self.tokens[idx])
 
     def get_from_token(self, token: str) -> MetricCache:
 
-        with lzma.open(self._metric_cache_paths[token], "rb") as f:
+        with lzma.open(self.metric_cache_paths[token], "rb") as f:
             metric_cache: MetricCache = pickle.load(f)
 
         return metric_cache

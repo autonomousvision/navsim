@@ -19,16 +19,18 @@ Navigate to the download directory and download the maps
 cd download && ./download_maps
 ```
 
-Next download the splits you want to use.
-You can download the mini, trainval, test and submission_test split with the following scripts
+Next download the data splits you want to use.
+Note that the dataset splits do not exactly map to the recommended standardized training / test splits-
+Please refer to [splits](splits.md) for an overview on the standardized training and test splits including their size and check which dataset splits you need to download in order to be able to run them.
+
+You can download the mini, trainval, test and private_test_e2e dataset split with the following scripts
 ```
 ./download_mini
 ./download_trainval
 ./download_test
-./download_competition_test
+./download_private_test_e2e
 ```
-
-**The mini split and the test split take around ~160GB and ~220GB of memory respectively**
+Also, the script `./download_navtrain` can be used to download a small portion of the  `trainval` dataset split which is needed for the `navtrain` training split. 
 
 This will download the splits into the download directory. From there, move it to create the following structure.
 ```angular2html
@@ -40,17 +42,18 @@ This will download the splits into the download directory. From there, move it t
     ├── navsim_logs
     |    ├── test
     |    ├── trainval
-    |    ├── competition_test
+    |    ├── private_test_e2e
     │    └── mini
     └── sensor_blobs
          ├── test
          ├── trainval
-         ├── competition_test
+         ├── private_test_e2e
          └── mini
 ```
 Set the required environment variables, by adding the following to your `~/.bashrc` file
 Based on the structure above, the environment variables need to be defined as:
 ```
+export NUPLAN_MAP_VERSION="nuplan-maps-v1.0"
 export NUPLAN_MAPS_ROOT="$HOME/navsim_workspace/dataset/maps"
 export NAVSIM_EXP_ROOT="$HOME/navsim_workspace/exp"
 export NAVSIM_DEVKIT_ROOT="$HOME/navsim_workspace/navsim"

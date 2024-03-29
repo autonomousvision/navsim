@@ -25,8 +25,11 @@
 >   - Large-scale publicly available test split for internal benchmarking
 >   - Continually-maintained devkit
 
-🏁 **NAVSIM** will serve as a main track in the **`CVPR 2024 Autonomous Grand Challenge`**. The warm-up phase of the challenge has begun! For further details, please [check the challenge website](https://opendrivelab.com/challenge2024/)!
+🏁 **NAVSIM** will serve as a main track in the **`CVPR 2024 Autonomous Grand Challenge`**. The leaderboard for the challenge is open! For further details, please [check the challenge website](https://opendrivelab.com/challenge2024/)!
 
+<p align="center">
+  <img src="assets/navsim_cameras.gif" width="800">
+</p>
 
 ## Table of Contents
 1. [Highlights](#highlight)
@@ -41,6 +44,7 @@
 - [Download and installation](docs/install.md)
 - [Understanding and creating agents](docs/agents.md) 
 - [Understanding the data format and classes](docs/cache.md)
+- [Dataset splits vs. filtered training / test splits](docs/splits.md)
 - [Understanding the PDM Score](docs/metrics.md)
 - [Submitting to the Leaderboard](docs/submission.md)
   
@@ -48,8 +52,13 @@
 
 
 ## Changelog <a name="changelog"></a>
-- **`[2024/04/05]`** **IMPORTANT NOTE**: Please re-download the `competition_test` split.
-  - There has been an issue with the `competition_test` split, so that the Ego-Status information was incorrect. Please download the updated files. For details see [installation](docs/install.md).
+- **`[2024/04/21]`** NAVSIM v1.0 release (official devkit version for [AGC 2024](https://opendrivelab.com/challenge2024/))
+  - **IMPORTANT NOTE**: The name of the data split `competition_test` was changed to `private_test_e2e`. Please adapt your directory name accordingly. For details see [installation](docs/install.md).
+  - Parallelization of metric caching / evaluation
+  - Adds [Transfuser](https://arxiv.org/abs/2205.15997) baseline (see [agents](docs/agents.md#Baselines))
+  - Adds standardized training and test filtered splits (see [splits](docs/splits.md))
+  - Visualization tools (see [tutorial_visualization.ipynb](tutorial/tutorial_visualization.ipynb))
+  - Refactoring
 - **`[2024/04/03]`** NAVSIM v0.4 release
   - Support for test phase frames of competition
   - Download script for trainval
@@ -61,7 +70,7 @@
   - Major refactoring of dataloading and configs
 - **`[2024/03/11]`** NAVSIM v0.2 release
   - Easier installation and download
-  - mini and test split integration
+  - mini and test data split integration
   - Privileged `Human` agent
 - **`[2024/02/20]`** NAVSIM v0.1 release (initial demo)
   - OpenScene-mini sensor blobs and annotation logs

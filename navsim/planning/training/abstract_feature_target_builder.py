@@ -10,6 +10,10 @@ class AbstractFeatureBuilder:
         pass
     
     @abstractmethod
+    def get_unique_name(self) -> str:
+        pass
+    
+    @abstractmethod
     def compute_features(self, agent_input: AgentInput) -> Dict[str, Tensor]:
         """
         Computes features from the AgentInput object, i.e., without access to ground-truth.
@@ -20,6 +24,10 @@ class AbstractFeatureBuilder:
     
 class AbstractTargetBuilder:
     def __init__(self):
+        pass
+    
+    @abstractmethod
+    def get_unique_name(self) -> str:
         pass
 
     @abstractmethod

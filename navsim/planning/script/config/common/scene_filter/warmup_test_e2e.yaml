@@ -3,9 +3,10 @@ _convert_: 'all'
 
 num_history_frames: 4
 num_future_frames: 10
-has_route: True
+frame_interval: null
+has_route: true
 
-max_scenes: Null 
+max_scenes: null
 log_names:
   - "2021.07.24.20.37.45_veh-17_00015_00375"
   - "2021.06.08.12.54.54_veh-26_04262_04732"
