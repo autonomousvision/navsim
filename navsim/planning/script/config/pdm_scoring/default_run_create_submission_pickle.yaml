@@ -9,8 +9,9 @@ defaults:
   - default_common
   - default_evaluation
   - agent: constant_velocity_agent
+  - override scene_filter: competition_test
 
-  - override scene_filter: warmup_test
+split: competition_test
 
 "team_name": ??? # The team name
 "authors": ??? # The team members

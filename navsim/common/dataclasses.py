@@ -212,7 +212,7 @@ class Annotations:
 class Trajectory:
     poses: npt.NDArray[np.float32]  # local coordinates
     trajectory_sampling: TrajectorySampling = TrajectorySampling(
-        time_horizon=5, interval_length=0.5
+        time_horizon=4, interval_length=0.5
     )
 
     def __post_init__(self):

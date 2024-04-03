@@ -1,0 +1,11 @@
+_target_: navsim.agents.ego_status_mlp_agent.EgoStatusMLPAgent
+_convert_: 'all'
+
+trajectory_sampling:
+  _target_: nuplan.planning.simulation.trajectory.trajectory_sampling.TrajectorySampling
+  _convert_: 'all'
+  time_horizon: 4
+  interval_length: 0.5
+checkpoint_path: null
+hidden_layer_dim: 512
+lr: 1e-4

@@ -48,6 +48,11 @@
 
 
 ## Changelog <a name="changelog"></a>
+- **`[2024/04/03]`** NAVSIM v0.4 release
+  - Support for test phase frames of competition
+  - Download script for trainval
+  - Egostatus MLP Agent and training pipeline
+  - Refactoring, Fixes, Documentation
 - **`[2024/03/25]`** NAVSIM v0.3 release (official devkit version for warm-up phase)
   - Changes env variable NUPLAN_EXP_ROOT to NAVSIM_EXP_ROOT
   - Adds code for Leaderboard submission

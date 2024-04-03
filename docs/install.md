@@ -19,10 +19,13 @@ Navigate to the download directory and download the maps
 cd download && ./download_maps
 ```
 
-Next download the mini split and the test split
+Next download the splits you want to use.
+You can download the mini, trainval, test and submision_test split with the following scritps
 ```
 ./download_mini
+./download_trainval
 ./download_test
+./download_competition_test
 ```
 
 **The mini split and the test split take around ~160GB and ~220GB of memory respectively**
@@ -36,9 +39,13 @@ This will download the splits into the download directory. From there, move it t
     ├── maps
     ├── navsim_logs
     |    ├── test
+    |    ├── trainval
+    |    ├── competition_test
     │    └── mini
     └── sensor_blobs
          ├── test
+         ├── trainval
+         ├── competition_test
          └── mini
 ```
 Set the required environment variables, by adding the following to your `~/.bashrc` file

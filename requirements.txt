@@ -16,7 +16,7 @@ joblib
 matplotlib  # Used for rendering
 nest_asyncio  # Used to nest event loops when running nuBoard/jupyter
 numpy==1.23.4
-opencv-python<=4.5.1.48  # Used widely
+opencv-python==4.9.0.80  # Used widely
 pandas    # Used widely
 Pillow    # Used widely to render images
 psutil  # Used widely to get the number of CPUs
@@ -31,10 +31,15 @@ retry
 rtree # Used in occupancy maps
 scipy  # Used widely
 selenium # Used in bokeh export png
-setuptools==59.5.0  # Used in setup.py, pinned to not break pytorch
+setuptools==65.5.1  # Used in setup.py, pinned to not break pytorch
 Shapely>=2.0.0  # Used widely
 SQLAlchemy==1.4.27  # older versions don't work with some table definitions
 sympy  # Use for symbolic algebra
 tornado  # Used in nuboard.py
 tqdm  # Used widely
 ujson  # Used in serialiation_callback.py
+
+torch==2.0.1
+pytorch-lightning==2.2.1
+tensorboard==2.16.2
+protobuf==4.25.3
