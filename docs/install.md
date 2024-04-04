@@ -20,7 +20,7 @@ cd download && ./download_maps
 ```
 
 Next download the splits you want to use.
-You can download the mini, trainval, test and submision_test split with the following scritps
+You can download the mini, trainval, test and submission_test split with the following scripts
 ```
 ./download_mini
 ./download_trainval

@@ -56,7 +56,7 @@ Given the features, the targets and the model predictions, this function compute
 
 - `get_optimizers()`
 Use this function to define the optimizers used for training. 
-Depending on wheter you want to use a learning-rate scheduler or not, this function needs to either return just an Optimizer (of type `torch.optim.Optimizer`) or a dictionary that contains the Optimizer (key: "optimizer") and the learning-rate scheduler of type `torch.optim.lr_scheduler.LRScheduler` (key: "lr_scheduler").
+Depending on whether you want to use a learning-rate scheduler or not, this function needs to either return just an Optimizer (of type `torch.optim.Optimizer`) or a dictionary that contains the Optimizer (key: "optimizer") and the learning-rate scheduler of type `torch.optim.lr_scheduler.LRScheduler` (key: "lr_scheduler").
 
 - `compute_trajectory()`
 In contrast to the non-learning-based Agent, you don't have to implement this function.
@@ -65,7 +65,7 @@ In inference, the trajectory will automatically be computed using the feature bu
 
 `get_sensor_config()` can be overwritten to determine which sensors are accessible to the agent. 
 
-The available sensors depend on the dataset. For OpenScene, this includes 9 sensor modalities: 8 cameras and a merged point cloud (from 5 LiDARs). Each modality is available for a duration of 2 seconds into the past, at a frquency of 2Hz (i.e., 4 frames). Only this data will be released for the test frames (no maps/tracks/occupancy etc, which you may use during training but will not have access to for leaderboard submissions).
+The available sensors depend on the dataset. For OpenScene, this includes 9 sensor modalities: 8 cameras and a merged point cloud (from 5 LiDARs). Each modality is available for a duration of 2 seconds into the past, at a frequency of 2Hz (i.e., 4 frames). Only this data will be released for the test frames (no maps/tracks/occupancy etc, which you may use during training but will not have access to for leaderboard submissions).
 
 You can configure the set of sensor modalities to use and how much history you need for each frame with the `navsim.common.dataclasses.SensorConfig` dataclass.
 
