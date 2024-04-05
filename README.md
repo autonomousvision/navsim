@@ -48,6 +48,7 @@
 
 
 ## Changelog <a name="changelog"></a>
+- **`[2024/04/05]`** **IMPORTANT NOTE**: Please re-download the `competition_test` split.
 - **`[2024/04/03]`** NAVSIM v0.4 release
   - Support for test phase frames of competition
   - Download script for trainval
