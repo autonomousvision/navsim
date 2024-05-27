@@ -1,36 +1,24 @@
-import copy
+from typing import List, Optional
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+import copy
 
 import numpy as np
 import numpy.typing as npt
-from nuplan.common.actor_state.vehicle_parameters import VehicleParameters, get_pacifica_parameters
+from shapely import Point, creation
 
 from nuplan.common.actor_state.state_representation import StateSE2
 from nuplan.common.actor_state.tracked_objects_types import AGENT_TYPES
-from nuplan.common.maps.abstract_map import AbstractMap
-from nuplan.common.maps.abstract_map_objects import LaneGraphEdgeMapObject
+from nuplan.common.actor_state.vehicle_parameters import VehicleParameters, get_pacifica_parameters
 from nuplan.common.maps.maps_datatypes import SemanticMapLayer
 from nuplan.planning.metrics.utils.collision_utils import CollisionType
-from nuplan.planning.simulation.observation.idm.utils import (
-    is_agent_ahead,
-    is_agent_behind,
-)
+from nuplan.planning.simulation.observation.idm.utils import is_agent_ahead, is_agent_behind
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
-from shapely import Point, creation
 
-from navsim.planning.simulation.planner.pdm_planner.observation.pdm_observation import (
-    PDMObservation,
-)
-from navsim.planning.simulation.planner.pdm_planner.observation.pdm_occupancy_map import (
-    PDMDrivableMap,
-)
-from navsim.planning.simulation.planner.pdm_planner.scoring.pdm_comfort_metrics import (
-    ego_is_comfortable,
-)
-from navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer_utils import (
-    get_collision_type,
-)
+from navsim.planning.simulation.planner.pdm_planner.observation.pdm_observation import PDMObservation
+from navsim.planning.simulation.planner.pdm_planner.observation.pdm_occupancy_map import PDMDrivableMap
+from navsim.planning.simulation.planner.pdm_planner.scoring.pdm_comfort_metrics import ego_is_comfortable
+from navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer_utils import get_collision_type
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_path import PDMPath
 from navsim.planning.simulation.planner.pdm_planner.utils.pdm_array_representation import (
     coords_array_to_polygon_array,
     state_array_to_coords_array,
@@ -42,23 +30,23 @@ from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import (
     StateIndex,
     WeightedMetricIndex,
 )
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_path import PDMPath
 
 
 @dataclass
 class PDMScorerConfig:
-    
+
     # weighted metric weights
     progress_weight: float = 5.0
     ttc_weight: float = 5.0
     comfortable_weight: float = 2.0
+    driving_direction_weight: float = 0.0
 
     # thresholds
     driving_direction_horizon: float = 1.0  # [s] (driving direction)
     driving_direction_compliance_threshold: float = 2.0  # [m] (driving direction)
     driving_direction_violation_threshold: float = 6.0  # [m] (driving direction)
     stopped_speed_threshold: float = 5e-03  # [m/s] (ttc)
-    progress_distance_threshold: float = 0.1  # [m] (progress)
+    progress_distance_threshold: float = 5.0  # [m] (progress)
 
     @property
     def weighted_metrics_array(self) -> npt.NDArray[np.float64]:
@@ -66,6 +54,7 @@ class PDMScorerConfig:
         weighted_metrics[WeightedMetricIndex.PROGRESS] = self.progress_weight
         weighted_metrics[WeightedMetricIndex.TTC] = self.ttc_weight
         weighted_metrics[WeightedMetricIndex.COMFORTABLE] = self.comfortable_weight
+        weighted_metrics[WeightedMetricIndex.DRIVING_DIRECTION] = self.driving_direction_weight
         return weighted_metrics
 
 
@@ -183,12 +172,9 @@ class PDMScorer:
             normalized_progress[multiplicate_metric_scores == 0.0] = 0.0
         self._weighted_metrics[WeightedMetricIndex.PROGRESS] = normalized_progress
 
-
         # accumulate weighted metrics
         weighted_metrics_array = self._config.weighted_metrics_array
-        weighted_metric_scores = (self._weighted_metrics * weighted_metrics_array[..., None]).sum(
-            axis=0
-        )
+        weighted_metric_scores = (self._weighted_metrics * weighted_metrics_array[..., None]).sum(axis=0)
         weighted_metric_scores /= weighted_metrics_array.sum()
 
         # calculate final scores
@@ -241,12 +227,8 @@ class PDMScorer:
             ),
             dtype=np.bool_,
         )
-        self._multi_metrics = np.zeros(
-            (len(MultiMetricIndex), self._num_proposals), dtype=np.float64
-        )
-        self._weighted_metrics = np.zeros(
-            (len(WeightedMetricIndex), self._num_proposals), dtype=np.float64
-        )
+        self._multi_metrics = np.zeros((len(MultiMetricIndex), self._num_proposals), dtype=np.float64)
+        self._weighted_metrics = np.zeros((len(WeightedMetricIndex), self._num_proposals), dtype=np.float64)
         self._progress_raw = np.zeros(self._num_proposals, dtype=np.float64)
 
         # initialize infraction arrays with infinity (meaning no infraction occurs)
@@ -264,9 +246,7 @@ class PDMScorer:
         n_proposals, n_horizon, n_points, _ = self._ego_coords.shape
 
         in_polygons = self._drivable_area_map.points_in_polygons(self._ego_coords)
-        in_polygons = in_polygons.transpose(
-            1, 2, 0, 3
-        )  # shape: n_proposals, n_horizon, n_polygons, n_points
+        in_polygons = in_polygons.transpose(1, 2, 0, 3)  # shape: n_proposals, n_horizon, n_polygons, n_points
 
         drivable_area_idcs = self._drivable_area_map.get_indices_of_map_type(
             [
@@ -282,9 +262,7 @@ class PDMScorer:
         )
 
         drivable_on_route_idcs: List[int] = [
-            idx
-            for idx in drivable_lane_idcs
-            if self._drivable_area_map.tokens[idx] in self._route_lane_ids
+            idx for idx in drivable_lane_idcs if self._drivable_area_map.tokens[idx] in self._route_lane_ids
         ]  # index mask for on-route lanes
 
         corners_in_polygon = in_polygons[..., :-1]  # ignore center coordinate
@@ -294,30 +272,22 @@ class PDMScorer:
         # - more than one drivable polygon contains at least one corner
         # - no polygon contains all corners
         batch_multiple_lanes_mask = np.zeros((n_proposals, n_horizon), dtype=np.bool_)
-        batch_multiple_lanes_mask = (
-            corners_in_polygon[:, :, drivable_lane_idcs].sum(axis=-1) > 0
-        ).sum(axis=-1) > 1
+        batch_multiple_lanes_mask = (corners_in_polygon[:, :, drivable_lane_idcs].sum(axis=-1) > 0).sum(axis=-1) > 1
 
         batch_not_single_lanes_mask = np.zeros((n_proposals, n_horizon), dtype=np.bool_)
-        batch_not_single_lanes_mask = np.all(
-            corners_in_polygon[:, :, drivable_lane_idcs].sum(axis=-1) != 4, axis=-1
-        )
+        batch_not_single_lanes_mask = np.all(corners_in_polygon[:, :, drivable_lane_idcs].sum(axis=-1) != 4, axis=-1)
 
         multiple_lanes_mask = np.logical_and(batch_multiple_lanes_mask, batch_not_single_lanes_mask)
         self._ego_areas[multiple_lanes_mask, EgoAreaIndex.MULTIPLE_LANES] = True
 
         # in_nondrivable_area: if at least one corner is not within any drivable polygon
         batch_nondrivable_area_mask = np.zeros((n_proposals, n_horizon), dtype=np.bool_)
-        batch_nondrivable_area_mask = (
-            corners_in_polygon[:, :, drivable_area_idcs].sum(axis=-2) > 0
-        ).sum(axis=-1) < 4
+        batch_nondrivable_area_mask = (corners_in_polygon[:, :, drivable_area_idcs].sum(axis=-2) > 0).sum(axis=-1) < 4
         self._ego_areas[batch_nondrivable_area_mask, EgoAreaIndex.NON_DRIVABLE_AREA] = True
 
         # in_oncoming_traffic: if center not in any drivable polygon that is on-route
         batch_oncoming_traffic_mask = np.zeros((n_proposals, n_horizon), dtype=np.bool_)
-        batch_oncoming_traffic_mask = (
-            center_in_polygon[..., drivable_on_route_idcs].sum(axis=-1) == 0
-        )
+        batch_oncoming_traffic_mask = center_in_polygon[..., drivable_on_route_idcs].sum(axis=-1) == 0
         self._ego_areas[batch_oncoming_traffic_mask, EgoAreaIndex.ONCOMING_TRAFFIC] = True
 
     def _calculate_no_at_fault_collision(self) -> None:
@@ -340,9 +310,7 @@ class PDMScorer:
 
             for proposal_idx, geometry_idx in zip(intersecting[0], intersecting[1]):
                 token = self._observation[time_idx].tokens[geometry_idx]
-                if (self._observation.red_light_token in token) or (
-                    token in proposal_collided_track_ids[proposal_idx]
-                ):
+                if (self._observation.red_light_token in token) or (token in proposal_collided_track_ids[proposal_idx]):
                     continue
 
                 ego_in_multiple_lanes_or_nondrivable_area = (
@@ -363,23 +331,17 @@ class PDMScorer:
                     CollisionType.ACTIVE_FRONT_COLLISION,
                     CollisionType.STOPPED_TRACK_COLLISION,
                 ]
-                collision_at_lateral: bool = (
-                    collision_type == CollisionType.ACTIVE_LATERAL_COLLISION
-                )
+                collision_at_lateral: bool = collision_type == CollisionType.ACTIVE_LATERAL_COLLISION
 
                 # 1. at fault collision
                 if collisions_at_stopped_track_or_active_front or (
                     ego_in_multiple_lanes_or_nondrivable_area and collision_at_lateral
                 ):
-                    no_at_fault_collision_score = (
-                        0.0 if tracked_object.tracked_object_type in AGENT_TYPES else 0.5
-                    )
+                    no_at_fault_collision_score = 0.0 if tracked_object.tracked_object_type in AGENT_TYPES else 0.5
                     no_collision_scores[proposal_idx] = np.minimum(
                         no_collision_scores[proposal_idx], no_at_fault_collision_score
                     )
-                    self._collision_time_idcs[proposal_idx] = min(
-                        time_idx, self._collision_time_idcs[proposal_idx]
-                    )
+                    self._collision_time_idcs[proposal_idx] = min(time_idx, self._collision_time_idcs[proposal_idx])
 
                 else:  # 2. no at fault collision
                     proposal_collided_track_ids[proposal_idx].append(token)
@@ -404,9 +366,7 @@ class PDMScorer:
             (self._num_proposals, self.proposal_sampling.num_poses + 1),
             dtype=np.float64,
         )
-        oncoming_progress[:, 1:] = (
-            (center_coordinates[:, 1:] - center_coordinates[:, :-1]) ** 2.0
-        ).sum(axis=-1) ** 0.5
+        oncoming_progress[:, 1:] = np.linalg.norm(center_coordinates[:, 1:] - center_coordinates[:, :-1], axis=-1)
 
         # mask out progress along the driving direction
         oncoming_traffic_masks = self._ego_areas[:, :, EgoAreaIndex.ONCOMING_TRAFFIC]
@@ -414,17 +374,15 @@ class PDMScorer:
 
         # aggregate
         driving_direction_compliance_scores = np.ones(self._num_proposals, dtype=np.float64)
+        horizon = int(self._config.driving_direction_horizon / self.proposal_sampling.interval_length)
 
-        horizon = int(
-            self._config.driving_direction_horizon / self.proposal_sampling.interval_length
-        )
-
-        oncoming_progress_over_horizon = np.array(
+        oncoming_progress_over_horizon = np.concatenate(
             [
-                sum(oncoming_progress[max(0, time_idx - horizon) : time_idx + 1])
-                for time_idx in range(len(oncoming_progress))
+                oncoming_progress[:, max(0, time_idx - horizon) : time_idx + 1].sum(axis=-1)[..., None]
+                for time_idx in range(oncoming_progress.shape[-1])
             ],
             dtype=np.float64,
+            axis=-1,
         )
 
         for proposal_idx, progress in enumerate(oncoming_progress_over_horizon.max(axis=-1)):
@@ -435,9 +393,7 @@ class PDMScorer:
             else:
                 driving_direction_compliance_scores[proposal_idx] = 0.0
 
-        self._multi_metrics[MultiMetricIndex.DRIVING_DIRECTION] = (
-            driving_direction_compliance_scores
-        )
+        self._weighted_metrics[WeightedMetricIndex.DRIVING_DIRECTION] = driving_direction_compliance_scores
 
     def _calculate_progress(self) -> None:
         """
@@ -472,9 +428,7 @@ class PDMScorer:
 
         # create polygons for each ego position and 1s future projection
         coords_exterior = self._ego_coords.copy()
-        coords_exterior[:, :, BBCoordsIndex.CENTER, :] = coords_exterior[
-            :, :, BBCoordsIndex.FRONT_LEFT, :
-        ]
+        coords_exterior[:, :, BBCoordsIndex.CENTER, :] = coords_exterior[:, :, BBCoordsIndex.FRONT_LEFT, :]
         coords_exterior_time_steps = np.repeat(coords_exterior[:, :, None], n_future_steps, axis=2)
 
         speeds = np.hypot(
@@ -503,9 +457,7 @@ class PDMScorer:
             for step_idx, future_time_idx in enumerate(future_time_idcs):
                 current_time_idx = time_idx + future_time_idx
                 polygons_at_time_step = polygons[:, time_idx, step_idx]
-                intersecting = self._observation[current_time_idx].query(
-                    polygons_at_time_step, predicate="intersects"
-                )
+                intersecting = self._observation[current_time_idx].query(polygons_at_time_step, predicate="intersects")
 
                 if len(intersecting) == 0:
                     continue
@@ -523,9 +475,7 @@ class PDMScorer:
                         self._ego_areas[proposal_idx, time_idx, EgoAreaIndex.MULTIPLE_LANES]
                         or self._ego_areas[proposal_idx, time_idx, EgoAreaIndex.NON_DRIVABLE_AREA]
                     )
-                    ego_rear_axle: StateSE2 = StateSE2(
-                        *self._states[proposal_idx, time_idx, StateIndex.STATE_SE2]
-                    )
+                    ego_rear_axle: StateSE2 = StateSE2(*self._states[proposal_idx, time_idx, StateIndex.STATE_SE2])
 
                     centroid = self._observation[current_time_idx][token].centroid
                     track_heading = self._observation.unique_objects[token].box.center.heading
@@ -541,14 +491,11 @@ class PDMScorer:
                         and not is_agent_behind(ego_rear_axle, track_state)
                     ):
                         ttc_scores[proposal_idx] = np.minimum(ttc_scores[proposal_idx], 0.0)
-                        self._ttc_time_idcs[proposal_idx] = min(
-                            time_idx, self._ttc_time_idcs[proposal_idx]
-                        )
+                        self._ttc_time_idcs[proposal_idx] = min(time_idx, self._ttc_time_idcs[proposal_idx])
                     else:
                         temp_collided_track_ids[proposal_idx].append(token)
 
         self._weighted_metrics[WeightedMetricIndex.TTC] = ttc_scores
-
 
     def _calculate_is_comfortable(self) -> None:
         """

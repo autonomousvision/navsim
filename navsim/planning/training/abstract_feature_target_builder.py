@@ -5,14 +5,20 @@ from torch import Tensor
 
 from navsim.common.dataclasses import AgentInput, Scene
 
+
 class AbstractFeatureBuilder:
+    """Abstract class of feature builder for agent training."""
+
     def __init__(self):
         pass
-    
+
     @abstractmethod
     def get_unique_name(self) -> str:
+        """
+        :return: Unique name of created feature.
+        """
         pass
-    
+
     @abstractmethod
     def compute_features(self, agent_input: AgentInput) -> Dict[str, Tensor]:
         """
@@ -21,13 +27,17 @@ class AbstractFeatureBuilder:
         One FeatureBuilder can return a dict with multiple FeatureTensors.
         """
         pass
-    
+
+
 class AbstractTargetBuilder:
     def __init__(self):
         pass
-    
+
     @abstractmethod
     def get_unique_name(self) -> str:
+        """
+        :return: Unique name of created target.
+        """
         pass
 
     @abstractmethod

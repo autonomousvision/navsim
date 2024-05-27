@@ -3,39 +3,25 @@ import numpy.typing as npt
 
 from typing import List
 
+from nuplan.common.actor_state.state_representation import StateSE2, TimePoint
+from nuplan.common.actor_state.ego_state import EgoState
+from nuplan.common.geometry.convert import relative_to_absolute_poses
+from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
+from nuplan.planning.simulation.trajectory.interpolated_trajectory import InterpolatedTrajectory
 from nuplan.planning.simulation.planner.ml_planner.transform_utils import (
     _get_fixed_timesteps,
     _se2_vel_acc_to_ego_state,
 )
 
-from navsim.planning.simulation.planner.pdm_planner.simulation.pdm_simulator import (
-    PDMSimulator,
-)
-from navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer import (
-    PDMScorer,
-)
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_array_representation import (
-    ego_states_to_state_array,
-)
+from navsim.common.dataclasses import PDMResults, Trajectory
+from navsim.planning.simulation.planner.pdm_planner.simulation.pdm_simulator import PDMSimulator
+from navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer import PDMScorer
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_array_representation import ego_states_to_state_array
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import MultiMetricIndex, WeightedMetricIndex
 from navsim.planning.metric_caching.metric_cache import MetricCache
 
-from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
-from nuplan.planning.simulation.trajectory.interpolated_trajectory import InterpolatedTrajectory
-from nuplan.common.actor_state.state_representation import StateSE2, TimePoint
-from nuplan.common.actor_state.ego_state import EgoState
-from nuplan.common.geometry.convert import relative_to_absolute_poses
 
-from navsim.common.dataclasses import PDMResults, Trajectory
-
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import (
-    MultiMetricIndex,
-    WeightedMetricIndex,
-)
-
-
-def transform_trajectory(
-    pred_trajectory: Trajectory, initial_ego_state: EgoState
-) -> InterpolatedTrajectory:
+def transform_trajectory(pred_trajectory: Trajectory, initial_ego_state: EgoState) -> InterpolatedTrajectory:
     """
     Transform trajectory in global frame and return as InterpolatedTrajectory
     :param pred_trajectory: trajectory dataclass in ego frame
@@ -44,9 +30,7 @@ def transform_trajectory(
     """
 
     future_sampling = pred_trajectory.trajectory_sampling
-    timesteps = _get_fixed_timesteps(
-        initial_ego_state, future_sampling.time_horizon, future_sampling.interval_length
-    )
+    timesteps = _get_fixed_timesteps(initial_ego_state, future_sampling.time_horizon, future_sampling.interval_length)
 
     relative_poses = np.array(pred_trajectory.poses, dtype=np.float64)
     relative_states = [StateSE2.deserialize(pose) for pose in relative_poses]
@@ -101,7 +85,7 @@ def pdm_score(
     model_trajectory: Trajectory,
     future_sampling: TrajectorySampling,
     simulator: PDMSimulator,
-    scorer: PDMScorer
+    scorer: PDMScorer,
 ) -> PDMResults:
     """
     Runs PDM-Score and saves results in dataclass.
@@ -137,22 +121,20 @@ def pdm_score(
 
     no_at_fault_collisions = scorer._multi_metrics[MultiMetricIndex.NO_COLLISION, pred_idx]
     drivable_area_compliance = scorer._multi_metrics[MultiMetricIndex.DRIVABLE_AREA, pred_idx]
-    driving_direction_compliance = scorer._multi_metrics[
-        MultiMetricIndex.DRIVING_DIRECTION, pred_idx
-    ]
 
     ego_progress = scorer._weighted_metrics[WeightedMetricIndex.PROGRESS, pred_idx]
     time_to_collision_within_bound = scorer._weighted_metrics[WeightedMetricIndex.TTC, pred_idx]
     comfort = scorer._weighted_metrics[WeightedMetricIndex.COMFORTABLE, pred_idx]
+    driving_direction_compliance = scorer._weighted_metrics[WeightedMetricIndex.DRIVING_DIRECTION, pred_idx]
 
     score = scores[pred_idx]
 
     return PDMResults(
         no_at_fault_collisions,
         drivable_area_compliance,
-        driving_direction_compliance,
         ego_progress,
         time_to_collision_within_bound,
         comfort,
+        driving_direction_compliance,
         score,
     )

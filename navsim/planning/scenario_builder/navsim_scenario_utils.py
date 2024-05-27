@@ -1,20 +1,15 @@
 from typing import Dict, List, Optional
+
 import numpy as np
 import numpy.typing as npt
 
-
-from nuplan.common.actor_state.tracked_objects_types import (
-    TrackedObjectType,
-    AGENT_TYPES,
-)
-
 from nuplan.common.actor_state.agent import Agent
-from nuplan.common.actor_state.static_object import StaticObject
-
+from nuplan.common.actor_state.ego_state import EgoState
 from nuplan.common.actor_state.oriented_box import OrientedBox
 from nuplan.common.actor_state.scene_object import SceneObjectMetadata
-from nuplan.common.actor_state.ego_state import EgoState
+from nuplan.common.actor_state.static_object import StaticObject
 from nuplan.common.actor_state.state_representation import StateSE2, StateVector2D
+from nuplan.common.actor_state.tracked_objects_types import TrackedObjectType, AGENT_TYPES
 from nuplan.common.actor_state.tracked_objects import TrackedObjects, TrackedObject
 from nuplan.planning.simulation.observation.observation_type import DetectionsTracks
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
@@ -44,7 +39,13 @@ def normalize_angle(angle):
     return np.arctan2(np.sin(angle), np.cos(angle))
 
 
-def annotations_to_detection_tracks(annotations: Annotations, ego_state: EgoState):
+def annotations_to_detection_tracks(annotations: Annotations, ego_state: EgoState) -> DetectionsTracks:
+    """
+    Convert annotations dataclass (NAVSIM) too detection tracks (nuPlan).
+    :param annotations: dataclass for bounding box annotations
+    :param ego_state: object of ego vehicle state
+    :return: detection tracks dataclass
+    """
 
     detection_tracks: List[TrackedObject] = []
 
@@ -85,13 +86,16 @@ def annotations_to_detection_tracks(annotations: Annotations, ego_state: EgoStat
     return DetectionsTracks(TrackedObjects(detection_tracks))
 
 
-def gt_boxes_oriented_box(
-    gt_boxes: List[npt.NDArray[np.float32]], ego_state: EgoState
-) -> List[OrientedBox]:
+def gt_boxes_oriented_box(gt_boxes: List[npt.NDArray[np.float32]], ego_state: EgoState) -> List[OrientedBox]:
+    """
+    Concerts bounding box extends from NAVSIM to oriented box objects in nuPlan.
+    :param gt_boxes: numpy array contained box extend
+    :param ego_state: object of ego vehicle state
+    :return: list of oriented object instances
+    """
 
     oriented_boxes: List[OrientedBox] = []
     for gt_box in gt_boxes:
-        # gt_box = (x, y, z, length, width, height, yaw) TODO: add intenum
         local_box_x, local_box_y, local_box_heading = (
             gt_box[BoundingBoxIndex.X],
             gt_box[BoundingBoxIndex.Y],
@@ -120,16 +124,26 @@ def gt_boxes_oriented_box(
 
 
 def rotate_state_se2(state_se2: StateSE2, angle: float = np.deg2rad(0)) -> StateSE2:
-
+    """
+    Rotate (x,y,θ) state given angle
+    :param state_se2: object containing SE(2) information
+    :param angle: angle in rad to rotate, defaults to np.deg2rad(0)
+    :return: rotated SE(2) object
+    """
     sin, cos = np.sin(angle), np.cos(angle)
     x_rotated = state_se2.x * cos - state_se2.y * sin
     y_rotated = state_se2.x * sin + state_se2.y * cos
     heading_rotated = normalize_angle(state_se2.heading + angle)
-
     return StateSE2(x_rotated, y_rotated, heading_rotated)
 
 
 def rotate_vector(vector: StateVector2D, angle: float) -> StateVector2D:
+    """
+    Rotate 2D vector given angle
+    :param vector: object describing 2D vector
+    :param angle: angle in rad to rotate
+    :return: rotated 2D vector
+    """
     sin, cos = np.sin(angle), np.cos(angle)
     x_rotated = vector.x * cos - vector.y * sin
     y_rotated = vector.x * sin + vector.y * cos
@@ -137,11 +151,17 @@ def rotate_vector(vector: StateVector2D, angle: float) -> StateVector2D:
 
 
 def sample_future_indices(
-    future_sampling: TrajectorySampling,
-    iteration: int,
-    time_horizon: float,
-    num_samples: Optional[int],
+    future_sampling: TrajectorySampling, iteration: int, time_horizon: float, num_samples: Optional[int]
 ) -> List[int]:
+    """
+    Helper function to sample future time indices.
+    :param future_sampling: dataclass describing future sampling specification.
+    :param iteration: starting iteration to sample
+    :param time_horizon: horizon to sample for [s]
+    :param num_samples: number of future sample to extract
+    :raises ValueError: invalid input arguments
+    :return: list of integers
+    """
     time_interval = future_sampling.interval_length
     if time_horizon <= 0.0 or time_interval <= 0.0 or time_horizon < time_interval:
         raise ValueError(
@@ -153,9 +173,6 @@ def sample_future_indices(
 
     num_intervals = int(time_horizon / time_interval) + 1
     step_size = num_intervals // num_samples
-    try:
-        time_idcs = np.arange(iteration, num_intervals, step_size)
-    except:
-        assert None
+    time_idcs = np.arange(iteration, num_intervals, step_size)
 
     return list(time_idcs)

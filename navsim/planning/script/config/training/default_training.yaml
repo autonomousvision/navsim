@@ -3,31 +3,33 @@ hydra:
     dir: ${output_dir}
   output_subdir: ${output_dir}/code/hydra           # Store hydra's config breakdown here for debugging
   searchpath:                                       # Only <exp_dir> in these paths are discoverable
-    - pkg://navsim.planning.script.config.common 
-    # - pkg://navsim.planning.script.config.pdm_scoring
-    # - pkg://navsim.planning.script.config.training
+    - pkg://navsim.planning.script.config.common
+  job:
+    chdir: False
 
 defaults:
   - default_common
   - default_evaluation
   - default_train_val_test_log_split
   - agent: ego_status_mlp_agent
+  - _self_
 
 split: trainval
 cache_path: ${oc.env:NAVSIM_EXP_ROOT}/training_cache
 use_cache_without_dataset: false # load the training samples from the cache. scene-filter will be ignored
-force_cache_computation: false
+force_cache_computation: true
+seed: 0
 
 dataloader:
   params:
-    batch_size: 32  # number of samples per batch
+    batch_size: 64  # number of samples per batch
     num_workers: 4  # number of workers for data loading
     pin_memory: true  # pin memory for faster GPU transfer
     prefetch_factor: 2  # number of samples loaded in advance by each worker
 
 trainer:
   params:
-    max_epochs: 20  # maximum number of training epochs
+    max_epochs: 100  # maximum number of training epochs
     check_val_every_n_epoch: 1  # run validation set every n training epochs
     val_check_interval: 1.0  # [%] run validation set every X% of training set
 
@@ -46,3 +48,4 @@ trainer:
     # track_grad_norm: -1  # logs the p-norm for inspection
     gradient_clip_val: 0.0  # value to clip gradients
     gradient_clip_algorithm: norm  # [value, norm] method to clip gradients
+    default_root_dir: ${output_dir}

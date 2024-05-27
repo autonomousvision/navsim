@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from typing import Any, List, Tuple, Dict
+from typing import Tuple
 
+import numpy as np
 from nuplan.common.maps.abstract_map import SemanticMapLayer
 from nuplan.common.actor_state.tracked_objects_types import TrackedObjectType
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
@@ -8,13 +9,15 @@ from nuplan.planning.simulation.trajectory.trajectory_sampling import Trajectory
 
 @dataclass
 class TransfuserConfig:
+    """Global TransFuser config."""
 
-    trajectory_sampling: TrajectorySampling = TrajectorySampling(
-        time_horizon=4, interval_length=0.5
-    )
+    trajectory_sampling: TrajectorySampling = TrajectorySampling(time_horizon=4, interval_length=0.5)
 
     image_architecture: str = "resnet34"
     lidar_architecture: str = "resnet34"
+
+    latent: bool = False
+    latent_rad_thresh: float = 4 * np.pi / 9
 
     max_height_lidar: float = 100.0
     pixels_per_meter: float = 4.0

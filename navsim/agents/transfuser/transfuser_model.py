@@ -5,12 +5,18 @@ import torch.nn as nn
 
 from navsim.agents.transfuser.transfuser_config import TransfuserConfig
 from navsim.agents.transfuser.transfuser_backbone import TransfuserBackbone
-from navsim.common.enums import StateSE2Index
 from navsim.agents.transfuser.transfuser_features import BoundingBox2DIndex
+from navsim.common.enums import StateSE2Index
 
 
 class TransfuserModel(nn.Module):
+    """Torch module for Transfuser."""
+
     def __init__(self, config: TransfuserConfig):
+        """
+        Initializes TransFuser torch module.
+        :param config: global config dataclass of TransFuser.
+        """
 
         super().__init__()
 
@@ -22,9 +28,7 @@ class TransfuserModel(nn.Module):
         self._config = config
         self._backbone = TransfuserBackbone(config)
 
-        self._keyval_embedding = nn.Embedding(
-            8**2 + 1, config.tf_d_model
-        )  # 8x8 feature grid + trajectory
+        self._keyval_embedding = nn.Embedding(8**2 + 1, config.tf_d_model)  # 8x8 feature grid + trajectory
         self._query_embedding = nn.Embedding(sum(self._query_splits), config.tf_d_model)
 
         # usually, the BEV features are variable in size.
@@ -78,6 +82,7 @@ class TransfuserModel(nn.Module):
         )
 
     def forward(self, features: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        """Torch module forward pass."""
 
         camera_feature: torch.Tensor = features["camera_feature"]
         lidar_feature: torch.Tensor = features["lidar_feature"]
@@ -111,12 +116,20 @@ class TransfuserModel(nn.Module):
 
 
 class AgentHead(nn.Module):
+    """Bounding box prediction head."""
+
     def __init__(
         self,
         num_agents: int,
         d_ffn: int,
         d_model: int,
     ):
+        """
+        Initializes prediction head.
+        :param num_agents: maximum number of agents to predict
+        :param d_ffn: dimensionality of feed-forward network
+        :param d_model: input dimensionality
+        """
         super(AgentHead, self).__init__()
 
         self._num_objects = num_agents
@@ -134,14 +147,11 @@ class AgentHead(nn.Module):
         )
 
     def forward(self, agent_queries) -> Dict[str, torch.Tensor]:
+        """Torch module forward pass."""
 
         agent_states = self._mlp_states(agent_queries)
-        agent_states[..., BoundingBox2DIndex.POINT] = (
-            agent_states[..., BoundingBox2DIndex.POINT].tanh() * 32
-        )
-        agent_states[..., BoundingBox2DIndex.HEADING] = (
-            agent_states[..., BoundingBox2DIndex.HEADING].tanh() * np.pi
-        )
+        agent_states[..., BoundingBox2DIndex.POINT] = agent_states[..., BoundingBox2DIndex.POINT].tanh() * 32
+        agent_states[..., BoundingBox2DIndex.HEADING] = agent_states[..., BoundingBox2DIndex.HEADING].tanh() * np.pi
 
         agent_labels = self._mlp_label(agent_queries).squeeze(dim=-1)
 
@@ -149,7 +159,15 @@ class AgentHead(nn.Module):
 
 
 class TrajectoryHead(nn.Module):
+    """Trajectory prediction head."""
+
     def __init__(self, num_poses: int, d_ffn: int, d_model: int):
+        """
+        Initializes trajectory head.
+        :param num_poses: number of (x,y,θ) poses to predict
+        :param d_ffn: dimensionality of feed-forward network
+        :param d_model: input dimensionality
+        """
         super(TrajectoryHead, self).__init__()
 
         self._num_poses = num_poses
@@ -163,6 +181,7 @@ class TrajectoryHead(nn.Module):
         )
 
     def forward(self, object_queries) -> Dict[str, torch.Tensor]:
+        """Torch module forward pass."""
         poses = self._mlp(object_queries).reshape(-1, self._num_poses, StateSE2Index.size())
         poses[..., StateSE2Index.HEADING] = poses[..., StateSE2Index.HEADING].tanh() * np.pi
         return {"trajectory": poses}

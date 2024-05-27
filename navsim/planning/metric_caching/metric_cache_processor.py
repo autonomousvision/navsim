@@ -1,49 +1,31 @@
 import pathlib
 from typing import Any, Dict, Optional, Tuple
 
+import numpy as np
+
+from nuplan.common.actor_state.agent import Agent
+from nuplan.common.actor_state.static_object import StaticObject
+from nuplan.common.actor_state.tracked_objects_types import AGENT_TYPES
+from nuplan.common.actor_state.tracked_objects import TrackedObjects
+from nuplan.common.actor_state.oriented_box import OrientedBox
+from nuplan.common.actor_state.state_representation import StateSE2, StateVector2D
 from nuplan.planning.training.experiments.cache_metadata_entry import CacheMetadataEntry
 from nuplan.planning.scenario_builder.abstract_scenario import AbstractScenario
 from nuplan.planning.simulation.observation.observation_type import DetectionsTracks
 from nuplan.planning.simulation.planner.abstract_planner import PlannerInitialization, PlannerInput
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
+from nuplan.planning.simulation.simulation_time_controller.simulation_iteration import SimulationIteration
+from nuplan.planning.simulation.history.simulation_history_buffer import SimulationHistoryBuffer
 
-from nuplan.planning.simulation.simulation_time_controller.simulation_iteration import (
-    SimulationIteration,
-)
-from nuplan.planning.simulation.history.simulation_history_buffer import (
-    SimulationHistoryBuffer,
-)
-
-from navsim.planning.simulation.planner.pdm_planner.pdm_closed_planner import (
-    PDMClosedPlanner,
-)
-from navsim.planning.simulation.planner.pdm_planner.proposal.batch_idm_policy import (
-    BatchIDMPolicy,
-)
-from navsim.planning.simulation.planner.pdm_planner.observation.pdm_observation import (
-    PDMObservation,
-)
-
+from navsim.planning.simulation.planner.pdm_planner.pdm_closed_planner import PDMClosedPlanner
+from navsim.planning.simulation.planner.pdm_planner.proposal.batch_idm_policy import BatchIDMPolicy
+from navsim.planning.simulation.planner.pdm_planner.observation.pdm_observation import PDMObservation
 from navsim.planning.metric_caching.metric_cache import MetricCache
 from navsim.planning.metric_caching.metric_caching_utils import StateInterpolator
 
-from nuplan.common.actor_state.agent import Agent
-from nuplan.common.actor_state.static_object import StaticObject
-
-import numpy as np
-
-from nuplan.common.actor_state.tracked_objects_types import (
-    AGENT_TYPES,
-)
-from nuplan.common.actor_state.oriented_box import OrientedBox
-from nuplan.common.actor_state.state_representation import StateSE2, StateVector2D
-from nuplan.common.actor_state.tracked_objects import TrackedObjects
-
 
 class MetricCacheProcessor:
-    """
-    TODO
-    """
+    """Class for creating metric cache in NAVSIM."""
 
     def __init__(
         self,
@@ -78,9 +60,7 @@ class MetricCacheProcessor:
             map_radius=self._map_radius,
         )
 
-    def _get_planner_inputs(
-        self, scenario: AbstractScenario
-    ) -> Tuple[PlannerInput, PlannerInitialization]:
+    def _get_planner_inputs(self, scenario: AbstractScenario) -> Tuple[PlannerInput, PlannerInitialization]:
         """
         Creates planner input arguments from scenario object.
         :param scenario: scenario object of nuPlan
@@ -109,6 +89,11 @@ class MetricCacheProcessor:
         return planner_input, planner_initialization
 
     def _interpolate_gt_observation(self, scenario: AbstractScenario) -> PDMObservation:
+        """
+        Helper function to interpolate detections tracks to higher temporal resolution.
+        :param scenario: scenario interface of nuPlan framework
+        :return: observation object of PDM-Closed
+        """
 
         # TODO: add to config
         state_size = 6  # (time, x, y, heading, velo_x, velo_y)
@@ -120,16 +105,11 @@ class MetricCacheProcessor:
         scenario_step = scenario.database_interval  # [s]
 
         # sample detection tracks a 2Hz
-        relative_time_s = (
-            np.arange(0, (time_horizon * 1 / resolution_step) + 1, 1, dtype=float) * resolution_step
-        )
+        relative_time_s = np.arange(0, (time_horizon * 1 / resolution_step) + 1, 1, dtype=float) * resolution_step
 
-        gt_indices = np.arange(
-            0, int(time_horizon / scenario_step) + 1, int(resolution_step / scenario_step)
-        )
+        gt_indices = np.arange(0, int(time_horizon / scenario_step) + 1, int(resolution_step / scenario_step))
         gt_detection_tracks = [
-            scenario.get_tracked_objects_at_iteration(iteration=iteration)
-            for iteration in gt_indices
+            scenario.get_tracked_objects_at_iteration(iteration=iteration) for iteration in gt_indices
         ]
 
         detection_tracks_states: Dict[str, Any] = {}
@@ -173,10 +153,7 @@ class MetricCacheProcessor:
             detection_interpolators[token] = StateInterpolator(states)
 
         # interpolate at 10Hz
-        interpolated_time_s = (
-            np.arange(0, int(time_horizon / interpolate_step) + 1, 1, dtype=float)
-            * interpolate_step
-        )
+        interpolated_time_s = np.arange(0, int(time_horizon / interpolate_step) + 1, 1, dtype=float) * interpolate_step
 
         interpolated_detection_tracks = []
         for time_s in interpolated_time_s:
@@ -191,9 +168,7 @@ class MetricCacheProcessor:
                 elif interpolated_state is not None:
 
                     tracked_type = initial_detection_track.tracked_object_type
-                    metadata = (
-                        initial_detection_track.metadata
-                    )  # copied since time stamp is ignored
+                    metadata = initial_detection_track.metadata  # copied since time stamp is ignored
 
                     oriented_box = OrientedBox(
                         StateSE2(*interpolated_state[:3]),
@@ -219,9 +194,7 @@ class MetricCacheProcessor:
                         )
 
                     interpolated_tracks.append(detection_track)
-            interpolated_detection_tracks.append(
-                DetectionsTracks(TrackedObjects(interpolated_tracks))
-            )
+            interpolated_detection_tracks.append(DetectionsTracks(TrackedObjects(interpolated_tracks)))
 
         # convert to pdm observation
         pdm_observation = PDMObservation(
@@ -235,13 +208,7 @@ class MetricCacheProcessor:
 
     def compute_metric_cache(self, scenario: AbstractScenario) -> Optional[CacheMetadataEntry]:
 
-        file_name = (
-            self._cache_path
-            / scenario.log_name
-            / scenario.scenario_type
-            / scenario.token
-            / "metric_cache.pkl"
-        )
+        file_name = self._cache_path / scenario.log_name / scenario.scenario_type / scenario.token / "metric_cache.pkl"
 
         if file_name.exists() and not self._force_feature_computation:
             return CacheMetadataEntry(file_name)

@@ -4,9 +4,12 @@ hydra:
   output_subdir: ${output_dir}/code/hydra           # Store hydra's config breakdown here for debugging
   searchpath:                                       # Only <exp_dir> in these paths are discoverable
     - pkg://navsim.planning.script.config.common 
+  job:
+    chdir: False
 
 defaults:
   - default_common
+  - _self_
 
 # Cache parameters
 cache:
@@ -15,4 +18,4 @@ cache:
   force_feature_computation: false
 
 output_dir: ${cache.cache_path}/metadata
-navsim_log_path: ${oc.env:OPENSCENE_DATA_ROOT}/navsim_logs/${split} # path to log annotations
+navsim_log_path: ${oc.env:OPENSCENE_DATA_ROOT}/navsim_logs/${train_test_split.data_split} # path to log annotations

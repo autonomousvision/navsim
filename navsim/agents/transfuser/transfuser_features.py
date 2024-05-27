@@ -19,14 +19,17 @@ from navsim.agents.transfuser.transfuser_config import TransfuserConfig
 from navsim.common.dataclasses import AgentInput, Scene, Annotations
 from navsim.common.enums import BoundingBoxIndex, LidarIndex
 from navsim.planning.scenario_builder.navsim_scenario_utils import tracked_object_types
-from navsim.planning.training.abstract_feature_target_builder import (
-    AbstractFeatureBuilder,
-    AbstractTargetBuilder,
-)
+from navsim.planning.training.abstract_feature_target_builder import AbstractFeatureBuilder, AbstractTargetBuilder
 
 
 class TransfuserFeatureBuilder(AbstractFeatureBuilder):
+    """Input feature builder for TransFuser."""
+
     def __init__(self, config: TransfuserConfig):
+        """
+        Initializes feature builder.
+        :param config: global config dataclass of TransFuser
+        """
         self._config = config
 
     def get_unique_name(self) -> str:
@@ -87,16 +90,12 @@ class TransfuserFeatureBuilder(AbstractFeatureBuilder):
             xbins = np.linspace(
                 self._config.lidar_min_x,
                 self._config.lidar_max_x,
-                (self._config.lidar_max_x - self._config.lidar_min_x)
-                * int(self._config.pixels_per_meter)
-                + 1,
+                (self._config.lidar_max_x - self._config.lidar_min_x) * int(self._config.pixels_per_meter) + 1,
             )
             ybins = np.linspace(
                 self._config.lidar_min_y,
                 self._config.lidar_max_y,
-                (self._config.lidar_max_y - self._config.lidar_min_y)
-                * int(self._config.pixels_per_meter)
-                + 1,
+                (self._config.lidar_max_y - self._config.lidar_min_y) * int(self._config.pixels_per_meter) + 1,
             )
             hist = np.histogramdd(point_cloud[:, :2], bins=(xbins, ybins))[0]
             hist[hist > self._config.hist_max_per_pixel] = self._config.hist_max_per_pixel
@@ -119,7 +118,13 @@ class TransfuserFeatureBuilder(AbstractFeatureBuilder):
 
 
 class TransfuserTargetBuilder(AbstractTargetBuilder):
+    """Output target builder for TransFuser."""
+
     def __init__(self, config: TransfuserConfig):
+        """
+        Initializes target builder.
+        :param config: global config dataclass of TransFuser
+        """
         self._config = config
 
     def get_unique_name(self) -> str:
@@ -130,9 +135,7 @@ class TransfuserTargetBuilder(AbstractTargetBuilder):
         """Inherited, see superclass."""
 
         trajectory = torch.tensor(
-            scene.get_future_trajectory(
-                num_trajectory_frames=self._config.trajectory_sampling.num_poses
-            ).poses
+            scene.get_future_trajectory(num_trajectory_frames=self._config.trajectory_sampling.num_poses).poses
         )
         frame_idx = scene.scene_metadata.num_history_frames - 1
         annotations = scene.frames[frame_idx].annotations
@@ -159,9 +162,7 @@ class TransfuserTargetBuilder(AbstractTargetBuilder):
         agent_states_list: List[npt.NDArray[np.float32]] = []
 
         def _xy_in_lidar(x: float, y: float, config: TransfuserConfig) -> bool:
-            return (config.lidar_min_x <= x <= config.lidar_max_x) and (
-                config.lidar_min_y <= y <= config.lidar_max_y
-            )
+            return (config.lidar_min_x <= x <= config.lidar_max_x) and (config.lidar_min_y <= y <= config.lidar_max_y)
 
         for box, name in zip(annotations.boxes, annotations.names):
             box_x, box_y, box_heading, box_length, box_width = (
@@ -173,9 +174,7 @@ class TransfuserTargetBuilder(AbstractTargetBuilder):
             )
 
             if name == "vehicle" and _xy_in_lidar(box_x, box_y, self._config):
-                agent_states_list.append(
-                    np.array([box_x, box_y, box_heading, box_length, box_width], dtype=np.float32)
-                )
+                agent_states_list.append(np.array([box_x, box_y, box_heading, box_length, box_width], dtype=np.float32))
 
         agents_states_arr = np.array(agent_states_list)
 
@@ -258,9 +257,7 @@ class TransfuserTargetBuilder(AbstractTargetBuilder):
         map_linestring_mask = np.zeros(self._config.bev_semantic_frame[::-1], dtype=np.uint8)
         for layer in layers:
             for map_object in map_object_dict[layer]:
-                linestring: LineString = self._geometry_local_coords(
-                    map_object.baseline_path.linestring, ego_pose
-                )
+                linestring: LineString = self._geometry_local_coords(map_object.baseline_path.linestring, ego_pose)
                 points = np.array(linestring.coords).reshape((-1, 1, 2))
                 points = self._coords_to_pixel(points)
                 cv2.polylines(map_linestring_mask, [points], isClosed=False, color=255, thickness=2)
@@ -268,9 +265,7 @@ class TransfuserTargetBuilder(AbstractTargetBuilder):
         map_linestring_mask = np.rot90(map_linestring_mask)[::-1]
         return map_linestring_mask > 0
 
-    def _compute_box_mask(
-        self, annotations: Annotations, layers: TrackedObjectType
-    ) -> npt.NDArray[np.bool_]:
+    def _compute_box_mask(self, annotations: Annotations, layers: TrackedObjectType) -> npt.NDArray[np.bool_]:
         """
         Compute binary of bounding boxes in BEV space
         :param annotations: annotation dataclass
@@ -305,9 +300,7 @@ class TransfuserTargetBuilder(AbstractTargetBuilder):
         """
 
         # query map api with interesting layers
-        map_object_dict = map_api.get_proximal_map_objects(
-            point=ego_pose.point, radius=self, layers=layers
-        )
+        map_object_dict = map_api.get_proximal_map_objects(point=ego_pose.point, radius=self, layers=layers)
         map_objects: List[MapObject] = []
         for layer in layers:
             map_objects += map_object_dict[layer]
@@ -349,6 +342,7 @@ class TransfuserTargetBuilder(AbstractTargetBuilder):
 
 
 class BoundingBox2DIndex(IntEnum):
+    """Intenum for bounding boxes in TransFuser."""
 
     _X = 0
     _Y = 1
@@ -361,9 +355,7 @@ class BoundingBox2DIndex(IntEnum):
         valid_attributes = [
             attribute
             for attribute in dir(cls)
-            if attribute.startswith("_")
-            and not attribute.startswith("__")
-            and not callable(getattr(cls, attribute))
+            if attribute.startswith("_") and not attribute.startswith("__") and not callable(getattr(cls, attribute))
         ]
         return len(valid_attributes)
 

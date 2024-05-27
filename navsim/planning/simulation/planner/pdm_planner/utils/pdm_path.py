@@ -1,26 +1,22 @@
 from __future__ import annotations
 
 from typing import Any, List, Tuple, Type, Union
+import warnings
 
 import numpy as np
 import numpy.typing as npt
-from nuplan.common.actor_state.state_representation import StateSE2
-from scipy.interpolate import interp1d
 from shapely.creation import linestrings
 from shapely.geometry import LineString
 from shapely.ops import substring
-import warnings
+from scipy.interpolate import interp1d
 
+from nuplan.common.actor_state.state_representation import StateSE2
+
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import calculate_progress, normalize_angle
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import SE2Index
 from navsim.planning.simulation.planner.pdm_planner.utils.pdm_array_representation import (
     array_to_states_se2,
     states_se2_to_array,
-)
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import (
-    SE2Index,
-)
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import (
-    calculate_progress,
-    normalize_angle,
 )
 
 
@@ -38,16 +34,14 @@ class PDMPath:
 
         # loaded during initialization
         self._states_se2_array = states_se2_to_array(discrete_path)
-        self._states_se2_array[:, SE2Index.HEADING] = np.unwrap(
-            self._states_se2_array[:, SE2Index.HEADING], axis=0
-        )
+        self._states_se2_array[:, SE2Index.HEADING] = np.unwrap(self._states_se2_array[:, SE2Index.HEADING], axis=0)
         self._progress = calculate_progress(discrete_path)
         self._linestring = linestrings(self._states_se2_array[:, : SE2Index.HEADING])
         self._interpolator = interp1d(self._progress, self._states_se2_array, axis=0)
 
     def __reduce__(self) -> Tuple[Type[PDMPath], Tuple[Any, ...]]:
         """Helper for pickling."""
-        return self.__class__, (self._discrete_path, )
+        return self.__class__, (self._discrete_path,)
 
     @property
     def discrete_path(self):
@@ -66,9 +60,7 @@ class PDMPath:
 
     def project(self, points: Any) -> Any:
         warnings.filterwarnings(
-            "ignore",
-            message="invalid value encountered in line_locate_point", 
-            category=RuntimeWarning
+            "ignore", message="invalid value encountered in line_locate_point", category=RuntimeWarning
         )
         return self._linestring.project(points)
 
@@ -104,9 +96,7 @@ class PDMPath:
         # try faster method fist
         start_distance = np.clip(start_distance, 0.0, self.length)
         end_distance = np.clip(end_distance, 0.0, self.length)
-        in_interval = np.logical_and(
-            start_distance <= self._progress, self._progress <= end_distance
-        )
+        in_interval = np.logical_and(start_distance <= self._progress, self._progress <= end_distance)
         coordinates = self._states_se2_array[in_interval, :2]
         if len(coordinates) > 1:
             return LineString(coordinates)

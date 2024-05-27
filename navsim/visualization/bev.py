@@ -1,12 +1,11 @@
 from typing import Any, Dict, List
-import matplotlib.pyplot as plt
 
 import numpy as np
 from shapely import affinity
 from shapely.geometry import Polygon, LineString
+import matplotlib.pyplot as plt
 
 from nuplan.common.maps.abstract_map import AbstractMap, SemanticMapLayer
-from nuplan.common.maps.abstract_map import SemanticMapLayer
 from nuplan.common.actor_state.state_representation import StateSE2
 from nuplan.common.actor_state.oriented_box import OrientedBox
 from nuplan.common.actor_state.vehicle_parameters import get_pacifica_parameters
@@ -16,15 +15,9 @@ from nuplan.common.geometry.transform import translate_longitudinally
 
 from navsim.common.dataclasses import Frame, Annotations, Trajectory, Lidar
 from navsim.common.enums import BoundingBoxIndex, LidarIndex
-
 from navsim.planning.scenario_builder.navsim_scenario_utils import tracked_object_types
 from navsim.visualization.lidar import filter_lidar_pc, get_lidar_pc_color
-from navsim.visualization.config import (
-    BEV_PLOT_CONFIG,
-    MAP_LAYER_CONFIG,
-    AGENT_CONFIG,
-    LIDAR_CONFIG,
-)
+from navsim.visualization.config import BEV_PLOT_CONFIG, MAP_LAYER_CONFIG, AGENT_CONFIG, LIDAR_CONFIG
 
 
 def add_configured_bev_on_ax(ax: plt.Axes, map_api: AbstractMap, frame: Frame) -> plt.Axes:
@@ -34,7 +27,7 @@ def add_configured_bev_on_ax(ax: plt.Axes, map_api: AbstractMap, frame: Frame) -
     :param map_api: nuPlans map interface
     :param frame: navsim frame dataclass
     :return: ax with plot
-    """    
+    """
 
     if "map" in BEV_PLOT_CONFIG["layers"]:
         add_map_to_bev_ax(ax, map_api, StateSE2(*frame.ego_status.ego_pose))
@@ -48,16 +41,14 @@ def add_configured_bev_on_ax(ax: plt.Axes, map_api: AbstractMap, frame: Frame) -
     return ax
 
 
-def add_annotations_to_bev_ax(
-    ax: plt.Axes, annotations: Annotations, add_ego: bool = True
-) -> plt.Axes:
+def add_annotations_to_bev_ax(ax: plt.Axes, annotations: Annotations, add_ego: bool = True) -> plt.Axes:
     """
     Adds birds-eye-view visualization of annotations (ie. bounding boxes)
     :param ax: matplotlib ax object
     :param annotations: navsim annotations dataclass
     :param add_ego: boolean weather to add ego bounding box, defaults to True
     :return: ax with plot
-    """    
+    """
 
     for name_value, box_value in zip(annotations.names, annotations.boxes):
         agent_type = tracked_object_types[name_value]
@@ -91,7 +82,7 @@ def add_map_to_bev_ax(ax: plt.Axes, map_api: AbstractMap, origin: StateSE2) -> p
     :param map_api: nuPlans map interface
     :param origin: (x,y,θ) dataclass of global ego frame
     :return: ax with plot
-    """    
+    """
 
     # layers for plotting complete layers
     polygon_layers: List[SemanticMapLayer] = [
@@ -117,7 +108,7 @@ def add_map_to_bev_ax(ax: plt.Axes, map_api: AbstractMap, origin: StateSE2) -> p
     )
 
     def _geometry_local_coords(geometry: Any, origin: StateSE2) -> Any:
-        """ Helper for transforming shapely geometry in coord-frame """
+        """Helper for transforming shapely geometry in coord-frame"""
         a = np.cos(origin.heading)
         b = np.sin(origin.heading)
         d = -np.sin(origin.heading)
@@ -135,12 +126,8 @@ def add_map_to_bev_ax(ax: plt.Axes, map_api: AbstractMap, origin: StateSE2) -> p
 
     for polyline_layer in polyline_layers:
         for map_object in map_object_dict[polyline_layer]:
-            linestring: LineString = _geometry_local_coords(
-                map_object.baseline_path.linestring, origin
-            )
-            add_linestring_to_bev_ax(
-                ax, linestring, MAP_LAYER_CONFIG[SemanticMapLayer.BASELINE_PATHS]
-            )
+            linestring: LineString = _geometry_local_coords(map_object.baseline_path.linestring, origin)
+            add_linestring_to_bev_ax(ax, linestring, MAP_LAYER_CONFIG[SemanticMapLayer.BASELINE_PATHS])
     return ax
 
 
@@ -150,7 +137,7 @@ def add_lidar_to_bev_ax(ax: plt.Axes, lidar: Lidar) -> plt.Axes:
     :param ax: matplotlib ax object
     :param lidar: navsim lidar dataclass
     :return: ax with plot
-    """    
+    """
 
     lidar_pc = filter_lidar_pc(lidar.lidar_pc)
     lidar_pc_colors = get_lidar_pc_color(lidar_pc, as_hex=True)
@@ -165,16 +152,14 @@ def add_lidar_to_bev_ax(ax: plt.Axes, lidar: Lidar) -> plt.Axes:
     return ax
 
 
-def add_trajectory_to_bev_ax(
-    ax: plt.Axes, trajectory: Trajectory, config: Dict[str, Any]
-) -> plt.Axes:
+def add_trajectory_to_bev_ax(ax: plt.Axes, trajectory: Trajectory, config: Dict[str, Any]) -> plt.Axes:
     """
     Add trajectory poses as lint to plot
     :param ax: matplotlib ax object
     :param trajectory: navsim trajectory dataclass
     :param config: dictionary with plot parameters
     :return: ax with plot
-    """    
+    """
     poses = np.concatenate([np.array([[0, 0]]), trajectory.poses[:, :2]])
     ax.plot(
         poses[:, 1],
@@ -201,7 +186,7 @@ def add_oriented_box_to_bev_ax(
     :param config: dictionary with plot parameters
     :param add_heading: whether to add a heading line, defaults to True
     :return: ax with plot
-    """    
+    """
 
     box_corners = box.all_corners()
     corners = [[corner.x, corner.y] for corner in box_corners]
@@ -244,13 +229,13 @@ def add_polygon_to_bev_ax(ax: plt.Axes, polygon: Polygon, config: Dict[str, Any]
     """
     Adds shapely polygon to birds-eye-view visualization
     :param ax: matplotlib ax object
-    :param polygon: shapely Polygon 
+    :param polygon: shapely Polygon
     :param config: dictionary containing plot parameters
     :return: ax with plot
-    """    
+    """
 
     def _add_element_helper(element: Polygon):
-        """ Helper to add single polygon to ax """
+        """Helper to add single polygon to ax"""
         exterior_x, exterior_y = element.exterior.xy
         ax.fill(
             exterior_y,
@@ -296,16 +281,14 @@ def add_polygon_to_bev_ax(ax: plt.Axes, polygon: Polygon, config: Dict[str, Any]
     return ax
 
 
-def add_linestring_to_bev_ax(
-    ax: plt.Axes, linestring: LineString, config: Dict[str, Any]
-) -> plt.Axes:
+def add_linestring_to_bev_ax(ax: plt.Axes, linestring: LineString, config: Dict[str, Any]) -> plt.Axes:
     """
     Adds shapely linestring (polyline) to birds-eye-view visualization
     :param ax: matplotlib ax object
     :param linestring: shapely LineString
     :param config: dictionary containing plot parameters
     :return: ax with plot
-    """    
+    """
 
     x, y = linestring.xy
     ax.plot(

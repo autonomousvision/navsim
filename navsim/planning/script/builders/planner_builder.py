@@ -16,7 +16,7 @@ def _build_planner(planner_cfg: DictConfig, scenario: Optional[AbstractScenario]
     :return AbstractPlanner
     """
     config = planner_cfg.copy()
-    
+
     planner_cls: Type[AbstractPlanner] = _locate(config._target_)
 
     if planner_cls.requires_scenario:

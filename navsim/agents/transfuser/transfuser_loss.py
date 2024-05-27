@@ -5,6 +5,7 @@ import torch
 import torch.nn.functional as F
 
 from navsim.agents.transfuser.transfuser_config import TransfuserConfig
+from navsim.agents.transfuser.transfuser_features import BoundingBox2DIndex
 
 
 def transfuser_loss(
@@ -45,6 +46,18 @@ def _agent_loss(
 
     gt_states, gt_valid = targets["agent_states"], targets["agent_labels"]
     pred_states, pred_logits = predictions["agent_states"], predictions["agent_labels"]
+
+    if config.latent:
+        rad_to_ego = torch.arctan2(
+            gt_states[..., BoundingBox2DIndex.Y],
+            gt_states[..., BoundingBox2DIndex.X],
+        )
+
+        in_latent_rad_thresh = torch.logical_and(
+            -config.latent_rad_thresh <= rad_to_ego,
+            rad_to_ego <= config.latent_rad_thresh,
+        )
+        gt_valid = torch.logical_and(in_latent_rad_thresh, gt_valid)
 
     # save constants
     batch_dim, num_instances = pred_states.shape[:2]

@@ -4,14 +4,15 @@ hydra:
   output_subdir: ${output_dir}/code/hydra           # Store hydra's config breakdown here for debugging
   searchpath:                                       # Only <exp_dir> in these paths are discoverable
     - pkg://navsim.planning.script.config.common 
+  job:
+    chdir: False
 
 defaults:
   - default_common
   - default_evaluation
   - agent: constant_velocity_agent
-  - override scene_filter: private_test_e2e
-
-split: private_test_e2e
+  - _self_
+  - override train_test_split: navtest
 
 "team_name": ??? # The team name
 "authors": ??? # The team members

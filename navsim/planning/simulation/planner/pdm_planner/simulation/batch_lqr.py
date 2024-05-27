@@ -1,26 +1,17 @@
-from enum import IntEnum
 from typing import Optional, Tuple
+from enum import IntEnum
 
 import numpy as np
 import numpy.typing as npt
-from nuplan.common.actor_state.vehicle_parameters import (
-    VehicleParameters,
-    get_pacifica_parameters,
-)
-from nuplan.planning.simulation.simulation_time_controller.simulation_iteration import (
-    SimulationIteration,
-)
 
+from nuplan.common.actor_state.vehicle_parameters import VehicleParameters, get_pacifica_parameters
+from nuplan.planning.simulation.simulation_time_controller.simulation_iteration import SimulationIteration
+
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import DynamicStateIndex, StateIndex
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import normalize_angle
 from navsim.planning.simulation.planner.pdm_planner.simulation.batch_lqr_utils import (
     _generate_profile_from_initial_condition_and_derivatives,
     get_velocity_curvature_profiles_with_derivatives_from_poses,
-)
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import (
-    DynamicStateIndex,
-    StateIndex,
-)
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import (
-    normalize_angle,
 )
 
 
@@ -31,9 +22,7 @@ class LateralStateIndex(IntEnum):
 
     LATERAL_ERROR = 0  # [m] The lateral error with respect to the planner centerline at the vehicle's rear axle center.
     HEADING_ERROR = 1  # [rad] The heading error "".
-    STEERING_ANGLE = (
-        2  # [rad] The wheel angle relative to the longitudinal axis of the vehicle.
-    )
+    STEERING_ANGLE = 2  # [rad] The wheel angle relative to the longitudinal axis of the vehicle.
 
 
 class BatchLQRTracker:
@@ -96,19 +85,13 @@ class BatchLQRTracker:
         :param vehicle: Vehicle parameters
         """
         # Longitudinal LQR Parameters
-        assert (
-            len(q_longitudinal) == 1
-        ), "q_longitudinal should have 1 element (velocity)."
-        assert (
-            len(r_longitudinal) == 1
-        ), "r_longitudinal should have 1 element (acceleration)."
+        assert len(q_longitudinal) == 1, "q_longitudinal should have 1 element (velocity)."
+        assert len(r_longitudinal) == 1, "r_longitudinal should have 1 element (acceleration)."
         self._q_longitudinal: float = q_longitudinal[0]
         self._r_longitudinal: float = r_longitudinal[0]
 
         # Lateral LQR Parameters
-        assert (
-            len(q_lateral) == 3
-        ), "q_lateral should have 3 elements (lateral_error, heading_error, steering_angle)."
+        assert len(q_lateral) == 3, "q_lateral should have 3 elements (lateral_error, heading_error, steering_angle)."
         assert len(r_lateral) == 1, "r_lateral should have 1 element (steering_rate)."
         self._q_lateral: npt.NDArray[np.float64] = np.diag(q_lateral)
         self._r_lateral: npt.NDArray[np.float64] = np.diag(r_lateral)
@@ -125,16 +108,12 @@ class BatchLQRTracker:
 
         # Velocity/Curvature Estimation Parameters
         assert jerk_penalty > 0.0, "The jerk penalty must be positive."
-        assert (
-            curvature_rate_penalty > 0.0
-        ), "The curvature rate penalty must be positive."
+        assert curvature_rate_penalty > 0.0, "The curvature rate penalty must be positive."
         self._jerk_penalty = jerk_penalty
         self._curvature_rate_penalty = curvature_rate_penalty
 
         # Stopping Controller Parameters
-        assert (
-            stopping_proportional_gain > 0
-        ), "stopping_proportional_gain has to be greater than 0."
+        assert stopping_proportional_gain > 0, "stopping_proportional_gain has to be greater than 0."
         assert stopping_velocity > 0, "stopping_velocity has to be greater than 0."
         self._stopping_proportional_gain = stopping_proportional_gain
         self._stopping_velocity = stopping_velocity
@@ -165,9 +144,7 @@ class BatchLQRTracker:
         :param initial_states: array representation of current ego states.
         :return: command values for motion model.
         """
-        assert (
-            self._initialized
-        ), "BatchLQRTracker: Run update first to load proposal states!"
+        assert self._initialized, "BatchLQRTracker: Run update first to load proposal states!"
 
         batch_size = len(initial_states)
         (
@@ -206,9 +183,7 @@ class BatchLQRTracker:
 
         velocity_profiles = _generate_profile_from_initial_condition_and_derivatives(
             initial_condition=initial_velocity[~should_stop_mask],
-            derivatives=np.repeat(
-                accel_cmds[~should_stop_mask, None], self._tracking_horizon, axis=-1
-            ),
+            derivatives=np.repeat(accel_cmds[~should_stop_mask, None], self._tracking_horizon, axis=-1),
             discretization_time=self._discretization_time,
         )[:, : self._tracking_horizon]
 
@@ -218,9 +193,7 @@ class BatchLQRTracker:
             curvature_profiles[~should_stop_mask],
         )
 
-        command_states = np.zeros(
-            (batch_size, len(DynamicStateIndex)), dtype=np.float64
-        )
+        command_states = np.zeros((batch_size, len(DynamicStateIndex)), dtype=np.float64)
         command_states[:, DynamicStateIndex.ACCELERATION_X] = accel_cmds
         command_states[:, DynamicStateIndex.STEERING_RATE] = steering_rate_cmds
 
@@ -242,20 +215,12 @@ class BatchLQRTracker:
         initial_trajectory_values = self._proposal_states[:, current_iteration.index]
 
         # Determine initial error state.
-        x_errors = (
-            initial_values[:, StateIndex.X] - initial_trajectory_values[:, StateIndex.X]
-        )
-        y_errors = (
-            initial_values[:, StateIndex.Y] - initial_trajectory_values[:, StateIndex.Y]
-        )
+        x_errors = initial_values[:, StateIndex.X] - initial_trajectory_values[:, StateIndex.X]
+        y_errors = initial_values[:, StateIndex.Y] - initial_trajectory_values[:, StateIndex.Y]
         heading_references = initial_trajectory_values[:, StateIndex.HEADING]
 
-        lateral_errors = -x_errors * np.sin(heading_references) + y_errors * np.cos(
-            heading_references
-        )
-        heading_errors = normalize_angle(
-            initial_values[:, StateIndex.HEADING] - heading_references
-        )
+        lateral_errors = -x_errors * np.sin(heading_references) + y_errors * np.cos(heading_references)
+        heading_errors = normalize_angle(initial_values[:, StateIndex.HEADING] - heading_references)
 
         # Return initial velocity and lateral state vector.
         initial_velocities = initial_values[:, StateIndex.VELOCITY_X]
@@ -299,14 +264,10 @@ class BatchLQRTracker:
             )
 
         batch_size, num_poses = self._velocity_profile.shape
-        reference_idx = min(
-            current_iteration.index + self._tracking_horizon, num_poses - 1
-        )
+        reference_idx = min(current_iteration.index + self._tracking_horizon, num_poses - 1)
         reference_velocities = self._velocity_profile[:, reference_idx]
 
-        reference_curvature_profiles = np.zeros(
-            (batch_size, self._tracking_horizon), dtype=np.float64
-        )
+        reference_curvature_profiles = np.zeros((batch_size, self._tracking_horizon), dtype=np.float64)
 
         reference_length = reference_idx - current_iteration.index
         reference_curvature_profiles[:, 0:reference_length] = self._curvature_profile[
@@ -314,9 +275,7 @@ class BatchLQRTracker:
         ]
 
         if reference_length < self._tracking_horizon:
-            reference_curvature_profiles[
-                :, reference_length:
-            ] = self._curvature_profile[:, reference_idx, None]
+            reference_curvature_profiles[:, reference_length:] = self._curvature_profile[:, reference_idx, None]
 
         return reference_velocities, reference_curvature_profiles
 
@@ -331,9 +290,7 @@ class BatchLQRTracker:
         :param reference_velocity: [m/s] The reference velocity to track.
         :return: Acceleration [m/s^2] and zero steering_rate [rad/s] command.
         """
-        accel = -self._stopping_proportional_gain * (
-            initial_velocities - reference_velocities
-        )
+        accel = -self._stopping_proportional_gain * (initial_velocities - reference_velocities)
         return accel, 0.0
 
     def _longitudinal_lqr_controller(
@@ -402,22 +359,20 @@ class BatchLQRTracker:
 
         I: npt.NDArray[np.float64] = np.eye(n_lateral_states, dtype=np.float64)
 
-        in_matrix: npt.NDArray[np.float64] = np.zeros(
-            (n_lateral_states, 1), np.float64
-        )  # no batch dim
+        in_matrix: npt.NDArray[np.float64] = np.zeros((n_lateral_states, 1), np.float64)  # no batch dim
         in_matrix[LateralStateIndex.STEERING_ANGLE] = self._discretization_time
 
         states_matrix_at_step: npt.NDArray[np.float64] = np.tile(
             I[None, None, ...], [self._tracking_horizon, batch_dim, 1, 1]
         )  # (horizon, batch, 3, 3)
 
-        states_matrix_at_step[
-            :, :, LateralStateIndex.LATERAL_ERROR, LateralStateIndex.HEADING_ERROR
-        ] = (velocity_profile.T * self._discretization_time)
+        states_matrix_at_step[:, :, LateralStateIndex.LATERAL_ERROR, LateralStateIndex.HEADING_ERROR] = (
+            velocity_profile.T * self._discretization_time
+        )
 
-        states_matrix_at_step[
-            :, :, LateralStateIndex.HEADING_ERROR, LateralStateIndex.STEERING_ANGLE
-        ] = (velocity_profile.T * self._discretization_time / self._wheel_base)
+        states_matrix_at_step[:, :, LateralStateIndex.HEADING_ERROR, LateralStateIndex.STEERING_ANGLE] = (
+            velocity_profile.T * self._discretization_time / self._wheel_base
+        )
 
         affine_terms: npt.NDArray[np.float64] = np.zeros(
             (self._tracking_horizon, batch_dim, n_lateral_states), dtype=np.float64
@@ -427,28 +382,16 @@ class BatchLQRTracker:
             -velocity_profile.T * curvature_profile.T * self._discretization_time
         )
 
-        A: npt.NDArray[np.float64] = np.tile(
-            I[None, ...], [batch_dim, 1, 1]
-        )  # (batch, 3, 3)
-        B: npt.NDArray[np.float64] = np.zeros(
-            (batch_dim, n_lateral_states, 1), dtype=np.float64
-        )  # (batch, 3, 1)
-        g: npt.NDArray[np.float64] = np.zeros(
-            (batch_dim, n_lateral_states), dtype=np.float64
-        )  # (batch, 3)
+        A: npt.NDArray[np.float64] = np.tile(I[None, ...], [batch_dim, 1, 1])  # (batch, 3, 3)
+        B: npt.NDArray[np.float64] = np.zeros((batch_dim, n_lateral_states, 1), dtype=np.float64)  # (batch, 3, 1)
+        g: npt.NDArray[np.float64] = np.zeros((batch_dim, n_lateral_states), dtype=np.float64)  # (batch, 3)
 
-        for index_step, (state_matrix_at_step, affine_term) in enumerate(
-            zip(states_matrix_at_step, affine_terms)
-        ):
+        for index_step, (state_matrix_at_step, affine_term) in enumerate(zip(states_matrix_at_step, affine_terms)):
             # state_matrix_at_step (batch, 3, 3)
             # affine_term (batch, 3)
             A = np.einsum("bij, bjk -> bik", state_matrix_at_step, A)  # (batch, 3, 3)
-            B = (
-                np.einsum("bij, bjk -> bik", state_matrix_at_step, B) + in_matrix
-            )  # (batch, 3, 1)
-            g = (
-                np.einsum("bij, bj  -> bi", state_matrix_at_step, g) + affine_term
-            )  # (batch, 3)
+            B = np.einsum("bij, bjk -> bik", state_matrix_at_step, B) + in_matrix  # (batch, 3, 1)
+            g = np.einsum("bij, bj  -> bi", state_matrix_at_step, g) + affine_term  # (batch, 3)
 
         steering_rate_cmd = self._solve_one_step_lateral_lqr(
             initial_state=initial_lateral_state_vector,
@@ -510,9 +453,7 @@ class BatchLQRTracker:
         state_error_zero_input = np.einsum("bij, bj -> bi", A, initial_state) + g
 
         angle = state_error_zero_input[..., angle_diff_indices]
-        state_error_zero_input[..., angle_diff_indices] = np.arctan2(
-            np.sin(angle), np.cos(angle)
-        )
+        state_error_zero_input[..., angle_diff_indices] = np.arctan2(np.sin(angle), np.cos(angle))
 
         BT_x_Q = np.einsum("bij, jk -> bik", BT, Q)
         Inv = -1 / (np.einsum("bij, bji -> bi", BT_x_Q, B) + R)

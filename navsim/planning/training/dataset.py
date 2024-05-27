@@ -1,50 +1,58 @@
-import gzip
-import os
+from typing import Dict, List, Optional, Tuple
 from pathlib import Path
-
 import logging
 import pickle
-from typing import Dict, List, Optional, Tuple
-from tqdm import tqdm
+import gzip
+import os
+
 import torch
+from tqdm import tqdm
 
 from navsim.common.dataloader import SceneLoader
-from navsim.planning.training.abstract_feature_target_builder import (
-    AbstractFeatureBuilder,
-    AbstractTargetBuilder,
-)
+from navsim.planning.training.abstract_feature_target_builder import AbstractFeatureBuilder, AbstractTargetBuilder
 
 logger = logging.getLogger(__name__)
 
 
 def load_feature_target_from_pickle(path: Path) -> Dict[str, torch.Tensor]:
+    """Helper function to load pickled feature/target from path."""
     with gzip.open(path, "rb") as f:
         data_dict: Dict[str, torch.Tensor] = pickle.load(f)
     return data_dict
 
 
 def dump_feature_target_to_pickle(path: Path, data_dict: Dict[str, torch.Tensor]) -> None:
+    """Helper function to save feature/target to pickle."""
     # Use compresslevel = 1 to compress the size but also has fast write and read.
     with gzip.open(path, "wb", compresslevel=1) as f:
         pickle.dump(data_dict, f)
 
 
 class CacheOnlyDataset(torch.utils.data.Dataset):
+    """Dataset wrapper for feature/target datasets from cache only."""
+
     def __init__(
         self,
         cache_path: str,
         feature_builders: List[AbstractFeatureBuilder],
         target_builders: List[AbstractTargetBuilder],
-        log_names: List[str] = None,
+        log_names: Optional[List[str]] = None,
     ):
+        """
+        Initializes the dataset module.
+        :param cache_path: directory to cache folder
+        :param feature_builders: list of feature builders
+        :param target_builders: list of target builders
+        :param log_names: optional list of log folder to consider, defaults to None
+        """
         super().__init__()
         assert Path(cache_path).is_dir(), f"Cache path {cache_path} does not exist!"
         self._cache_path = Path(cache_path)
 
         if log_names is not None:
-            self.log_names = [Path(l) for l in log_names if (self._cache_path / l).is_dir()]
+            self.log_names = [Path(log_name) for log_name in log_names if (self._cache_path / log_name).is_dir()]
         else:
-            self.log_names = [l for l in self._cache_path.iterdir()]
+            self.log_names = [log_name for log_name in self._cache_path.iterdir()]
 
         self._feature_builders = feature_builders
         self._target_builders = target_builders
@@ -56,10 +64,18 @@ class CacheOnlyDataset(torch.utils.data.Dataset):
         )
         self.tokens = list(self._valid_cache_paths.keys())
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """
+        :return: number of samples to load
+        """
         return len(self.tokens)
 
     def __getitem__(self, idx: int) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+        """
+        Loads and returns pair of feature and target dict from data.
+        :param idx: index of sample to load.
+        :return: tuple of feature and target dictionary
+        """
         return self._load_scene_with_token(self.tokens[idx])
 
     @staticmethod
@@ -69,6 +85,14 @@ class CacheOnlyDataset(torch.utils.data.Dataset):
         target_builders: List[AbstractTargetBuilder],
         log_names: List[Path],
     ) -> Dict[str, Path]:
+        """
+        Helper method to load valid cache paths.
+        :param cache_path: directory of training cache folder
+        :param feature_builders: list of feature builders
+        :param target_builders: list of target builders
+        :param log_names: list of log paths to load
+        :return: dictionary of tokens and sample paths as keys / values
+        """
 
         valid_cache_paths: Dict[str, Path] = {}
 
@@ -84,9 +108,12 @@ class CacheOnlyDataset(torch.utils.data.Dataset):
 
         return valid_cache_paths
 
-    def _load_scene_with_token(
-        self, token: str
-    ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+    def _load_scene_with_token(self, token: str) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+        """
+        Helper method to load sample tensors given token
+        :param token: unique string identifier of sample
+        :return: tuple of feature and target dictionaries
+        """
 
         token_path = self._valid_cache_paths[token]
 
@@ -134,6 +161,13 @@ class Dataset(torch.utils.data.Dataset):
         feature_builders: List[AbstractFeatureBuilder],
         target_builders: List[AbstractTargetBuilder],
     ) -> Dict[str, Path]:
+        """
+        Helper method to load valid cache paths.
+        :param cache_path: directory of training cache folder
+        :param feature_builders: list of feature builders
+        :param target_builders: list of target builders
+        :return: dictionary of tokens and sample paths as keys / values
+        """
 
         valid_cache_paths: Dict[str, Path] = {}
 
@@ -150,6 +184,10 @@ class Dataset(torch.utils.data.Dataset):
         return valid_cache_paths
 
     def _cache_scene_with_token(self, token: str) -> None:
+        """
+        Helper function to compute feature / targets and save in cache.
+        :param token: unique identifier of scene to cache
+        """
 
         scene = self._scene_loader.get_scene_from_token(token)
         agent_input = scene.get_agent_input()
@@ -170,9 +208,12 @@ class Dataset(torch.utils.data.Dataset):
 
         self._valid_cache_paths[token] = token_path
 
-    def _load_scene_with_token(
-        self, token: str
-    ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+    def _load_scene_with_token(self, token: str) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+        """
+        Helper function to load feature / targets from cache.
+        :param token:  unique identifier of scene to load
+        :return: tuple of feature and target dictionaries
+        """
 
         token_path = self._valid_cache_paths[token]
 
@@ -191,6 +232,8 @@ class Dataset(torch.utils.data.Dataset):
         return (features, targets)
 
     def cache_dataset(self) -> None:
+        """Caches complete dataset into cache folder."""
+
         assert self._cache_path is not None, "Dataset did not receive a cache path!"
         os.makedirs(self._cache_path, exist_ok=True)
 
@@ -205,16 +248,24 @@ class Dataset(torch.utils.data.Dataset):
                 Starting caching of {len(tokens_to_cache)} tokens.
                 Note: Caching tokens within the training loader is slow. Only use it with a small number of tokens.
                 You can cache large numbers of tokens using the `run_dataset_caching.py` python script.
-            """
+                """
             )
 
         for token in tqdm(tokens_to_cache, desc="Caching Dataset"):
             self._cache_scene_with_token(token)
 
-    def __len__(self):
+    def __len__(self) -> None:
+        """
+        :return: number of samples to load
+        """
         return len(self._scene_loader)
 
     def __getitem__(self, idx: int) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+        """
+        Get features or targets either from cache or computed on-the-fly.
+        :param idx: index of sample to load.
+        :return: tuple of feature and target dictionary
+        """
 
         token = self._scene_loader.tokens[idx]
         features: Dict[str, torch.Tensor] = {}

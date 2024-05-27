@@ -1,33 +1,43 @@
 from typing import Tuple
+from pathlib import Path
+import logging
+
 import hydra
 from hydra.utils import instantiate
-import logging
 from omegaconf import DictConfig
-from pathlib import Path
-import pytorch_lightning as pl
 from torch.utils.data import DataLoader
+import pytorch_lightning as pl
 
+from navsim.agents.abstract_agent import AbstractAgent
+from navsim.common.dataclasses import SceneFilter
+from navsim.common.dataloader import SceneLoader
 from navsim.planning.training.dataset import CacheOnlyDataset, Dataset
 from navsim.planning.training.agent_lightning_module import AgentLightningModule
-from navsim.common.dataloader import SceneLoader
-from navsim.common.dataclasses import SceneFilter
-from navsim.agents.abstract_agent import AbstractAgent
 
 logger = logging.getLogger(__name__)
 
 CONFIG_PATH = "config/training"
 CONFIG_NAME = "default_training"
 
+
 def build_datasets(cfg: DictConfig, agent: AbstractAgent) -> Tuple[Dataset, Dataset]:
-    train_scene_filter: SceneFilter = instantiate(cfg.scene_filter)
+    """
+    Builds training and validation datasets from omega config
+    :param cfg: omegaconf dictionary
+    :param agent: interface of agents in NAVSIM
+    :return: tuple for training and validation dataset
+    """
+    train_scene_filter: SceneFilter = instantiate(cfg.train_test_split.scene_filter)
     if train_scene_filter.log_names is not None:
-        train_scene_filter.log_names = [l for l in train_scene_filter.log_names if l in cfg.train_logs]
+        train_scene_filter.log_names = [
+            log_name for log_name in train_scene_filter.log_names if log_name in cfg.train_logs
+        ]
     else:
         train_scene_filter.log_names = cfg.train_logs
 
-    val_scene_filter: SceneFilter = instantiate(cfg.scene_filter)
+    val_scene_filter: SceneFilter = instantiate(cfg.train_test_split.scene_filter)
     if val_scene_filter.log_names is not None:
-        val_scene_filter.log_names = [l for l in val_scene_filter.log_names if l in cfg.val_logs]
+        val_scene_filter.log_names = [log_name for log_name in val_scene_filter.log_names if log_name in cfg.val_logs]
     else:
         val_scene_filter.log_names = cfg.val_logs
 
@@ -67,10 +77,15 @@ def build_datasets(cfg: DictConfig, agent: AbstractAgent) -> Tuple[Dataset, Data
     return train_data, val_data
 
 
-@hydra.main(config_path=CONFIG_PATH, config_name=CONFIG_NAME)
+@hydra.main(config_path=CONFIG_PATH, config_name=CONFIG_NAME, version_base=None)
 def main(cfg: DictConfig) -> None:
-    logger.info("Global Seed set to 0")
-    pl.seed_everything(0, workers=True)
+    """
+    Main entrypoint for training an agent.
+    :param cfg: omegaconf dictionary
+    """
+
+    pl.seed_everything(cfg.seed, workers=True)
+    logger.info(f"Global Seed set to {cfg.seed}")
 
     logger.info(f"Path where all results are stored: {cfg.output_dir}")
 
@@ -84,8 +99,12 @@ def main(cfg: DictConfig) -> None:
 
     if cfg.use_cache_without_dataset:
         logger.info("Using cached data without building SceneLoader")
-        assert cfg.force_cache_computation==False, "force_cache_computation must be False when using cached data without building SceneLoader"
-        assert cfg.cache_path is not None, "cache_path must be provided when using cached data without building SceneLoader"
+        assert (
+            not cfg.force_cache_computation
+        ), "force_cache_computation must be False when using cached data without building SceneLoader"
+        assert (
+            cfg.cache_path is not None
+        ), "cache_path must be provided when using cached data without building SceneLoader"
         train_data = CacheOnlyDataset(
             cache_path=cfg.cache_path,
             feature_builders=agent.get_feature_builders(),
@@ -117,6 +136,7 @@ def main(cfg: DictConfig) -> None:
         train_dataloaders=train_dataloader,
         val_dataloaders=val_dataloader,
     )
+
 
 if __name__ == "__main__":
     main()

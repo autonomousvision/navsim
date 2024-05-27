@@ -2,11 +2,10 @@ from typing import List
 
 import numpy as np
 import numpy.typing as npt
+
 from nuplan.common.actor_state.state_representation import StateSE2
 
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import (
-    SE2Index,
-)
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import SE2Index
 
 
 def normalize_angle(angle):
@@ -18,9 +17,7 @@ def normalize_angle(angle):
     return np.arctan2(np.sin(angle), np.cos(angle))
 
 
-def parallel_discrete_path(
-    discrete_path: List[StateSE2], offset=float
-) -> List[StateSE2]:
+def parallel_discrete_path(discrete_path: List[StateSE2], offset=float) -> List[StateSE2]:
     """
     Creates a parallel discrete path for a given offset.
     :param discrete_path: baseline path (x,y,θ)
@@ -71,9 +68,7 @@ def calculate_progress(path: List[StateSE2]) -> List[float]:
     y_position = [point.y for point in path]
     x_diff = np.diff(x_position)
     y_diff = np.diff(y_position)
-    points_diff: npt.NDArray[np.float64] = np.concatenate(
-        ([x_diff], [y_diff]), axis=0, dtype=np.float64
-    )
+    points_diff: npt.NDArray[np.float64] = np.concatenate(([x_diff], [y_diff]), axis=0, dtype=np.float64)
     progress_diff = np.append(0.0, np.linalg.norm(points_diff, axis=0))
     return np.cumsum(progress_diff, dtype=np.float64)  # type: ignore
 

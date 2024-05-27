@@ -3,8 +3,7 @@ from enum import IntEnum
 
 class StateIndex:
     """Index mapping for array representation of ego states."""
-    # TODO: Update, @classmethod + @property deprecates in Python 3.13 :(
-    
+
     _X = 0
     _Y = 1
     _HEADING = 2
@@ -22,9 +21,7 @@ class StateIndex:
         valid_attributes = [
             attribute
             for attribute in dir(cls)
-            if attribute.startswith("_")
-            and not attribute.startswith("__")
-            and not callable(getattr(cls, attribute))
+            if attribute.startswith("_") and not attribute.startswith("__") and not callable(getattr(cls, attribute))
         ]
         return len(valid_attributes)
 
@@ -161,7 +158,6 @@ class MultiMetricIndex(IntEnum):
 
     NO_COLLISION = 0
     DRIVABLE_AREA = 1
-    DRIVING_DIRECTION = 2
 
 
 class WeightedMetricIndex(IntEnum):
@@ -170,3 +166,4 @@ class WeightedMetricIndex(IntEnum):
     PROGRESS = 0
     TTC = 1
     COMFORTABLE = 2
+    DRIVING_DIRECTION = 3

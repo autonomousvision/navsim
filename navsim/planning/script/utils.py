@@ -1,8 +1,8 @@
+from typing import List, Any
+from pathlib import Path
+from dataclasses import dataclass
 import logging
 import os
-from dataclasses import dataclass
-from pathlib import Path
-from typing import List, Any
 
 import pandas as pd
 from omegaconf import DictConfig, OmegaConf
@@ -22,6 +22,7 @@ from navsim.planning.script.builders.worker_pool_builder import build_worker
 
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class CommonBuilder:
@@ -55,6 +56,7 @@ def update_config_for_simulation(cfg: DictConfig) -> None:
     if cfg.log_config:
         logger.info(f"Creating experiment: {cfg.experiment}")
         logger.info("\n" + OmegaConf.to_yaml(cfg))
+
 
 def set_up_common_builder(cfg: DictConfig, profiler_name: str) -> CommonBuilder:
     """
@@ -91,21 +93,23 @@ def set_up_common_builder(cfg: DictConfig, profiler_name: str) -> CommonBuilder:
         profiler=None,
     )
 
+
 def set_default_path() -> None:
     """
     This function sets the default paths as environment variables if none are set.
     These can then be used by Hydra, unless the user overwrites them from the command line.
     """
-    DEFAULT_DATA_ROOT = os.path.expanduser('~/nuplan/dataset')
-    DEFAULT_EXP_ROOT = os.path.expanduser('~/nuplan/exp')
+    DEFAULT_DATA_ROOT = os.path.expanduser("~/nuplan/dataset")
+    DEFAULT_EXP_ROOT = os.path.expanduser("~/nuplan/exp")
 
-    if 'NUPLAN_DATA_ROOT' not in os.environ:
-        logger.info(f'Setting default NUPLAN_DATA_ROOT: {DEFAULT_DATA_ROOT}')
-        os.environ['NUPLAN_DATA_ROOT'] = DEFAULT_DATA_ROOT
+    if "NUPLAN_DATA_ROOT" not in os.environ:
+        logger.info(f"Setting default NUPLAN_DATA_ROOT: {DEFAULT_DATA_ROOT}")
+        os.environ["NUPLAN_DATA_ROOT"] = DEFAULT_DATA_ROOT
 
-    if 'NUPLAN_EXP_ROOT' not in os.environ:
-        logger.info(f'Setting default NUPLAN_EXP_ROOT: {DEFAULT_EXP_ROOT}')
-        os.environ['NUPLAN_EXP_ROOT'] = DEFAULT_EXP_ROOT
+    if "NUPLAN_EXP_ROOT" not in os.environ:
+        logger.info(f"Setting default NUPLAN_EXP_ROOT: {DEFAULT_EXP_ROOT}")
+        os.environ["NUPLAN_EXP_ROOT"] = DEFAULT_EXP_ROOT
+
 
 def run_runners(
     runners: List[AbstractRunner], common_builder: CommonBuilder, profiler_name: str, cfg: DictConfig
@@ -117,12 +121,12 @@ def run_runners(
     :param profiler_name: Profiler name.
     :param cfg: Hydra config.
     """
-    assert len(runners) > 0, 'No scenarios found to simulate!'
+    assert len(runners) > 0, "No scenarios found to simulate!"
     if common_builder.profiler:
         # Start simulation running profiling
         common_builder.profiler.start_profiler(profiler_name)
 
-    logger.info('Executing runners...')
+    logger.info("Executing runners...")
     reports = execute_runners(
         runners=runners,
         worker=common_builder.worker,
@@ -131,7 +135,7 @@ def run_runners(
         exit_on_failure=cfg.exit_on_failure,
         verbose=cfg.verbose,
     )
-    logger.info('Finished executing runners!')
+    logger.info("Finished executing runners!")
 
     # Save RunnerReports as parquet file
     save_runner_reports(reports, common_builder.output_dir, cfg.runner_report_file)
@@ -140,12 +144,13 @@ def run_runners(
     distributed_sync(Path(cfg.output_dir / Path("barrier")), cfg.distributed_timeout_seconds)
 
     # Only run on_run_simulation_end callbacks on master node
-    if int(os.environ.get('NODE_RANK', 0)) == 0:
+    if int(os.environ.get("NODE_RANK", 0)) == 0:
         common_builder.multi_main_callback.on_run_simulation_end()
 
     # Save profiler
     if common_builder.profiler:
         common_builder.profiler.save_profiler(profiler_name)
+
 
 def save_runner_reports(reports: List[RunnerReport], output_dir: Path, report_name: str) -> None:
     """
@@ -163,8 +168,8 @@ def save_runner_reports(reports: List[RunnerReport], output_dir: Path, report_na
             report.update(planner_report_statistics)
         report_dicts.append(report)
     df = pd.DataFrame(report_dicts)
-    df['duration'] = df['end_time'] - df['start_time']
+    df["duration"] = df["end_time"] - df["start_time"]
 
     save_path = output_dir / report_name
     df.to_parquet(safe_path_to_string(save_path))
-    logger.info(f'Saved runner reports to {save_path}')
+    logger.info(f"Saved runner reports to {save_path}")

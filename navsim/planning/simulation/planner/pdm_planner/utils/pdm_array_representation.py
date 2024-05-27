@@ -3,22 +3,13 @@ from typing import List
 import numpy as np
 import numpy.typing as npt
 import shapely
+
 from nuplan.common.actor_state.ego_state import EgoState
-from nuplan.common.actor_state.state_representation import (
-    StateSE2,
-    StateVector2D,
-    TimePoint,
-)
+from nuplan.common.actor_state.state_representation import StateSE2, StateVector2D, TimePoint
 from nuplan.common.actor_state.vehicle_parameters import VehicleParameters
 
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import (
-    BBCoordsIndex,
-    SE2Index,
-    StateIndex,
-)
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import (
-    translate_lon_and_lat,
-)
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import BBCoordsIndex, SE2Index, StateIndex
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import translate_lon_and_lat
 
 
 def array_to_state_se2(array: npt.NDArray[np.float64]) -> StateSE2:
@@ -78,24 +69,14 @@ def ego_state_to_state_array(ego_state: EgoState) -> npt.NDArray[np.float64]:
     state_array = np.zeros(StateIndex.size(), dtype=np.float64)
 
     state_array[StateIndex.STATE_SE2] = ego_state.rear_axle.serialize()
-    state_array[
-        StateIndex.VELOCITY_2D
-    ] = ego_state.dynamic_car_state.rear_axle_velocity_2d.array
-    state_array[
-        StateIndex.ACCELERATION_2D
-    ] = ego_state.dynamic_car_state.rear_axle_acceleration_2d.array
+    state_array[StateIndex.VELOCITY_2D] = ego_state.dynamic_car_state.rear_axle_velocity_2d.array
+    state_array[StateIndex.ACCELERATION_2D] = ego_state.dynamic_car_state.rear_axle_acceleration_2d.array
 
     state_array[StateIndex.STEERING_ANGLE] = ego_state.tire_steering_angle
-    state_array[
-        StateIndex.STEERING_RATE
-    ] = ego_state.dynamic_car_state.tire_steering_rate
+    state_array[StateIndex.STEERING_RATE] = ego_state.dynamic_car_state.tire_steering_rate
 
-    state_array[
-        StateIndex.ANGULAR_VELOCITY
-    ] = ego_state.dynamic_car_state.angular_velocity
-    state_array[
-        StateIndex.ANGULAR_ACCELERATION
-    ] = ego_state.dynamic_car_state.angular_acceleration
+    state_array[StateIndex.ANGULAR_VELOCITY] = ego_state.dynamic_car_state.angular_velocity
+    state_array[StateIndex.ANGULAR_ACCELERATION] = ego_state.dynamic_car_state.angular_acceleration
 
     return state_array
 
@@ -128,9 +109,7 @@ def state_array_to_ego_state(
     return EgoState.build_from_rear_axle(
         rear_axle_pose=StateSE2(*state_array[StateIndex.STATE_SE2]),
         rear_axle_velocity_2d=StateVector2D(*state_array[StateIndex.VELOCITY_2D]),
-        rear_axle_acceleration_2d=StateVector2D(
-            *state_array[StateIndex.ACCELERATION_2D]
-        ),
+        rear_axle_acceleration_2d=StateVector2D(*state_array[StateIndex.ACCELERATION_2D]),
         tire_steering_angle=state_array[StateIndex.STEERING_ANGLE],
         time_point=time_point,
         vehicle_parameters=vehicle_parameters,
@@ -156,9 +135,7 @@ def state_array_to_ego_states(
     ego_states_list: List[EgoState] = []
     for i, time_point in enumerate(time_points):
         state = state_array[i] if i < len(state_array) else state_array[-1]
-        ego_states_list.append(
-            state_array_to_ego_state(state, time_point, vehicle_parameter)
-        )
+        ego_states_list.append(state_array_to_ego_state(state, time_point, vehicle_parameter))
     return ego_states_list
 
 
@@ -184,29 +161,19 @@ def state_array_to_coords_array(
     cos, sin = np.cos(headings), np.sin(headings)
 
     # calculate ego center from rear axle
-    rear_axle_to_center_translate = np.stack(
-        [rear_axle_to_center * cos, rear_axle_to_center * sin], axis=-1
-    )
+    rear_axle_to_center_translate = np.stack([rear_axle_to_center * cos, rear_axle_to_center * sin], axis=-1)
 
-    ego_centers: npt.NDArray[np.float64] = (
-        states[..., StateIndex.POINT] + rear_axle_to_center_translate
-    )
+    ego_centers: npt.NDArray[np.float64] = states[..., StateIndex.POINT] + rear_axle_to_center_translate
 
-    coords_array: npt.NDArray[np.float64] = np.zeros(
-        (n_batch, n_time, len(BBCoordsIndex), 2), dtype=np.float64
-    )
+    coords_array: npt.NDArray[np.float64] = np.zeros((n_batch, n_time, len(BBCoordsIndex), 2), dtype=np.float64)
 
     coords_array[:, :, BBCoordsIndex.CENTER] = ego_centers
 
-    coords_array[:, :, BBCoordsIndex.FRONT_LEFT] = translate_lon_and_lat(
-        ego_centers, headings, half_length, half_width
-    )
+    coords_array[:, :, BBCoordsIndex.FRONT_LEFT] = translate_lon_and_lat(ego_centers, headings, half_length, half_width)
     coords_array[:, :, BBCoordsIndex.FRONT_RIGHT] = translate_lon_and_lat(
         ego_centers, headings, half_length, -half_width
     )
-    coords_array[:, :, BBCoordsIndex.REAR_LEFT] = translate_lon_and_lat(
-        ego_centers, headings, -half_length, half_width
-    )
+    coords_array[:, :, BBCoordsIndex.REAR_LEFT] = translate_lon_and_lat(ego_centers, headings, -half_length, half_width)
     coords_array[:, :, BBCoordsIndex.REAR_RIGHT] = translate_lon_and_lat(
         ego_centers, headings, -half_length, -half_width
     )
@@ -224,9 +191,7 @@ def coords_array_to_polygon_array(
     """
     # create coords copy and use center point for closed exterior
     coords_exterior: npt.NDArray[np.float64] = coords.copy()
-    coords_exterior[..., BBCoordsIndex.CENTER, :] = coords_exterior[
-        ..., BBCoordsIndex.FRONT_LEFT, :
-    ]
+    coords_exterior[..., BBCoordsIndex.CENTER, :] = coords_exterior[..., BBCoordsIndex.FRONT_LEFT, :]
 
     # load new coordinates into polygon array
     polygons = shapely.creation.polygons(coords_exterior)

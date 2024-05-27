@@ -1,18 +1,22 @@
-from typing import List
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
+
 from navsim.agents.abstract_agent import AbstractAgent
 from navsim.common.dataclasses import AgentInput, Trajectory, Scene, SensorConfig
 
+
 class HumanAgent(AbstractAgent):
+    """Privileged agent interface of human operator."""
 
     requires_scene = True
 
     def __init__(
         self,
-        trajectory_sampling: TrajectorySampling = TrajectorySampling(
-            time_horizon=4, interval_length=0.5
-        ),
+        trajectory_sampling: TrajectorySampling = TrajectorySampling(time_horizon=4, interval_length=0.5),
     ):
+        """
+        Initializes the human agent object.
+        :param trajectory_sampling: trajectory sampling specification
+        """
         self._trajectory_sampling = trajectory_sampling
 
     def name(self) -> str:

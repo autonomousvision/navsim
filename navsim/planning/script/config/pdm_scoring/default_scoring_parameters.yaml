@@ -20,6 +20,7 @@ scorer:
     progress_weight: 5.0
     ttc_weight: 5.0
     comfortable_weight: 2.0
+    driving_direction_weight: 0.0
 
     # thresholds
     driving_direction_horizon: 1.0  # [s] (driving direction)

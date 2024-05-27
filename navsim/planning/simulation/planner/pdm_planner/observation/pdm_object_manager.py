@@ -1,28 +1,21 @@
-import copy
 from typing import Dict, Tuple
+import copy
 
 import numpy as np
 import numpy.typing as npt
+
 from nuplan.common.actor_state.state_representation import Point2D
 from nuplan.common.actor_state.tracked_objects import TrackedObject
-from nuplan.common.actor_state.tracked_objects_types import (
-    AGENT_TYPES,
-    TrackedObjectType,
-)
+from nuplan.common.actor_state.tracked_objects_types import AGENT_TYPES, TrackedObjectType
 
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import (
-    BBCoordsIndex,
-)
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import (
-    normalize_angle,
-)
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import BBCoordsIndex
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import normalize_angle
 
 MAX_DYNAMIC_OBJECTS: Dict[TrackedObjectType, int] = {
     TrackedObjectType.VEHICLE: 50,
     TrackedObjectType.PEDESTRIAN: 25,
     TrackedObjectType.BICYCLE: 10,
 }
-
 MAX_STATIC_OBJECTS: int = 50
 
 
@@ -61,9 +54,7 @@ class PDMObjectManager:
         """
         self._unique_objects[object.track_token] = object
 
-        coords_list = [
-            [corner.x, corner.y] for corner in copy.deepcopy(object.box.all_corners())
-        ]
+        coords_list = [[corner.x, corner.y] for corner in copy.deepcopy(object.box.all_corners())]
         coords_list.append([object.center.x, object.center.y])
 
         coords: np.ndarray = np.array(coords_list, dtype=np.float64)
@@ -71,15 +62,10 @@ class PDMObjectManager:
         if object.tracked_object_type in AGENT_TYPES:
             velocity = object.velocity
             velocity_angle = np.arctan2(velocity.y, velocity.x)
-            agent_drives_forward = (
-                np.abs(normalize_angle(object.center.heading - velocity_angle))
-                < np.pi / 2
-            )
+            agent_drives_forward = np.abs(normalize_angle(object.center.heading - velocity_angle)) < np.pi / 2
 
             track_heading = (
-                object.center.heading
-                if agent_drives_forward
-                else normalize_angle(object.center.heading + np.pi)
+                object.center.heading if agent_drives_forward else normalize_angle(object.center.heading + np.pi)
             )
 
             dxy = np.array(
@@ -90,14 +76,10 @@ class PDMObjectManager:
                 dtype=np.float64,
             ).T  # x,y velocity [m/s]
 
-            self._add_dynamic_object(
-                object.tracked_object_type, object.track_token, coords, dxy
-            )
+            self._add_dynamic_object(object.tracked_object_type, object.track_token, coords, dxy)
 
         else:
-            self._add_static_object(
-                object.tracked_object_type, object.track_token, coords
-            )
+            self._add_static_object(object.tracked_object_type, object.track_token, coords)
 
     def get_nearest_objects(self, position: Point2D) -> Tuple:
         """
@@ -126,19 +108,13 @@ class PDMObjectManager:
             dynamic_object_dxy_list.append(dynamic_object_dxy_)
 
         if len(dynamic_object_coords_list) > 0:
-            dynamic_object_coords = np.concatenate(
-                dynamic_object_coords_list, axis=0, dtype=np.float64
-            )
-            dynamic_object_dxy = np.concatenate(
-                dynamic_object_dxy_list, axis=0, dtype=np.float64
-            )
+            dynamic_object_coords = np.concatenate(dynamic_object_coords_list, axis=0, dtype=np.float64)
+            dynamic_object_dxy = np.concatenate(dynamic_object_dxy_list, axis=0, dtype=np.float64)
         else:
             dynamic_object_coords = np.array([], dtype=np.float64)
             dynamic_object_dxy = np.array([], dtype=np.float64)
 
-        static_object_tokens, static_object_coords = self._get_nearest_static_objects(
-            position, None
-        )
+        static_object_tokens, static_object_coords = self._get_nearest_static_objects(position, None)
 
         return (
             static_object_tokens,
@@ -181,9 +157,7 @@ class PDMObjectManager:
         self._static_object_tokens.append(token)
         self._static_object_coords.append(coords)
 
-    def _get_nearest_dynamic_objects(
-        self, position: Point2D, type: TrackedObjectType
-    ) -> Tuple:
+    def _get_nearest_dynamic_objects(self, position: Point2D, type: TrackedObjectType) -> Tuple:
         """
         Retrieves nearest k dynamic objects depending on type
         :param position: Ego-vehicle position
@@ -202,23 +176,19 @@ class PDMObjectManager:
                 object_coords = object_coords[None, ...]
                 object_dxy = object_dxy[None, ...]
 
-            position_to_center_dist = (
-                (object_coords[..., BBCoordsIndex.CENTER, :] - position_coords) ** 2.0
-            ).sum(axis=-1) ** 0.5
+            position_to_center_dist = ((object_coords[..., BBCoordsIndex.CENTER, :] - position_coords) ** 2.0).sum(
+                axis=-1
+            ) ** 0.5
 
             object_argsort = np.argsort(position_to_center_dist)
 
-            object_tokens = [object_tokens[i] for i in object_argsort][
-                : MAX_DYNAMIC_OBJECTS[type]
-            ]
+            object_tokens = [object_tokens[i] for i in object_argsort][: MAX_DYNAMIC_OBJECTS[type]]
             object_coords = object_coords[object_argsort][: MAX_DYNAMIC_OBJECTS[type]]
             object_dxy = object_dxy[object_argsort][: MAX_DYNAMIC_OBJECTS[type]]
 
         return (object_tokens, object_coords, object_dxy)
 
-    def _get_nearest_static_objects(
-        self, position: Point2D, type: TrackedObjectType
-    ) -> Tuple:
+    def _get_nearest_static_objects(self, position: Point2D, type: TrackedObjectType) -> Tuple:
         """
         Retrieves nearest k static obstacles around ego's position.
         :param position: ego's position
@@ -235,15 +205,13 @@ class PDMObjectManager:
             if object_coords.ndim == 1:
                 object_coords = object_coords[None, ...]
 
-            position_to_center_dist = (
-                (object_coords[..., BBCoordsIndex.CENTER, :] - position_coords) ** 2.0
-            ).sum(axis=-1) ** 0.5
+            position_to_center_dist = ((object_coords[..., BBCoordsIndex.CENTER, :] - position_coords) ** 2.0).sum(
+                axis=-1
+            ) ** 0.5
 
             object_argsort = np.argsort(position_to_center_dist)
 
-            object_tokens = [object_tokens[i] for i in object_argsort][
-                :MAX_STATIC_OBJECTS
-            ]
+            object_tokens = [object_tokens[i] for i in object_argsort][:MAX_STATIC_OBJECTS]
             object_coords = object_coords[object_argsort][:MAX_STATIC_OBJECTS]
 
         return (object_tokens, object_coords)

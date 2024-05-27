@@ -1,0 +1,19 @@
+[flake8]
+ignore =
+    # Whitespace before ':'
+    E203,
+    # Module level import not at top of file
+    E402,
+    # Line break occurred before a binary operator
+    W503,
+    # Line break occurred after a binary operator
+    W504
+    # line break before binary operator
+    E203
+    # line too long
+    E501
+    # No lambdas — too strict
+    E731
+    # Local variable name is assigned to but never used
+    F841
+max-line-length = 120

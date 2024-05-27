@@ -11,5 +11,7 @@ config:
     time_horizon: 4
     interval_length: 0.5
 
+  latent: False
+
 checkpoint_path: null
 lr: 1e-4

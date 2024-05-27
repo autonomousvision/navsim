@@ -4,16 +4,15 @@ from typing import Any, Dict, List, Tuple, Type
 
 import numpy as np
 import numpy.typing as npt
-from nuplan.planning.simulation.occupancy_map.abstract_occupancy_map import Geometry
-from nuplan.common.maps.maps_datatypes import SemanticMapLayer
-
 import shapely.vectorized
 from shapely.strtree import STRtree
 from shapely.geometry import Point
 
+from nuplan.common.maps.abstract_map import AbstractMap, MapObject
+from nuplan.common.maps.maps_datatypes import SemanticMapLayer
 from nuplan.common.actor_state.ego_state import EgoState
 from nuplan.common.actor_state.state_representation import Point2D
-from nuplan.common.maps.abstract_map import AbstractMap, MapObject
+from nuplan.planning.simulation.occupancy_map.abstract_occupancy_map import Geometry
 
 
 class PDMOccupancyMap:
@@ -117,12 +116,7 @@ class PDMDrivableMap(PDMOccupancyMap):
 
     def __reduce__(self) -> Tuple[Type[PDMDrivableMap], Tuple[Any, ...]]:
         """Helper for pickling."""
-        return self.__class__, (
-            self._tokens,
-            self._map_types,
-            self._geometries,
-            self._node_capacity
-        )
+        return self.__class__, (self._tokens, self._map_types, self._geometries, self._node_capacity)
 
     @property
     def map_types(self) -> List[SemanticMapLayer]:
@@ -133,9 +127,7 @@ class PDMDrivableMap(PDMOccupancyMap):
         return self._map_types
 
     @classmethod
-    def from_simulation(
-        cls, map_api: AbstractMap, ego_state: EgoState, map_radius: float = 50
-    ) -> PDMDrivableMap:
+    def from_simulation(cls, map_api: AbstractMap, ego_state: EgoState, map_radius: float = 50) -> PDMDrivableMap:
         """ """
 
         # TODO: Fix SemanticMapLayer.DRIVABLE_AREA problems
@@ -148,9 +140,7 @@ class PDMDrivableMap(PDMOccupancyMap):
 
         # query all drivable map elements around ego position
         position: Point2D = ego_state.center.point
-        drivable_area = map_api.get_proximal_map_objects(
-            position, map_radius, roadblock_layers + drivable_map_layers
-        )
+        drivable_area = map_api.get_proximal_map_objects(position, map_radius, roadblock_layers + drivable_map_layers)
 
         # collect lane polygons in list, save on-route indices
         polygons: List[Geometry] = []
@@ -200,9 +190,7 @@ class PDMDrivableMap(PDMOccupancyMap):
         Getter for indices of a particular SemanticMapLayer
         :return: list of integers
         """
-        indices_of_type = [
-            idx for idx, map_type_ in enumerate(self._map_types) if map_type_ in map_types
-        ]
+        indices_of_type = [idx for idx, map_type_ in enumerate(self._map_types) if map_type_ in map_types]
         return indices_of_type
 
     def points_in_polygons(self, points: npt.NDArray[np.float64]) -> npt.NDArray[np.bool_]:
@@ -218,9 +206,7 @@ class PDMDrivableMap(PDMOccupancyMap):
 
         output = np.zeros((len(self._geometries), len(flattened_points)), dtype=bool)
         for i, polygon in enumerate(self._geometries):
-            output[i] = shapely.vectorized.contains(
-                polygon, flattened_points[:, 0], flattened_points[:, 1]
-            )
+            output[i] = shapely.vectorized.contains(polygon, flattened_points[:, 0], flattened_points[:, 1])
 
         output_shape = (len(self._geometries),) + input_shape
         return output.reshape(output_shape)

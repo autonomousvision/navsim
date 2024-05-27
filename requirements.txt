@@ -11,7 +11,7 @@ control==0.9.1  # Used for LQR controller synthesis
 Fiona  # Used in GpkgMapsDB.py
 geopandas>=0.12.1  # Used to read maps
 guppy3==3.1.2
-hydra-core==1.1.0rc1  # Used for configs
+hydra-core==1.2.0  # Used for configs
 joblib
 matplotlib  # Used for rendering
 nest_asyncio  # Used to nest event loops when running nuBoard/jupyter

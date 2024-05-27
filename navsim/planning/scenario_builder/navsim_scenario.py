@@ -3,14 +3,9 @@ from __future__ import annotations
 import warnings
 from typing import Any, Generator, List, Optional, Set, Tuple, Type, cast
 
-
 from nuplan.common.actor_state.ego_state import EgoState
-from nuplan.common.actor_state.state_representation import (
-    StateVector2D,
-    StateSE2,
-    TimePoint,
-)
-from nuplan.common.actor_state.vehicle_parameters import VehicleParameters
+from nuplan.common.actor_state.state_representation import StateVector2D, StateSE2, TimePoint
+from nuplan.common.actor_state.vehicle_parameters import VehicleParameters, get_pacifica_parameters
 from nuplan.common.maps.abstract_map import AbstractMap
 from nuplan.common.maps.maps_datatypes import (
     TrafficLightStatusType,
@@ -18,31 +13,24 @@ from nuplan.common.maps.maps_datatypes import (
     TrafficLightStatuses,
     Transform,
 )
-
-from nuplan.planning.scenario_builder.abstract_scenario import AbstractScenario
-from nuplan.planning.simulation.observation.observation_type import (
-    DetectionsTracks,
-    SensorChannel,
-    Sensors,
-)
-from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
-from nuplan.common.actor_state.vehicle_parameters import get_pacifica_parameters
 from nuplan.common.maps.nuplan_map.map_factory import get_maps_api
 from nuplan.database.maps_db.gpkg_mapsdb import MAP_LOCATIONS
+from nuplan.planning.scenario_builder.abstract_scenario import AbstractScenario
+from nuplan.planning.simulation.observation.observation_type import DetectionsTracks, SensorChannel, Sensors
+from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
 
+from navsim.common.dataclasses import Scene
 from navsim.planning.scenario_builder.navsim_scenario_utils import (
     annotations_to_detection_tracks,
     sample_future_indices,
 )
 
-from navsim.common.dataclasses import Scene
-
-# TODO: Refactor
 DUMMY_SCENARIO_TYPE = "unknown"
 DUMMY_GOAL_STATE = StateSE2(0, 0, 0)
 
+
 class NavSimScenario(AbstractScenario):
-    # TODO: Refactor
+    """nuPlan interface for scenarios from NAVSIM logs."""
 
     def __init__(
         self,
@@ -51,6 +39,13 @@ class NavSimScenario(AbstractScenario):
         map_version: str,
         ego_vehicle_parameters: VehicleParameters = get_pacifica_parameters(),
     ) -> None:
+        """
+        Initializes the NAVSIM scenario
+        :param scene: dataclass describing scene in NAVSIM
+        :param map_root: directory of maps
+        :param map_version: string identifier of map version
+        :param ego_vehicle_parameters: extend of ego vehicle, defaults to get_pacifica_parameters()
+        """
 
         self._database_interval = 0.5  # interpolated to 10 Hz
         self._scene = scene
@@ -58,23 +53,19 @@ class NavSimScenario(AbstractScenario):
         # map attributes
         self._map_root = map_root
         self._map_version = map_version
-        
+
         self._scene_data = scene.scene_metadata
         self._map_name = self._scene_data.map_name
-        self._map_name = (
-            self._map_name if self._map_name != "las_vegas" else "us-nv-las-vegas-strip"
-        )
-        
+        self._map_name = self._map_name if self._map_name != "las_vegas" else "us-nv-las-vegas-strip"
+
         self._initial_frame_idx = self._scene_data.num_history_frames - 1
-        
+
         self._initial_lidar_token = self._scene.frames[self._initial_frame_idx].token
         self._log_name = self._scene_data.log_name
         self._route_roadblock_ids = self._scene.frames[self._initial_frame_idx].roadblock_ids
 
         self._time_points = [TimePoint(int(frame.timestamp)) for frame in self._scene.frames]
-        self._future_sampling = TrajectorySampling(
-            num_poses=len(self._time_points) + 1, interval_length=0.5
-        )
+        self._future_sampling = TrajectorySampling(num_poses=len(self._time_points) + 1, interval_length=0.5)
         self._ego_vehicle_parameters = ego_vehicle_parameters
 
     def __reduce__(self) -> Tuple[Type[NavSimScenario], Tuple[Any, ...]]:
@@ -150,7 +141,7 @@ class NavSimScenario(AbstractScenario):
 
     def get_mission_goal(self) -> Optional[StateSE2]:
         """Inherited, see superclass."""
-        return DUMMY_GOAL_STATE  # TODO: avoid dummy
+        return DUMMY_GOAL_STATE
 
     def get_route_roadblock_ids(self) -> List[str]:
         """Inherited, see superclass."""
@@ -158,12 +149,12 @@ class NavSimScenario(AbstractScenario):
 
     def get_expert_goal_state(self) -> StateSE2:
         """Inherited, see superclass."""
-        return DUMMY_GOAL_STATE  # TODO: avoid dummy
+        return DUMMY_GOAL_STATE
 
     def get_time_point(self, iteration: int) -> TimePoint:
         """Inherited, see superclass."""
-        
-        frame_idx = self._initial_frame_idx + iteration 
+
+        frame_idx = self._initial_frame_idx + iteration
         assert (
             0 <= frame_idx < self.get_number_of_iterations()
         ), f"Iteration {frame_idx} out of bound of {self.get_number_of_iterations()} iterations!"
@@ -171,18 +162,14 @@ class NavSimScenario(AbstractScenario):
 
     def get_ego_state_at_iteration(self, iteration: int) -> EgoState:
         """Inherited, see superclass."""
-        
-        frame_idx = self._initial_frame_idx + iteration 
+
+        frame_idx = self._initial_frame_idx + iteration
         assert (
             0 <= frame_idx < self.get_number_of_iterations()
         ), f"Iteration {frame_idx} out of bound of {self.get_number_of_iterations()} iterations!"
 
-        rear_axle_velocity_2d = StateVector2D(
-            *self._scene.frames[frame_idx].ego_status.ego_velocity
-        )
-        rear_axle_acceleration_2d = StateVector2D(
-            *self._scene.frames[frame_idx].ego_status.ego_acceleration
-        )
+        rear_axle_velocity_2d = StateVector2D(*self._scene.frames[frame_idx].ego_status.ego_velocity)
+        rear_axle_acceleration_2d = StateVector2D(*self._scene.frames[frame_idx].ego_status.ego_acceleration)
         return EgoState.build_from_rear_axle(
             StateSE2(*self._scene.frames[frame_idx].ego_status.ego_pose),
             tire_steering_angle=0.0,
@@ -198,15 +185,11 @@ class NavSimScenario(AbstractScenario):
         future_trajectory_sampling: Optional[TrajectorySampling] = None,
     ) -> DetectionsTracks:
         """Inherited, see superclass."""
-        frame_idx = self._initial_frame_idx + iteration 
-        assert (
-            0 <= frame_idx < self.get_number_of_iterations()
-        ), f"Iteration is out of scenario: {frame_idx}!"
+        frame_idx = self._initial_frame_idx + iteration
+        assert 0 <= frame_idx < self.get_number_of_iterations(), f"Iteration is out of scenario: {frame_idx}!"
 
         if future_trajectory_sampling:
-            warnings.warn(
-                "NavSimScenario: TrajectorySampling in get_tracked_objects_at_iteration() not supported."
-            )
+            warnings.warn("NavSimScenario: TrajectorySampling in get_tracked_objects_at_iteration() not supported.")
 
         ego_state = self.get_ego_state_at_iteration(iteration)
         return annotations_to_detection_tracks(self._scene.frames[frame_idx].annotations, ego_state)
@@ -220,14 +203,10 @@ class NavSimScenario(AbstractScenario):
         future_trajectory_sampling: Optional[TrajectorySampling] = None,
     ) -> DetectionsTracks:
         """Inherited, see superclass."""
-        assert (
-            0 <= iteration < self.get_number_of_iterations()
-        ), f"Iteration is out of scenario: {iteration}!"
+        assert 0 <= iteration < self.get_number_of_iterations(), f"Iteration is out of scenario: {iteration}!"
         raise NotImplementedError
 
-    def get_sensors_at_iteration(
-        self, iteration: int, channels: Optional[List[SensorChannel]] = None
-    ) -> Sensors:
+    def get_sensors_at_iteration(self, iteration: int, channels: Optional[List[SensorChannel]] = None) -> Sensors:
         """Inherited, see superclass."""
         raise NotImplementedError
 
@@ -295,11 +274,9 @@ class NavSimScenario(AbstractScenario):
         """Inherited, see superclass."""
         raise NotImplementedError
 
-    def get_traffic_light_status_at_iteration(
-        self, iteration: int
-    ) -> Generator[TrafficLightStatusData, None, None]:
+    def get_traffic_light_status_at_iteration(self, iteration: int) -> Generator[TrafficLightStatusData, None, None]:
         """Inherited, see superclass."""
-        
+
         frame_idx = iteration + self._initial_frame_idx
 
         for lane_connector_id, is_red in self._scene.frames[frame_idx].traffic_lights:

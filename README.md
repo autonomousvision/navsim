@@ -3,7 +3,7 @@
 <p align="center">
   <img src="assets/navsim_transparent.png" width="600">
   <h2 align="center">Data-Driven Non-Reactive Autonomous Vehicle Simulation and Benchmarking</h1>
-  <h3 align="center"><a href="https://arxiv.org/abs/2406.15349">Paper</a> | Supplementary | Talk | <a href="https://opendrivelab.com/challenge2024/#end_to_end_driving_at_scale">2024 Challenge</a> </h3>
+  <h3 align="center"><a href="https://arxiv.org/abs/2406.15349">Paper</a> | Supplementary | <a href="https://youtu.be/QKy2ZDCGbqE?si=l9ghG3pbiFgl8bmx&t=2345">Talk</a> | <a href="https://opendrivelab.com/challenge2024/#end_to_end_driving_at_scale">2024 Challenge</a> | <a href="https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim">Leaderboard</a>  </h3>
 </p>
 
 </div>
@@ -51,6 +51,10 @@
 
 
 ## Changelog <a name="changelog"></a>
+- **`[2024/09/03]`** NAVSIM v1.1 release
+  - Leaderboard for `navtest` on [Hugging Face](https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim)
+  - Updated docs for [submission](docs/submission.md) and [paper](https://arxiv.org/abs/2406.15349)
+  - Code refactoring, formatting, minor fixes
 - **`[2024/04/21]`** NAVSIM v1.0 release (official devkit version for [AGC 2024](https://opendrivelab.com/challenge2024/#end_to_end_driving_at_scale))
   - Parallelization of metric caching / evaluation
   - Adds [Transfuser](https://arxiv.org/abs/2205.15997) baseline (see [agents](docs/agents.md#Baselines))

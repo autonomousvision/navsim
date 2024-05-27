@@ -3,16 +3,11 @@ from typing import List, Union
 import numpy as np
 import numpy.typing as npt
 
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import (
-    LeadingAgentIndex,
-    StateIDMIndex,
-)
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import LeadingAgentIndex, StateIDMIndex
 
 
 class BatchIDMPolicy:
-    """
-    IDM policies operating on a batch of proposals.
-    """
+    """IDM policies operating on a batch of proposals."""
 
     def __init__(
         self,
@@ -40,9 +35,7 @@ class BatchIDMPolicy:
             accel_max,
             decel_max,
         ]
-        num_parameter_policies = [
-            len(item) for item in parameter_list if isinstance(item, list)
-        ]
+        num_parameter_policies = [len(item) for item in parameter_list if isinstance(item, list)]
 
         if len(num_parameter_policies) > 0:
             assert all(
@@ -54,56 +47,30 @@ class BatchIDMPolicy:
 
         self._num_policies: int = num_policies
 
-        self._fallback_target_velocities: npt.NDArray[np.float64] = np.zeros(
-            (self._num_policies), dtype=np.float64
-        )
-        self._speed_limit_fractions: npt.NDArray[np.float64] = np.zeros(
-            (self._num_policies), dtype=np.float64
-        )
-        self._min_gap_to_lead_agent: npt.NDArray[np.float64] = np.zeros(
-            (self._num_policies), dtype=np.float64
-        )
-        self._headway_time: npt.NDArray[np.float64] = np.zeros(
-            (self._num_policies), dtype=np.float64
-        )
-        self._accel_max: npt.NDArray[np.float64] = np.zeros(
-            (self._num_policies), dtype=np.float64
-        )
+        self._fallback_target_velocities: npt.NDArray[np.float64] = np.zeros((self._num_policies), dtype=np.float64)
+        self._speed_limit_fractions: npt.NDArray[np.float64] = np.zeros((self._num_policies), dtype=np.float64)
+        self._min_gap_to_lead_agent: npt.NDArray[np.float64] = np.zeros((self._num_policies), dtype=np.float64)
+        self._headway_time: npt.NDArray[np.float64] = np.zeros((self._num_policies), dtype=np.float64)
+        self._accel_max: npt.NDArray[np.float64] = np.zeros((self._num_policies), dtype=np.float64)
 
-        self._decel_max: npt.NDArray[np.float64] = np.zeros(
-            (self._num_policies), dtype=np.float64
-        )
+        self._decel_max: npt.NDArray[np.float64] = np.zeros((self._num_policies), dtype=np.float64)
 
         for i in range(self._num_policies):
             self._fallback_target_velocities[i] = (
-                fallback_target_velocity
-                if isinstance(fallback_target_velocity, float)
-                else fallback_target_velocity[i]
+                fallback_target_velocity if isinstance(fallback_target_velocity, float) else fallback_target_velocity[i]
             )
             self._speed_limit_fractions[i] = (
-                speed_limit_fraction
-                if isinstance(speed_limit_fraction, float)
-                else speed_limit_fraction[i]
+                speed_limit_fraction if isinstance(speed_limit_fraction, float) else speed_limit_fraction[i]
             )
             self._min_gap_to_lead_agent[i] = (
-                min_gap_to_lead_agent
-                if isinstance(min_gap_to_lead_agent, float)
-                else min_gap_to_lead_agent[i]
+                min_gap_to_lead_agent if isinstance(min_gap_to_lead_agent, float) else min_gap_to_lead_agent[i]
             )
-            self._headway_time[i] = (
-                headway_time if isinstance(headway_time, float) else headway_time[i]
-            )
-            self._accel_max[i] = (
-                accel_max if isinstance(accel_max, float) else accel_max[i]
-            )
-            self._decel_max[i] = (
-                decel_max if isinstance(decel_max, float) else decel_max[i]
-            )
+            self._headway_time[i] = headway_time if isinstance(headway_time, float) else headway_time[i]
+            self._accel_max[i] = accel_max if isinstance(accel_max, float) else accel_max[i]
+            self._decel_max[i] = decel_max if isinstance(decel_max, float) else decel_max[i]
 
         # lazy loaded
-        self._target_velocities: npt.NDArray[np.float64] = np.zeros(
-            (self._num_policies), dtype=np.float64
-        )
+        self._target_velocities: npt.NDArray[np.float64] = np.zeros((self._num_policies), dtype=np.float64)
 
     @property
     def num_policies(self) -> int:
@@ -130,9 +97,7 @@ class BatchIDMPolicy:
         if speed_limit_mps is not None:
             self._target_velocities = self._speed_limit_fractions * speed_limit_mps
         else:
-            self._target_velocities = (
-                self._speed_limit_fractions * self._fallback_target_velocities
-            )
+            self._target_velocities = self._speed_limit_fractions * self._fallback_target_velocities
 
     def propagate(
         self,
@@ -150,9 +115,7 @@ class BatchIDMPolicy:
         :return: array containing propagated state values
         """
 
-        assert len(previous_idm_states) == len(longitudinal_idcs) and len(
-            leading_agent_states
-        ) == len(
+        assert len(previous_idm_states) == len(longitudinal_idcs) and len(leading_agent_states) == len(
             longitudinal_idcs
         ), "PDMIDMPolicy: propagate function requires equal length of input arguments!"
 
@@ -187,17 +150,11 @@ class BatchIDMPolicy:
             + (v_agent * (v_agent - v_lead)) / (2 * np.sqrt(accel_max * decel_max))
         )
 
-        s_alpha = np.maximum(
-            x_lead - x_agent - l_r_lead, min_gap_to_lead_agent
-        )  # clamp to avoid zero division
+        s_alpha = np.maximum(x_lead - x_agent - l_r_lead, min_gap_to_lead_agent)  # clamp to avoid zero division
 
         # differential equations
         x_agent_dot = v_agent
-        v_agent_dot = accel_max * (
-            1
-            - (v_agent / target_velocity) ** acceleration_exponent
-            - (s_star / s_alpha) ** 2
-        )
+        v_agent_dot = accel_max * (1 - (v_agent / target_velocity) ** acceleration_exponent - (s_star / s_alpha) ** 2)
 
         # clip values
         v_agent_dot = np.clip(v_agent_dot, -decel_max, accel_max)
@@ -205,11 +162,7 @@ class BatchIDMPolicy:
         next_idm_states: npt.NDArray[np.float64] = np.zeros(
             (len(longitudinal_idcs), len(StateIDMIndex)), dtype=np.float64
         )
-        next_idm_states[:, StateIDMIndex.PROGRESS] = (
-            x_agent + sampling_time * x_agent_dot
-        )
-        next_idm_states[:, StateIDMIndex.VELOCITY] = (
-            v_agent + sampling_time * v_agent_dot
-        )
+        next_idm_states[:, StateIDMIndex.PROGRESS] = x_agent + sampling_time * x_agent_dot
+        next_idm_states[:, StateIDMIndex.VELOCITY] = v_agent + sampling_time * v_agent_dot
 
         return next_idm_states

@@ -1,19 +1,20 @@
-import gc
+from typing import Any, Dict, List, Optional, Union
+from pathlib import Path
 import logging
 import os
+import gc
 import uuid
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
-from hydra.utils import instantiate
 
+from hydra.utils import instantiate
 from omegaconf import DictConfig
+
+from nuplan.planning.utils.multithreading.worker_pool import WorkerPool
+from nuplan.planning.utils.multithreading.worker_utils import worker_map
 from nuplan.planning.training.experiments.cache_metadata_entry import (
     CacheMetadataEntry,
     CacheResult,
     save_cache_metadata,
 )
-from nuplan.planning.utils.multithreading.worker_pool import WorkerPool
-from nuplan.planning.utils.multithreading.worker_utils import worker_map
 
 from navsim.planning.metric_caching.metric_cache_processor import MetricCacheProcessor
 from navsim.planning.scenario_builder.navsim_scenario import NavSimScenario
@@ -38,21 +39,19 @@ def cache_scenarios(args: List[Dict[str, Union[List[str], DictConfig]]]) -> List
     # This way, everything will go out of scope, allowing the python GC to clean up after the function.
     #
     # This is necessary to save memory when running on large datasets.
-    def cache_scenarios_internal(
-        args: List[Dict[str, Union[Path, DictConfig]]]
-    ) -> List[CacheResult]:
-        
-        def cache_single_scenario(scene_dict: Dict[str, Any], processor: MetricCacheProcessor) -> Optional[CacheMetadataEntry]:
+    def cache_scenarios_internal(args: List[Dict[str, Union[Path, DictConfig]]]) -> List[CacheResult]:
+
+        def cache_single_scenario(
+            scene_dict: Dict[str, Any], processor: MetricCacheProcessor
+        ) -> Optional[CacheMetadataEntry]:
             scene = Scene.from_scene_dict_list(
                 scene_dict,
                 None,
-                num_history_frames=cfg.scene_filter.num_history_frames,
-                num_future_frames=cfg.scene_filter.num_future_frames,
+                num_history_frames=cfg.train_test_split.scene_filter.num_history_frames,
+                num_future_frames=cfg.train_test_split.scene_filter.num_future_frames,
                 sensor_config=SensorConfig.build_no_sensors(),
             )
-            scenario = NavSimScenario(
-                scene, map_root=os.environ["NUPLAN_MAPS_ROOT"], map_version="nuplan-maps-v1.0"
-            )
+            scenario = NavSimScenario(scene, map_root=os.environ["NUPLAN_MAPS_ROOT"], map_version="nuplan-maps-v1.0")
 
             return processor.compute_metric_cache(scenario)
 
@@ -63,7 +62,7 @@ def cache_scenarios(args: List[Dict[str, Union[List[str], DictConfig]]]) -> List
         tokens = [t for a in args for t in a["tokens"]]
         cfg: DictConfig = args[0]["cfg"]
 
-        scene_filter: SceneFilter =instantiate(cfg.scene_filter)
+        scene_filter: SceneFilter = instantiate(cfg.train_test_split.scene_filter)
         scene_filter.log_names = log_names
         scene_filter.tokens = tokens
         scene_loader = SceneLoader(
@@ -74,18 +73,14 @@ def cache_scenarios(args: List[Dict[str, Union[List[str], DictConfig]]]) -> List
         )
 
         # Create feature preprocessor
-        assert (
-            cfg.cache.cache_path is not None
-        ), f"Cache path cannot be None when caching, got {cfg.cache.cache_path}"
+        assert cfg.cache.cache_path is not None, f"Cache path cannot be None when caching, got {cfg.cache.cache_path}"
 
         processor = MetricCacheProcessor(
             cache_path=cfg.cache.cache_path,
             force_feature_computation=cfg.cache.force_feature_computation,
         )
 
-        logger.info(
-            f"Extracted {len(scene_loader)} scenarios for thread_id={thread_id}, node_id={node_id}."
-        )
+        logger.info(f"Extracted {len(scene_loader)} scenarios for thread_id={thread_id}, node_id={node_id}.")
         num_failures = 0
         num_successes = 0
         all_file_cache_metadata: List[Optional[CacheMetadataEntry]] = []
@@ -123,16 +118,14 @@ def cache_data(cfg: DictConfig, worker: WorkerPool) -> None:
     :param cfg: omegaconf dictionary
     :param worker: Worker to submit tasks which can be executed in parallel
     """
-    assert (
-        cfg.cache.cache_path is not None
-    ), f"Cache path cannot be None when caching, got {cfg.cache.cache_path}"
+    assert cfg.cache.cache_path is not None, f"Cache path cannot be None when caching, got {cfg.cache.cache_path}"
 
     # Extract scenes based on scene-loader to know which tokens to distribute across workers
     # TODO: infer the tokens per log from metadata, to not have to load metric cache and scenes here
     scene_loader = SceneLoader(
         sensor_blobs_path=None,
         data_path=Path(cfg.navsim_log_path),
-        scene_filter=instantiate(cfg.scene_filter),
+        scene_filter=instantiate(cfg.train_test_split.scene_filter),
         sensor_config=SensorConfig.build_no_sensors(),
     )
 
@@ -171,8 +164,6 @@ def cache_data(cfg: DictConfig, worker: WorkerPool) -> None:
     ]
 
     node_id = int(os.environ.get("NODE_RANK", 0))
-    logger.info(
-        f"Node {node_id}: Storing metadata csv file containing cache paths for valid features and targets..."
-    )
+    logger.info(f"Node {node_id}: Storing metadata csv file containing cache paths for valid features and targets...")
     save_cache_metadata(cached_metadata, Path(cfg.cache.cache_path), node_id)
     logger.info("Done storing metadata csv file.")

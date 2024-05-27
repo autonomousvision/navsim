@@ -1,7 +1,7 @@
 # Cache parameters
 experiment_name: ???
-navsim_log_path: ${oc.env:OPENSCENE_DATA_ROOT}/navsim_logs/${split} # path to log annotations
-sensor_blobs_path: ${oc.env:OPENSCENE_DATA_ROOT}/sensor_blobs/${split} # path to sensor blobs
+navsim_log_path: ${oc.env:OPENSCENE_DATA_ROOT}/navsim_logs/${train_test_split.data_split} # path to log annotations
+sensor_blobs_path: ${oc.env:OPENSCENE_DATA_ROOT}/sensor_blobs/${train_test_split.data_split} # path to sensor blobs
 date_format: '%Y.%m.%d.%H.%M.%S'
 experiment_uid: ${now:${date_format}}
 output_dir: ${oc.env:NAVSIM_EXP_ROOT}/${experiment_name}/${experiment_uid} # path where output csv is saved

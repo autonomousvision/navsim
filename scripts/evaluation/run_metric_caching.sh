@@ -1,6 +1,6 @@
-SPLIT=test
+TRAIN_TEST_SPLIT=navtest
+CACHE_PATH=$NAVSIM_EXP_ROOT/metric_cache
 
 python $NAVSIM_DEVKIT_ROOT/navsim/planning/script/run_metric_caching.py \
-split=$SPLIT \
-cache.cache_path=/home/aah1si/openscene/exp/public_test_metric_cache \
-scene_filter.frame_interval=1 \
+train_test_split=$TRAIN_TEST_SPLIT \
+cache.cache_path=$CACHE_PATH

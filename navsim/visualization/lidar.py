@@ -2,9 +2,8 @@ from typing import Any, List
 
 import numpy as np
 import numpy.typing as npt
-
 import matplotlib
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 
 from navsim.visualization.config import LIDAR_CONFIG
 from navsim.common.enums import LidarIndex
@@ -15,7 +14,7 @@ def filter_lidar_pc(lidar_pc: npt.NDArray[np.float32]) -> npt.NDArray[np.float32
     Filter lidar point cloud according to global configuration
     :param lidar_pc: numpy array of shape (6,n)
     :return: filtered point cloud
-    """    
+    """
 
     pc = lidar_pc.T
     mask = (
@@ -31,15 +30,13 @@ def filter_lidar_pc(lidar_pc: npt.NDArray[np.float32]) -> npt.NDArray[np.float32
     return pc.T
 
 
-def get_lidar_pc_color(
-    lidar_pc: npt.NDArray[np.float32], as_hex: bool = False
-) -> List[Any]:
+def get_lidar_pc_color(lidar_pc: npt.NDArray[np.float32], as_hex: bool = False) -> List[Any]:
     """
     Compute color map of lidar point cloud according to global configuration
     :param lidar_pc: numpy array of shape (6,n)
     :param as_hex: whether to return hex values, defaults to False
     :return: list of RGB or hex values
-    """    
+    """
 
     pc = lidar_pc.T
     if LIDAR_CONFIG["color_element"] == "none":

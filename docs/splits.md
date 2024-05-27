@@ -16,7 +16,8 @@ This eases access for users that only want to run the `navtrain` split and not t
 The logs are always the complete dataset split.
 
 ## Overview
-The Table belows offers an overview on the training and test splits supported by NAVSIM. It also shows which config parameters have to be used to set the dataset split (`split`) and training/test split (`scene-filter`).
+The Table belows offers an overview on the training and test splits supported by NAVSIM. 
+In Navsim-v1.1, the training/test split can bet set with a single config parameter given in the table.
 
 <table border="0">
     <tr>
@@ -34,8 +35,7 @@ The Table belows offers an overview on the training and test splits supported by
         <td>14GB</td>
         <td>&gt;2000GB</td>
         <td>
-        split=trainval<br>
-        scene_filter=all_scenes
+        train_test_split=trainval
         </td>
     </tr>
     <tr>
@@ -44,8 +44,7 @@ The Table belows offers an overview on the training and test splits supported by
         <td>1GB</td>
         <td>217GB</td>
         <td>
-        split=test<br>
-        scene_filter=all_scenes
+        train_test_split=test
         </td>
     </tr>
     <tr>
@@ -54,8 +53,7 @@ The Table belows offers an overview on the training and test splits supported by
         <td>1GB</td>
         <td>151GB</td>
         <td>
-        split=mini<br>
-        scene_filter=all_scenes
+        train_test_split=mini
         </td>
     </tr>
     <tr>
@@ -65,8 +63,7 @@ The Table belows offers an overview on the training and test splits supported by
         <td>-</td>
         <td>445GB*</td>
         <td>
-        split=trainval<br>
-        scene_filter=navtrain
+        train_test_split=navtrain
         </td>
     </tr>
     <tr>
@@ -75,8 +72,7 @@ The Table belows offers an overview on the training and test splits supported by
         <td>-</td>
         <td>-</td>
         <td>
-        split=test<br>
-        scene_filter=navtest
+        train_test_split=navtest
         </td>
     </tr>
     <tr>
@@ -86,8 +82,7 @@ The Table belows offers an overview on the training and test splits supported by
         <td>-</td>
         <td>-</td>
         <td>
-        split=mini<br>
-        scene_filter=warmup_test_e2e
+        train_test_split=warmup_test_e2e
         </td>
     </tr>
     <tr>
@@ -96,8 +91,7 @@ The Table belows offers an overview on the training and test splits supported by
         <td>&lt;1GB</td>
         <td>25GB</td>
         <td>
-        split=private_test_e2e<br>
-        scene_filter=private_test_e2e
+        train_test_split=private_test_e2e
         </td>
     </tr>
 </table>

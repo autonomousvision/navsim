@@ -1,20 +1,18 @@
-from typing import List
+import numpy as np
+
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
 from navsim.agents.abstract_agent import AbstractAgent
 from navsim.common.dataclasses import AgentInput, Trajectory, SensorConfig
 
-import numpy as np
-
 
 class ConstantVelocityAgent(AbstractAgent):
+    """Constant velocity baseline agent."""
 
     requires_scene = False
 
     def __init__(
         self,
-        trajectory_sampling: TrajectorySampling = TrajectorySampling(
-            time_horizon=4, interval_length=0.5
-        ),
+        trajectory_sampling: TrajectorySampling = TrajectorySampling(time_horizon=4, interval_length=0.5),
     ):
         self._trajectory_sampling = trajectory_sampling
 
@@ -32,11 +30,8 @@ class ConstantVelocityAgent(AbstractAgent):
         return SensorConfig.build_no_sensors()
 
     def compute_trajectory(self, agent_input: AgentInput) -> Trajectory:
-        """
-        Computes the ego vehicle trajectory.
-        :param current_input: Dataclass with agent inputs.
-        :return: Trajectory representing the predicted ego's position in future
-        """
+        """Inherited, see superclass."""
+
         ego_velocity_2d = agent_input.ego_statuses[-1].ego_velocity
         ego_speed = (ego_velocity_2d**2).sum(-1) ** 0.5
 

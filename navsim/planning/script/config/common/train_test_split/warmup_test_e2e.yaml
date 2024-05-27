@@ -1,0 +1,4 @@
+defaults:
+  - scene_filter: warmup_test_e2e
+
+data_split: mini

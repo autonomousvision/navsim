@@ -2,21 +2,14 @@ from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
-from nuplan.common.actor_state.ego_state import EgoState
-from nuplan.common.actor_state.state_representation import (
-    StateSE2,
-    StateVector2D,
-    TimePoint,
-)
-from nuplan.common.geometry.convert import relative_to_absolute_poses
-from nuplan.planning.simulation.trajectory.interpolated_trajectory import (
-    InterpolatedTrajectory,
-)
-from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
 
-from navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer import (
-    PDMScorer,
-)
+from nuplan.common.actor_state.ego_state import EgoState
+from nuplan.common.actor_state.state_representation import StateSE2, StateVector2D, TimePoint
+from nuplan.common.geometry.convert import relative_to_absolute_poses
+
+from nuplan.planning.simulation.trajectory.interpolated_trajectory import InterpolatedTrajectory
+from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
+from navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer import PDMScorer
 
 
 class PDMEmergencyBrake:
@@ -82,10 +75,7 @@ class PDMEmergencyBrake:
             time_to_infraction = scorer.time_to_at_fault_collision(proposal_idx)
 
         # check time to infraction below threshold
-        if (
-            time_to_infraction <= self._time_to_infraction_threshold
-            and ego_speed <= self._max_ego_speed
-        ):
+        if time_to_infraction <= self._time_to_infraction_threshold and ego_speed <= self._max_ego_speed:
             trajectory = self._generate_trajectory(ego_state)
 
         return trajectory
@@ -122,18 +112,14 @@ class PDMEmergencyBrake:
 
             u_t = k_p * error + k_d * dt_error
 
-            correcting_velocity = max(
-                min(u_t, self._max_long_accel), self._min_long_accel
-            )
+            correcting_velocity = max(min(u_t, self._max_long_accel), self._min_long_accel)
 
         trajectory_states = []
 
         # Propagate planned trajectory for set number of samples
         for sample in range(self._trajectory_sampling.num_poses + 1):
             time_t = self._trajectory_sampling.interval_length * sample
-            pose = relative_to_absolute_poses(
-                ego_state.center, [StateSE2(correcting_velocity * time_t, 0, 0)]
-            )[0]
+            pose = relative_to_absolute_poses(ego_state.center, [StateSE2(correcting_velocity * time_t, 0, 0)])[0]
 
             ego_state_ = EgoState.build_from_center(
                 center=pose,
@@ -145,8 +131,6 @@ class PDMEmergencyBrake:
             )
             trajectory_states.append(ego_state_)
 
-            current_time_point += TimePoint(
-                int(self._trajectory_sampling.interval_length * 1e6)
-            )
+            current_time_point += TimePoint(int(self._trajectory_sampling.interval_length * 1e6))
 
         return InterpolatedTrajectory(trajectory_states)

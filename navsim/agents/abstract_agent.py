@@ -8,6 +8,8 @@ from navsim.planning.training.abstract_feature_target_builder import AbstractFea
 
 
 class AbstractAgent(torch.nn.Module, ABC):
+    """Interface for an agent in NAVSIM."""
+
     def __init__(
         self,
         requires_scene: bool = False,
@@ -21,7 +23,7 @@ class AbstractAgent(torch.nn.Module, ABC):
         :return: string describing name of this agent.
         """
         pass
-    
+
     @abstractmethod
     def get_sensor_config(self) -> SensorConfig:
         """
@@ -64,7 +66,7 @@ class AbstractAgent(torch.nn.Module, ABC):
         :return: Trajectory representing the predicted ego's position in future
         """
         self.eval()
-        features : Dict[str, torch.Tensor] = {}
+        features: Dict[str, torch.Tensor] = {}
         # build features
         for builder in self.get_feature_builders():
             features.update(builder.compute_features(agent_input))
@@ -79,7 +81,7 @@ class AbstractAgent(torch.nn.Module, ABC):
 
         # extract trajectory
         return Trajectory(poses)
-    
+
     def compute_loss(
         self,
         features: Dict[str, torch.Tensor],
@@ -90,25 +92,17 @@ class AbstractAgent(torch.nn.Module, ABC):
         Computes the loss used for backpropagation based on the features, targets and model predictions.
         """
         raise NotImplementedError("No loss. Agent does not support training.")
-    
+
     def get_optimizers(
-        self
-    ) -> Union[
-        torch.optim.Optimizer,
-        Dict[str, Union[
-            torch.optim.Optimizer,
-            torch.optim.lr_scheduler.LRScheduler]
-        ]
-    ]:
+        self,
+    ) -> Union[torch.optim.Optimizer, Dict[str, Union[torch.optim.Optimizer, torch.optim.lr_scheduler.LRScheduler]]]:
         """
         Returns the optimizers that are used by thy pytorch-lightning trainer.
         Has to be either a single optimizer or a dict of optimizer and lr scheduler.
         """
         raise NotImplementedError("No optimizers. Agent does not support training.")
-    
-    def get_training_callbacks(
-        self
-    ) -> List[pl.Callback]:
+
+    def get_training_callbacks(self) -> List[pl.Callback]:
         """
         Returns a list of pytorch-lightning callbacks that are used during training.
         See navsim.planning.training.callbacks for examples.

@@ -2,31 +2,20 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import shapely.creation
+from shapely.geometry import Polygon
+
 from nuplan.common.actor_state.ego_state import EgoState
 from nuplan.common.actor_state.tracked_objects import TrackedObject
 from nuplan.common.actor_state.tracked_objects_types import TrackedObjectType
 from nuplan.common.maps.abstract_map_objects import LaneGraphEdgeMapObject
-
+from nuplan.common.maps.maps_datatypes import TrafficLightStatusData, TrafficLightStatusType
 from nuplan.planning.scenario_builder.abstract_scenario import AbstractScenario
-
-from nuplan.common.maps.maps_datatypes import (
-    TrafficLightStatusData,
-    TrafficLightStatusType,
-)
-from nuplan.planning.simulation.observation.observation_type import Observation
+from nuplan.planning.simulation.observation.observation_type import Observation, DetectionsTracks
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
-from shapely.geometry import Polygon
 
-from navsim.planning.simulation.planner.pdm_planner.observation.pdm_object_manager import (
-    PDMObjectManager,
-)
-from navsim.planning.simulation.planner.pdm_planner.observation.pdm_occupancy_map import (
-    PDMOccupancyMap,
-)
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import (
-    BBCoordsIndex,
-)
-from nuplan.planning.simulation.observation.observation_type import DetectionsTracks
+from navsim.planning.simulation.planner.pdm_planner.observation.pdm_object_manager import PDMObjectManager
+from navsim.planning.simulation.planner.pdm_planner.observation.pdm_occupancy_map import PDMOccupancyMap
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import BBCoordsIndex
 
 
 class PDMObservation:
@@ -55,8 +44,7 @@ class PDMObservation:
 
         self._observation_samples: int = (
             proposal_sampling.num_poses + int(1 / self._sample_interval)
-            if proposal_sampling.num_poses + int(1 / self._sample_interval)
-            > trajectory_sampling.num_poses
+            if proposal_sampling.num_poses + int(1 / self._sample_interval) > trajectory_sampling.num_poses
             else trajectory_sampling.num_poses
         )
 
@@ -65,8 +53,7 @@ class PDMObservation:
 
         # useful things
         self._global_to_local_idcs = [
-            idx // observation_sample_res
-            for idx in range(self._observation_samples + observation_sample_res)
+            idx // observation_sample_res for idx in range(self._observation_samples + observation_sample_res)
         ]
         self._collided_track_ids: List[str] = []
         self._red_light_token = "red_light"
@@ -84,9 +71,7 @@ class PDMObservation:
         :return: occupancy map
         """
         assert self._initialized, "PDMObservation: Has not been updated yet!"
-        assert (
-            0 <= time_idx < len(self._global_to_local_idcs)
-        ), f"PDMObservation: index {time_idx} out of range!"
+        assert 0 <= time_idx < len(self._global_to_local_idcs), f"PDMObservation: index {time_idx} out of range!"
 
         local_idx = self._global_to_local_idcs[time_idx]
         return self._occupancy_maps[local_idx]
@@ -162,9 +147,7 @@ class PDMObservation:
             dynamic_object_dxy = dynamic_object_dxy[None, ...]
 
         if has_static_object:
-            static_object_coords[..., BBCoordsIndex.CENTER, :] = static_object_coords[
-                ..., BBCoordsIndex.FRONT_LEFT, :
-            ]
+            static_object_coords[..., BBCoordsIndex.CENTER, :] = static_object_coords[..., BBCoordsIndex.FRONT_LEFT, :]
             static_object_polygons = shapely.creation.polygons(static_object_coords)
 
         else:
@@ -187,9 +170,7 @@ class PDMObservation:
         ):
             if has_dynamic_object:
                 delta_t = float(sample) * self._sample_interval
-                dynamic_object_coords_t = (
-                    dynamic_object_coords + delta_t * dynamic_object_dxy[:, None]
-                )
+                dynamic_object_coords_t = dynamic_object_coords + delta_t * dynamic_object_dxy[:, None]
                 dynamic_object_polygons = shapely.creation.polygons(dynamic_object_coords_t)
 
             all_polygons = np.concatenate(
@@ -278,9 +259,7 @@ class PDMObservation:
         self._unique_objects = unique_objects
         self._initialized = True
 
-    def _get_object_manager(
-        self, ego_state: EgoState, observation: Observation
-    ) -> PDMObjectManager:
+    def _get_object_manager(self, ego_state: EgoState, observation: Observation) -> PDMObjectManager:
         """
         Creates object manager class, but adding valid tracked objects.
         :param ego_state: state of ego-vehicle
@@ -292,10 +271,7 @@ class PDMObservation:
         for object in observation.tracked_objects:
             if (
                 (object.tracked_object_type == TrackedObjectType.EGO)
-                or (
-                    self._map_radius
-                    and ego_state.center.distance_to(object.center) > self._map_radius
-                )
+                or (self._map_radius and ego_state.center.distance_to(object.center) > self._map_radius)
                 or (object.track_token in self._collided_track_ids)
             ):
                 continue
@@ -320,9 +296,7 @@ class PDMObservation:
         for data in traffic_light_data:
             lane_connector_id = str(data.lane_connector_id)
 
-            if (data.status == TrafficLightStatusType.RED) and (
-                lane_connector_id in route_lane_dict.keys()
-            ):
+            if (data.status == TrafficLightStatusType.RED) and (lane_connector_id in route_lane_dict.keys()):
                 lane_connector = route_lane_dict[lane_connector_id]
                 traffic_light_tokens.append(f"{self._red_light_token}_{lane_connector_id}")
                 traffic_light_polygons.append(lane_connector.polygon)

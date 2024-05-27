@@ -1,15 +1,14 @@
 from typing import List, Optional, Tuple
+
 import cv2
+import numpy as np
+import numpy.typing as npt
 from PIL import ImageColor
 import matplotlib.pyplot as plt
 from pyquaternion import Quaternion
 
-import numpy as np
-import numpy.typing as npt
-
 from navsim.common.dataclasses import Camera, Lidar, Annotations
 from navsim.common.enums import LidarIndex, BoundingBoxIndex
-
 from navsim.visualization.config import AGENT_CONFIG
 from navsim.visualization.lidar import filter_lidar_pc, get_lidar_pc_color
 from navsim.planning.scenario_builder.navsim_scenario_utils import tracked_object_types
@@ -57,9 +56,7 @@ def add_lidar_to_camera_ax(ax: plt.Axes, camera: Camera, lidar: Lidar) -> plt.Ax
     return ax
 
 
-def add_annotations_to_camera_ax(
-    ax: plt.Axes, camera: Camera, annotations: Annotations
-) -> plt.Axes:
+def add_annotations_to_camera_ax(ax: plt.Axes, camera: Camera, annotations: Annotations) -> plt.Axes:
     """
     Adds camera image with bounding boxes on matplotlib ax object
     :param ax: matplotlib ax object
@@ -87,9 +84,7 @@ def add_annotations_to_camera_ax(
     corners += box_positions.reshape(-1, 1, 3)
 
     # Then draw project corners to image.
-    box_corners, corners_pc_in_fov = _transform_points_to_image(
-        corners.reshape(-1, 3), camera.intrinsics
-    )
+    box_corners, corners_pc_in_fov = _transform_points_to_image(corners.reshape(-1, 3), camera.intrinsics)
     box_corners = box_corners.reshape(-1, 8, 2)
     corners_pc_in_fov = corners_pc_in_fov.reshape(-1, 8)
     valid_corners = corners_pc_in_fov.any(-1)
@@ -142,9 +137,7 @@ def _transform_annotations_to_camera(
     return np.concatenate([locs_cam, dims_cam, rots_cam], -1)
 
 
-def _rotation_3d_in_axis(
-    points: npt.NDArray[np.float32], angles: npt.NDArray[np.float32], axis: int = 0
-):
+def _rotation_3d_in_axis(points: npt.NDArray[np.float32], angles: npt.NDArray[np.float32], axis: int = 0):
     """
     Rotate 3D points by angles according to axis.
     TODO: Refactor
@@ -306,9 +299,7 @@ def _transform_pcs_to_images(
     cur_pc_cam = lidar2img_rt @ cur_pc_xyz.T
     cur_pc_cam = cur_pc_cam.T
     cur_pc_in_fov = cur_pc_cam[:, 2] > eps
-    cur_pc_cam = cur_pc_cam[..., 0:2] / np.maximum(
-        cur_pc_cam[..., 2:3], np.ones_like(cur_pc_cam[..., 2:3]) * eps
-    )
+    cur_pc_cam = cur_pc_cam[..., 0:2] / np.maximum(cur_pc_cam[..., 2:3], np.ones_like(cur_pc_cam[..., 2:3]) * eps)
 
     if img_shape is not None:
         img_h, img_w = img_shape

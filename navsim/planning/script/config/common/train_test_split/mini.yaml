@@ -1,0 +1,4 @@
+defaults:
+  - scene_filter: all_scenes
+
+data_split: mini

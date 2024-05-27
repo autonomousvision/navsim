@@ -1,16 +1,16 @@
 from __future__ import annotations
 
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Union
+from dataclasses import dataclass, asdict
+from pathlib import Path
 import io
 import os
 
-from pathlib import Path
 import numpy as np
 import numpy.typing as npt
 from PIL import Image
+from pyquaternion import Quaternion
 
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import (
-    convert_absolute_to_relative_se2_array,
-)
 
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
 from nuplan.common.actor_state.state_representation import StateSE2
@@ -19,10 +19,9 @@ from nuplan.common.maps.nuplan_map.map_factory import get_maps_api
 from nuplan.database.maps_db.gpkg_mapsdb import MAP_LOCATIONS
 from nuplan.database.utils.pointclouds.lidar import LidarPointCloud
 
-from pyquaternion import Quaternion
-from dataclasses import dataclass, asdict
-from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Union
-
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import (
+    convert_absolute_to_relative_se2_array,
+)
 
 NAVSIM_INTERVAL_LENGTH: float = 0.5
 OPENSCENE_DATA_ROOT = os.environ.get("OPENSCENE_DATA_ROOT")
@@ -31,6 +30,8 @@ NUPLAN_MAPS_ROOT = os.environ.get("NUPLAN_MAPS_ROOT")
 
 @dataclass
 class Camera:
+    """Camera dataclass for image and parameters."""
+
     image: Optional[npt.NDArray[np.float32]] = None
 
     sensor2lidar_rotation: Optional[npt.NDArray[np.float32]] = None
@@ -41,6 +42,7 @@ class Camera:
 
 @dataclass
 class Cameras:
+    """Multi-camera dataclass."""
 
     cam_f0: Camera
     cam_l0: Camera
@@ -58,6 +60,13 @@ class Cameras:
         camera_dict: Dict[str, Any],
         sensor_names: List[str],
     ) -> Cameras:
+        """
+        Load camera dataclass from dictionary.
+        :param sensor_blobs_path: root directory of sensor data.
+        :param camera_dict: dictionary containing camera specifications.
+        :param sensor_names: list of camera identifiers to include.
+        :return: Cameras dataclass.
+        """
 
         data_dict: Dict[str, Camera] = {}
         for camera_name in camera_dict.keys():
@@ -88,6 +97,7 @@ class Cameras:
 
 @dataclass
 class Lidar:
+    """Lidar point cloud dataclass."""
 
     # NOTE:
     # merged lidar point cloud as (6,n) float32 array with n points
@@ -96,16 +106,19 @@ class Lidar:
 
     @staticmethod
     def _load_bytes(lidar_path: Path) -> BinaryIO:
+        """Helper static method to load lidar point cloud stream."""
         with open(lidar_path, "rb") as fp:
             return io.BytesIO(fp.read())
 
     @classmethod
-    def from_paths(
-        cls,
-        sensor_blobs_path: Path,
-        lidar_path: Path,
-        sensor_names: List[str],
-    ) -> Lidar:
+    def from_paths(cls, sensor_blobs_path: Path, lidar_path: Path, sensor_names: List[str]) -> Lidar:
+        """
+        Loads lidar point cloud dataclass in log loading.
+        :param sensor_blobs_path: root directory to sensor data
+        :param lidar_path: relative lidar path from logs.
+        :param sensor_names: list of sensor identifiers to load`
+        :return: lidar point cloud dataclass
+        """
 
         # NOTE: this could be extended to load specific LiDARs in the merged pc
         if "lidar_pc" in sensor_names:
@@ -117,6 +130,7 @@ class Lidar:
 
 @dataclass
 class EgoStatus:
+    """Ego vehicle status dataclass."""
 
     ego_pose: npt.NDArray[np.float64]
     ego_velocity: npt.NDArray[np.float32]
@@ -127,6 +141,7 @@ class EgoStatus:
 
 @dataclass
 class AgentInput:
+    """Dataclass for agent inputs with current and past ego statuses and sensors."""
 
     ego_statuses: List[EgoStatus]
     cameras: List[Cameras]
@@ -140,6 +155,14 @@ class AgentInput:
         num_history_frames: int,
         sensor_config: SensorConfig,
     ) -> AgentInput:
+        """
+        Load agent input from scene dictionary.
+        :param scene_dict_list: list of scene frames (in logs).
+        :param sensor_blobs_path: root directory of sensor data
+        :param num_history_frames: number of agent input frames
+        :param sensor_config: sensor config dataclass
+        :return: agent input dataclass
+        """
         assert len(scene_dict_list) > 0, "Scene list is empty!"
 
         global_ego_poses = []
@@ -193,6 +216,7 @@ class AgentInput:
 
 @dataclass
 class Annotations:
+    """Dataclass of annotations (e.g. bounding boxes) per frame."""
 
     boxes: npt.NDArray[np.float32]
     names: List[str]
@@ -211,15 +235,13 @@ class Annotations:
 
 @dataclass
 class Trajectory:
+    """Trajectory dataclass in NAVSIM."""
+
     poses: npt.NDArray[np.float32]  # local coordinates
-    trajectory_sampling: TrajectorySampling = TrajectorySampling(
-        time_horizon=4, interval_length=0.5
-    )
+    trajectory_sampling: TrajectorySampling = TrajectorySampling(time_horizon=4, interval_length=0.5)
 
     def __post_init__(self):
-        assert (
-            self.poses.ndim == 2
-        ), "Trajectory poses should have two dimensions for samples and poses."
+        assert self.poses.ndim == 2, "Trajectory poses should have two dimensions for samples and poses."
         assert (
             self.poses.shape[0] == self.trajectory_sampling.num_poses
         ), "Trajectory poses and sampling have unequal number of poses."
@@ -228,6 +250,8 @@ class Trajectory:
 
 @dataclass
 class SceneMetadata:
+    """Dataclass of scene metadata (e.g. location) per scene."""
+
     log_name: str
     scene_token: str
     map_name: str
@@ -239,6 +263,7 @@ class SceneMetadata:
 
 @dataclass
 class Frame:
+    """Frame dataclass with privileged information."""
 
     token: str
     timestamp: int
@@ -253,6 +278,7 @@ class Frame:
 
 @dataclass
 class Scene:
+    """Scene dataclass defining a single sample in NAVSIM."""
 
     # Ground truth information
     scene_metadata: SceneMetadata
@@ -260,6 +286,11 @@ class Scene:
     frames: List[Frame]
 
     def get_future_trajectory(self, num_trajectory_frames: Optional[int] = None) -> Trajectory:
+        """
+        Extracts future trajectory of the human operator in local coordinates (ie. ego rear-axle).
+        :param num_trajectory_frames: optional number frames to extract poses, defaults to None
+        :return: trajectory dataclass
+        """
 
         if num_trajectory_frames is None:
             num_trajectory_frames = self.scene_metadata.num_future_frames
@@ -283,6 +314,11 @@ class Scene:
         )
 
     def get_history_trajectory(self, num_trajectory_frames: Optional[int] = None) -> Trajectory:
+        """
+        Extracts past trajectory of ego vehicles in local coordinates (ie. ego rear-axle).
+        :param num_trajectory_frames: optional number frames to extract poses, defaults to None
+        :return: trajectory dataclass
+        """
 
         if num_trajectory_frames is None:
             num_trajectory_frames = self.scene_metadata.num_history_frames
@@ -292,9 +328,7 @@ class Scene:
             global_ego_poses.append(self.frames[frame_idx].ego_status.ego_pose)
 
         origin = StateSE2(*global_ego_poses[-1])
-        local_ego_poses = convert_absolute_to_relative_se2_array(
-            origin, np.array(global_ego_poses, dtype=np.float64)
-        )
+        local_ego_poses = convert_absolute_to_relative_se2_array(origin, np.array(global_ego_poses, dtype=np.float64))
 
         return Trajectory(
             local_ego_poses,
@@ -305,6 +339,10 @@ class Scene:
         )
 
     def get_agent_input(self) -> AgentInput:
+        """
+        Extracts agents input dataclass (without privileged information) from scene.
+        :return: agent input dataclass
+        """
 
         local_ego_poses = self.get_history_trajectory().poses
         ego_statuses: List[EgoStatus] = []
@@ -329,16 +367,13 @@ class Scene:
 
     @classmethod
     def _build_map_api(cls, map_name: str) -> AbstractMap:
-        assert (
-            map_name in MAP_LOCATIONS
-        ), f"The map name {map_name} is invalid, must be in {MAP_LOCATIONS}"
+        """Helper classmethod to load map api from name."""
+        assert map_name in MAP_LOCATIONS, f"The map name {map_name} is invalid, must be in {MAP_LOCATIONS}"
         return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
 
     @classmethod
-    def _build_annotations(
-        cls,
-        scene_frame: Dict,
-    ) -> Annotations:
+    def _build_annotations(cls, scene_frame: Dict) -> Annotations:
+        """Helper classmethod to load annotation dataclass from logs."""
         return Annotations(
             boxes=scene_frame["anns"]["gt_boxes"],
             names=scene_frame["anns"]["gt_names"],
@@ -348,10 +383,8 @@ class Scene:
         )
 
     @classmethod
-    def _build_ego_status(
-        cls,
-        scene_frame: Dict,
-    ) -> EgoStatus:
+    def _build_ego_status(cls, scene_frame: Dict) -> EgoStatus:
+        """Helper classmethod to load ego status dataclass from logs."""
         ego_translation = scene_frame["ego2global_translation"]
         ego_quaternion = Quaternion(*scene_frame["ego2global_rotation"])
         global_ego_pose = np.array(
@@ -376,8 +409,16 @@ class Scene:
         num_future_frames: int,
         sensor_config: SensorConfig,
     ) -> Scene:
+        """
+        Load scene dataclass from scene dictionary list (for log loading).
+        :param scene_dict_list: list of scene frames (in logs)
+        :param sensor_blobs_path: root directory of sensor data
+        :param num_history_frames: number of past and current frames to load
+        :param num_future_frames: number of future frames to load
+        :param sensor_config: sensor config dataclass
+        :return: scene dataclass
+        """
         assert len(scene_dict_list) >= 0, "Scene list is empty!"
-
         scene_metadata = SceneMetadata(
             log_name=scene_dict_list[num_history_frames - 1]["log_name"],
             scene_token=scene_dict_list[num_history_frames - 1]["scene_token"],
@@ -424,6 +465,7 @@ class Scene:
 
 @dataclass
 class SceneFilter:
+    """Scene filtering configuration for scene loading."""
 
     num_history_frames: int = 4
     num_future_frames: int = 10
@@ -440,26 +482,25 @@ class SceneFilter:
         if self.frame_interval is None:
             self.frame_interval = self.num_frames
 
-        assert (
-            self.num_history_frames >= 1
-        ), "SceneFilter: num_history_frames must greater equal one."
-        assert (
-            self.num_future_frames >= 0
-        ), "SceneFilter: num_future_frames must greater equal zero."
+        assert self.num_history_frames >= 1, "SceneFilter: num_history_frames must greater equal one."
+        assert self.num_future_frames >= 0, "SceneFilter: num_future_frames must greater equal zero."
         assert self.frame_interval >= 1, "SceneFilter: frame_interval must greater equal one."
 
     @property
     def num_frames(self) -> int:
+        """
+        :return: total number for frames for scenes to extract.
+        """
         return self.num_history_frames + self.num_future_frames
 
 
 @dataclass
 class SensorConfig:
+    """Configuration dataclass of agent sensors for memory management."""
 
     # Config values of sensors are either
     # - bool: Whether to load history or not
     # - List[int]: For loading specific history steps
-
     cam_f0: Union[bool, List[int]]
     cam_l0: Union[bool, List[int]]
     cam_l1: Union[bool, List[int]]
@@ -471,18 +512,26 @@ class SensorConfig:
     lidar_pc: Union[bool, List[int]]
 
     def get_sensors_at_iteration(self, iteration: int) -> List[str]:
-
+        """
+        Creates a list of sensor identifiers given iteration.
+        :param iteration: integer indicating the history iteration.
+        :return: list of sensor identifiers to load.
+        """
         sensors_at_iteration: List[str] = []
         for sensor_name, sensor_include in asdict(self).items():
             if isinstance(sensor_include, bool) and sensor_include:
                 sensors_at_iteration.append(sensor_name)
             elif isinstance(sensor_include, list) and iteration in sensor_include:
                 sensors_at_iteration.append(sensor_name)
-
         return sensors_at_iteration
 
     @classmethod
     def build_all_sensors(cls, include: Union[bool, List[int]] = True) -> SensorConfig:
+        """
+        Classmethod to load all sensors with the same specification.
+        :param include: boolean or integers for sensors to include, defaults to True
+        :return: sensor configuration dataclass
+        """
         return SensorConfig(
             cam_f0=include,
             cam_l0=include,
@@ -497,18 +546,23 @@ class SensorConfig:
 
     @classmethod
     def build_no_sensors(cls) -> SensorConfig:
+        """
+        Classmethod to load no sensors.
+        :return: sensor configuration dataclass
+        """
         return cls.build_all_sensors(include=False)
 
 
 @dataclass
 class PDMResults:
+    """Helper dataclass to record PDM results."""
 
     no_at_fault_collisions: float
     drivable_area_compliance: float
-    driving_direction_compliance: float
 
     ego_progress: float
     time_to_collision_within_bound: float
     comfort: float
+    driving_direction_compliance: float
 
     score: float

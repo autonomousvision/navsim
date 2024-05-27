@@ -76,11 +76,7 @@ class BreadthFirstSearchRoadBlock:
                 path_found = True
                 break
 
-            neighbors = (
-                current_edge.outgoing_edges
-                if self._forward_search
-                else current_edge.incoming_edges
-            )
+            neighbors = current_edge.outgoing_edges if self._forward_search else current_edge.incoming_edges
 
             # Populate queue
             for next_edge in neighbors:
@@ -127,9 +123,7 @@ class BreadthFirstSearchRoadBlock:
         """
         return current_edge.id in self._target_roadblock_ids and depth <= max_depth
 
-    def _construct_path(
-        self, end_edge: RoadBlockGraphEdgeMapObject, depth: int
-    ) -> List[RoadBlockGraphEdgeMapObject]:
+    def _construct_path(self, end_edge: RoadBlockGraphEdgeMapObject, depth: int) -> List[RoadBlockGraphEdgeMapObject]:
         """
         Constructs a path when goal was found.
         :param end_edge: The end edge to start back propagating back to the start edge.

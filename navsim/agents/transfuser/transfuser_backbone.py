@@ -2,35 +2,40 @@
 Implements the TransFuser vision backbone.
 """
 
-import math
-import torch
-from torch import nn
-import torch.nn.functional as F
-import timm
 import copy
+import math
+
+import timm
+import torch
+import torch.nn.functional as F
+from torch import nn
+
+from navsim.agents.transfuser.transfuser_config import TransfuserConfig
 
 
 class TransfuserBackbone(nn.Module):
-    """
-    Multi-scale Fusion Transformer for image + LiDAR feature fusion
-    """
+    """Multi-scale Fusion Transformer for image + LiDAR feature fusion."""
 
-    def __init__(self, config):
+    def __init__(self, config: TransfuserConfig):
 
         super().__init__()
         self.config = config
 
-        self.image_encoder = timm.create_model(
-            config.image_architecture, pretrained=True, features_only=True
-        )
+        self.image_encoder = timm.create_model(config.image_architecture, pretrained=True, features_only=True)
         if config.use_ground_plane:
             in_channels = 2 * config.lidar_seq_len
         else:
             in_channels = config.lidar_seq_len
 
-        self.avgpool_img = nn.AdaptiveAvgPool2d(
-            (self.config.img_vert_anchors, self.config.img_horz_anchors)
-        )
+        if config.latent:
+            self.lidar_latent = nn.Parameter(
+                torch.randn(
+                    (1, in_channels, config.lidar_resolution_width, config.lidar_resolution_height),
+                    requires_grad=True,
+                )
+            )
+
+        self.avgpool_img = nn.AdaptiveAvgPool2d((self.config.img_vert_anchors, self.config.img_horz_anchors))
 
         self.lidar_encoder = timm.create_model(
             config.lidar_architecture,
@@ -39,9 +44,7 @@ class TransfuserBackbone(nn.Module):
             features_only=True,
         )
         self.global_pool_lidar = nn.AdaptiveAvgPool2d(output_size=1)
-        self.avgpool_lidar = nn.AdaptiveAvgPool2d(
-            (self.config.lidar_vert_anchors, self.config.lidar_horz_anchors)
-        )
+        self.avgpool_lidar = nn.AdaptiveAvgPool2d((self.config.lidar_vert_anchors, self.config.lidar_horz_anchors))
         lidar_time_frames = [1, 1, 1, 1]
 
         self.global_pool_img = nn.AdaptiveAvgPool2d(output_size=1)
@@ -127,9 +130,7 @@ class TransfuserBackbone(nn.Module):
             self.up_conv4 = nn.Conv2d(channel, channel, (3, 3), padding=1)
 
             # lateral
-            self.c5_conv = nn.Conv2d(
-                self.lidar_encoder.feature_info.info[start_index + 3]["num_chs"], channel, (1, 1)
-            )
+            self.c5_conv = nn.Conv2d(self.lidar_encoder.feature_info.info[start_index + 3]["num_chs"], channel, (1, 1))
 
     def top_down(self, x):
 
@@ -148,6 +149,10 @@ class TransfuserBackbone(nn.Module):
         """
         image_features, lidar_features = image, lidar
 
+        if self.config.latent:
+            batch_size = lidar.shape[0]
+            lidar_features = self.lidar_latent.repeat(batch_size, 1, 1, 1)
+
         # Generate an iterator for all the layers in the network that one can loop through.
         image_layers = iter(self.image_encoder.items())
         lidar_layers = iter(self.lidar_encoder.items())
@@ -155,22 +160,14 @@ class TransfuserBackbone(nn.Module):
         # Stem layer.
         # In some architectures the stem is not a return layer, so we need to skip it.
         if len(self.image_encoder.return_layers) > 4:
-            image_features = self.forward_layer_block(
-                image_layers, self.image_encoder.return_layers, image_features
-            )
+            image_features = self.forward_layer_block(image_layers, self.image_encoder.return_layers, image_features)
         if len(self.lidar_encoder.return_layers) > 4:
-            lidar_features = self.forward_layer_block(
-                lidar_layers, self.lidar_encoder.return_layers, lidar_features
-            )
+            lidar_features = self.forward_layer_block(lidar_layers, self.lidar_encoder.return_layers, lidar_features)
 
         # Loop through the 4 blocks of the network.
         for i in range(4):
-            image_features = self.forward_layer_block(
-                image_layers, self.image_encoder.return_layers, image_features
-            )
-            lidar_features = self.forward_layer_block(
-                lidar_layers, self.lidar_encoder.return_layers, lidar_features
-            )
+            image_features = self.forward_layer_block(image_layers, self.image_encoder.return_layers, image_features)
+            lidar_features = self.forward_layer_block(lidar_layers, self.lidar_encoder.return_layers, lidar_features)
 
             image_features, lidar_features = self.fuse_features(image_features, lidar_features, i)
 
@@ -230,9 +227,7 @@ class TransfuserBackbone(nn.Module):
 
         lidar_embd_layer = self.lidar_channel_to_img[layer_idx](lidar_embd_layer)
 
-        image_features_layer, lidar_features_layer = self.transformers[layer_idx](
-            image_embd_layer, lidar_embd_layer
-        )
+        image_features_layer, lidar_features_layer = self.transformers[layer_idx](image_embd_layer, lidar_embd_layer)
         lidar_features_layer = self.img_channel_to_lidar[layer_idx](lidar_features_layer)
 
         image_features_layer = F.interpolate(
@@ -255,7 +250,7 @@ class TransfuserBackbone(nn.Module):
 
 
 class GPT(nn.Module):
-    """the full GPT language backbone, with a context size of block_size"""
+    """The full GPT language backbone, with a context size of block_size."""
 
     # def __init__(self, n_embd, config, lidar_video, lidar_time_frames):
     def __init__(self, n_embd, config, lidar_time_frames):
@@ -272,9 +267,7 @@ class GPT(nn.Module):
             torch.zeros(
                 1,
                 self.seq_len * self.config.img_vert_anchors * self.config.img_horz_anchors
-                + lidar_time_frames
-                * self.config.lidar_vert_anchors
-                * self.config.lidar_horz_anchors,
+                + lidar_time_frames * self.config.lidar_vert_anchors * self.config.lidar_horz_anchors,
                 self.n_embd,
             )
         )
@@ -284,9 +277,7 @@ class GPT(nn.Module):
         # transformer
         self.blocks = nn.Sequential(
             *[
-                Block(
-                    n_embd, config.n_head, config.block_exp, config.attn_pdrop, config.resid_pdrop
-                )
+                Block(n_embd, config.n_head, config.block_exp, config.attn_pdrop, config.resid_pdrop)
                 for layer in range(config.n_layer)
             ]
         )
@@ -376,21 +367,15 @@ class SelfAttention(nn.Module):
         # calculate query, key, values for all heads in batch and move head
         # forward to be the batch dim
         k = self.key(x).view(b, t, self.n_head, c // self.n_head).transpose(1, 2)  # (b, nh, t, hs)
-        q = (
-            self.query(x).view(b, t, self.n_head, c // self.n_head).transpose(1, 2)
-        )  # (b, nh, t, hs)
-        v = (
-            self.value(x).view(b, t, self.n_head, c // self.n_head).transpose(1, 2)
-        )  # (b, nh, t, hs)
+        q = self.query(x).view(b, t, self.n_head, c // self.n_head).transpose(1, 2)  # (b, nh, t, hs)
+        v = self.value(x).view(b, t, self.n_head, c // self.n_head).transpose(1, 2)  # (b, nh, t, hs)
 
         # self-attend: (b, nh, t, hs) x (b, nh, hs, t) -> (b, nh, t, t)
         att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
         att = F.softmax(att, dim=-1)
         att = self.attn_drop(att)
         y = att @ v  # (b, nh, t, t) x (b, nh, t, hs) -> (b, nh, t, hs)
-        y = (
-            y.transpose(1, 2).contiguous().view(b, t, c)
-        )  # re-assemble all head outputs side by side
+        y = y.transpose(1, 2).contiguous().view(b, t, c)  # re-assemble all head outputs side by side
 
         # output projection
         y = self.resid_drop(self.proj(y))
@@ -444,24 +429,16 @@ class MultiheadAttentionWithAttention(nn.Module):
 
         # calculate query, key, values for all heads in batch and move head
         # forward to be the batch dim
-        q = (
-            self.query(q_in).view(b, t, self.n_head, c // self.n_head).transpose(1, 2)
-        )  # (b, nh, t, hs)
-        k = (
-            self.key(k_in).view(b, t_mem, self.n_head, c // self.n_head).transpose(1, 2)
-        )  # (b, nh, t, hs)
-        v = (
-            self.value(v_in).view(b, t_mem, self.n_head, c // self.n_head).transpose(1, 2)
-        )  # (b, nh, t, hs)
+        q = self.query(q_in).view(b, t, self.n_head, c // self.n_head).transpose(1, 2)  # (b, nh, t, hs)
+        k = self.key(k_in).view(b, t_mem, self.n_head, c // self.n_head).transpose(1, 2)  # (b, nh, t, hs)
+        v = self.value(v_in).view(b, t_mem, self.n_head, c // self.n_head).transpose(1, 2)  # (b, nh, t, hs)
 
         # self-attend: (b, nh, t, hs) x (b, nh, hs, t) -> (b, nh, t, t)
         att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
         att = F.softmax(att, dim=-1)
         att = self.attn_drop(att)
         y = att @ v  # (b, nh, t, t) x (b, nh, t, hs) -> (b, nh, t, hs)
-        y = (
-            y.transpose(1, 2).contiguous().view(b, t, c)
-        )  # re-assemble all head outputs side by side
+        y = y.transpose(1, 2).contiguous().view(b, t, c)  # re-assemble all head outputs side by side
 
         # output projection
         y = self.resid_drop(self.proj(y))

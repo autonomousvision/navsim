@@ -1,4 +1,5 @@
 from typing import Any, Dict
+
 from nuplan.common.maps.abstract_map import SemanticMapLayer
 from nuplan.common.actor_state.tracked_objects_types import TrackedObjectType
 
@@ -6,16 +7,16 @@ from nuplan.common.actor_state.tracked_objects_types import TrackedObjectType
 LIGHT_GREY: str = "#D3D3D3"
 
 TAB_10: Dict[int, str] = {
-    0: "#1f77b4",
-    1: "#ff7f0e",
-    2: "#2ca02c",
-    3: "#d62728",
-    4: "#9467bd",
-    5: "#8c564b",
-    6: "#e377c2",
-    7: "#7f7f7f",
-    8: "#bcbd22",
-    9: "#17becf",
+    0: "#1f77b4",  # blue
+    1: "#ff7f0e",  # orange
+    2: "#2ca02c",  # green
+    3: "#d62728",  # red
+    4: "#9467bd",  # violet
+    5: "#8c564b",  # brown
+    6: "#e377c2",  # pink
+    7: "#7f7f7f",  # grey
+    8: "#bcbd22",  # yellow
+    9: "#17becf",  # cyan
 }
 
 
@@ -27,9 +28,9 @@ NEW_TAB_10: Dict[int, str] = {
     4: "#59a14f",  # green
     5: "#edc948",  # yellow
     6: "#b07aa1",  # violet
-    7: "#ff9da7",
-    8: "#9c755f",
-    9: "#bab0ac",
+    7: "#ff9da7",  # pink
+    8: "#9c755f",  # brown
+    9: "#bab0ac",  # grey
 }
 
 
@@ -46,7 +47,7 @@ BEV_PLOT_CONFIG: Dict[str, Any] = {
     "figure_size": (5, 5),
     "figure_margin": (64, 64),
     "background_color": "white",
-    "layers": ["map", "annotations"],  #  "map", "annotations", "lidar"
+    "layers": ["map", "annotations"],  # "map", "annotations", "lidar"
 }
 
 CAMERAS_PLOT_CONFIG: Dict[str, Any] = {

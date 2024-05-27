@@ -14,7 +14,5 @@ def build_observations(observation_cfg: DictConfig, scenario: AbstractScenario) 
     :param scenario: scenario
     :return AbstractObservation
     """
-
     observation = cast(AbstractObservation, instantiate(observation_cfg, scenario=scenario))
-
     return observation

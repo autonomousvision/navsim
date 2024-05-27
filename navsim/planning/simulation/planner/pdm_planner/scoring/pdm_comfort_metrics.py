@@ -4,9 +4,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy.signal import savgol_filter
 
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import (
-    StateIndex,
-)
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import StateIndex
 
 # TODO: Refactor & add to config
 
@@ -97,9 +95,7 @@ def _extract_ego_jerk(
     :return: array containing jerk values
     """
     n_batch, n_time, n_states = states.shape
-    ego_acceleration = _extract_ego_acceleration(
-        states, acceleration_coordinate=acceleration_coordinate
-    )
+    ego_acceleration = _extract_ego_acceleration(states, acceleration_coordinate=acceleration_coordinate)
     jerk = _approximate_derivatives(
         ego_acceleration,
         time_steps_s,
@@ -156,9 +152,7 @@ def _phase_unwrap(headings: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
     # So adjustments[j+1] - adjustments[j] = round((headings[j+1] - headings[j]) / (2*pi)).
     two_pi = 2.0 * np.pi
     adjustments = np.zeros_like(headings)
-    adjustments[..., 1:] = np.cumsum(
-        np.round(np.diff(headings, axis=-1) / two_pi), axis=-1
-    )
+    adjustments[..., 1:] = np.cumsum(np.round(np.diff(headings, axis=-1) / two_pi), axis=-1)
     unwrapped = headings - two_pi * adjustments
     return unwrapped
 
@@ -236,12 +230,8 @@ def _compute_lon_acceleration(
     :return: longitudinal acceleration within bound
     """
     n_batch, n_time, n_states = states.shape
-    lon_acceleration = _extract_ego_acceleration(
-        states, acceleration_coordinate="x", window_length=n_time
-    )
-    return _within_bound(
-        lon_acceleration, min_bound=min_lon_accel, max_bound=max_lon_accel
-    )
+    lon_acceleration = _extract_ego_acceleration(states, acceleration_coordinate="x", window_length=n_time)
+    return _within_bound(lon_acceleration, min_bound=min_lon_accel, max_bound=max_lon_accel)
 
 
 def _compute_lat_acceleration(
@@ -254,12 +244,8 @@ def _compute_lat_acceleration(
     :return: lateral acceleration within bound
     """
     n_batch, n_time, n_states = states.shape
-    lat_acceleration = _extract_ego_acceleration(
-        states, acceleration_coordinate="y", window_length=n_time
-    )
-    return _within_bound(
-        lat_acceleration, min_bound=-max_abs_lat_accel, max_bound=max_abs_lat_accel
-    )
+    lat_acceleration = _extract_ego_acceleration(states, acceleration_coordinate="y", window_length=n_time)
+    return _within_bound(lat_acceleration, min_bound=-max_abs_lat_accel, max_bound=max_abs_lat_accel)
 
 
 def _compute_jerk_metric(
@@ -278,9 +264,7 @@ def _compute_jerk_metric(
         time_steps_s=time_steps_s,
         window_length=n_time,
     )
-    return _within_bound(
-        jerk_metric, min_bound=-max_abs_mag_jerk, max_bound=max_abs_mag_jerk
-    )
+    return _within_bound(jerk_metric, min_bound=-max_abs_mag_jerk, max_bound=max_abs_mag_jerk)
 
 
 def _compute_lon_jerk_metric(
@@ -299,14 +283,10 @@ def _compute_lon_jerk_metric(
         time_steps_s=time_steps_s,
         window_length=n_time,
     )
-    return _within_bound(
-        lon_jerk_metric, min_bound=-max_abs_lon_jerk, max_bound=max_abs_lon_jerk
-    )
+    return _within_bound(lon_jerk_metric, min_bound=-max_abs_lon_jerk, max_bound=max_abs_lon_jerk)
 
 
-def _compute_yaw_accel(
-    states: npt.NDArray[np.float64], time_steps_s: npt.NDArray[np.float64]
-) -> npt.NDArray[np.bool_]:
+def _compute_yaw_accel(states: npt.NDArray[np.float64], time_steps_s: npt.NDArray[np.float64]) -> npt.NDArray[np.bool_]:
     """
     Compute acceleration of yaw-angle over batch-dim of simulated proposals
     :param states: array representation of ego state values
@@ -314,17 +294,11 @@ def _compute_yaw_accel(
     :return: acceleration of yaw-angle within bound
     """
     n_batch, n_time, n_states = states.shape
-    yaw_accel_metric = _extract_ego_yaw_rate(
-        states, time_steps_s, deriv_order=2, poly_order=3, window_length=n_time
-    )
-    return _within_bound(
-        yaw_accel_metric, min_bound=-max_abs_yaw_accel, max_bound=max_abs_yaw_accel
-    )
+    yaw_accel_metric = _extract_ego_yaw_rate(states, time_steps_s, deriv_order=2, poly_order=3, window_length=n_time)
+    return _within_bound(yaw_accel_metric, min_bound=-max_abs_yaw_accel, max_bound=max_abs_yaw_accel)
 
 
-def _compute_yaw_rate(
-    states: npt.NDArray[np.float64], time_steps_s: npt.NDArray[np.float64]
-) -> npt.NDArray[np.bool_]:
+def _compute_yaw_rate(states: npt.NDArray[np.float64], time_steps_s: npt.NDArray[np.float64]) -> npt.NDArray[np.bool_]:
     """
     Compute velocity of yaw-angle over batch-dim of simulated proposals
     :param states: array representation of ego state values
@@ -333,14 +307,10 @@ def _compute_yaw_rate(
     """
     n_batch, n_time, n_states = states.shape
     yaw_rate_metric = _extract_ego_yaw_rate(states, time_steps_s, window_length=n_time)
-    return _within_bound(
-        yaw_rate_metric, min_bound=-max_abs_yaw_rate, max_bound=max_abs_yaw_rate
-    )
+    return _within_bound(yaw_rate_metric, min_bound=-max_abs_yaw_rate, max_bound=max_abs_yaw_rate)
 
 
-def ego_is_comfortable(
-    states: npt.NDArray[np.float64], time_point_s: npt.NDArray[np.float64]
-) -> npt.NDArray[np.bool_]:
+def ego_is_comfortable(states: npt.NDArray[np.float64], time_point_s: npt.NDArray[np.float64]) -> npt.NDArray[np.bool_]:
     """
     Accumulates all within-bound comfortability metrics
     :param states: array representation of ego state values
@@ -359,9 +329,7 @@ def ego_is_comfortable(
         _compute_yaw_accel,
         _compute_yaw_rate,
     ]
-    results: npt.NDArray[np.bool_] = np.zeros(
-        (n_batch, len(comfort_metric_functions)), dtype=np.bool_
-    )
+    results: npt.NDArray[np.bool_] = np.zeros((n_batch, len(comfort_metric_functions)), dtype=np.bool_)
     for idx, metric_function in enumerate(comfort_metric_functions):
         results[:, idx] = metric_function(states, time_point_s)
 
