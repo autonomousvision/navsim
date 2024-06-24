@@ -1,10 +1,10 @@
 <div id="top" align="center">
 
 <p align="center">
-  <img src="assets/navsim_transparent.png" width="500">
+  <img src="assets/navsim_transparent.png" width="600">
+  <h2 align="center">Data-Driven Non-Reactive Autonomous Vehicle Simulation</h1>
+  <h3 align="center"><a href="https://arxiv.org/abs/2406.15349">Paper</a> | Supplementary | Talk  </h3>
 </p>
-    
-**NAVSIM:** *Data-Driven **N**on-Reactive **A**utonomous **V**ehicle **Sim**ulation*
 
 </div>
 
@@ -84,11 +84,12 @@
 All assets and code in this repository are under the [Apache 2.0 license](./LICENSE) unless specified otherwise. The datasets (including nuPlan and OpenScene) inherit their own distribution licenses. Please consider citing our paper and project if they help your research.
 
 ```BibTeX
-@misc{Contributors2024navsim,
-    title={NAVSIM: Data-Driven Non-Reactive Autonomous Vehicle Simulation},
-    author={NAVSIM Contributors},
-    howpublished={\url{https://github.com/autonomousvision/navsim}},
-    year={2024}
+@inproceedings{Dauner2024ARXIV,
+    title = {NAVSIM: Data-Driven Non-Reactive Autonomous Vehicle Simulation and Benchmarking},
+    author = {Daniel Dauner and Marcel Hallgarten and Tianyu Li and Xinshuo Weng and Zhiyu Huang and Zetong Yang and Hongyang Li and Igor Gilitschenski and Boris Ivanovic and Marco Pavone and Andreas Geiger and Kashyap Chitta},
+    journal = {arXiv},
+    volume = {2406.15349},
+    year = {2024}
 } 
 ```
 
