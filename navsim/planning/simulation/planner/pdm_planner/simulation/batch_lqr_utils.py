@@ -158,7 +158,7 @@ def _fit_initial_curvature_and_curvature_rate_profile(
     """
     Estimates initial curvature (curvature_0) and curvature rate ({curvature_rate_0, ...})
     using least squares with curvature rate regularization.
-    :param heading_displacements: [rad] Angular deviations in heading occuring between timesteps.
+    :param heading_displacements: [rad] Angular deviations in heading occurring between timesteps.
     :param velocity_profile: [m/s] Estimated or actual velocities at the timesteps matching displacements.
     :param discretization_time: [s] Time discretization used for integration.
     :param curvature_rate_penalty: A regularization parameter used to penalize curvature_rate.  Should be positive.
