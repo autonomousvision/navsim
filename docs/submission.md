@@ -5,10 +5,9 @@ NAVSIM comes with an [official leaderboard](https://huggingface.co/spaces/AGC202
 After the NAVSIM challenge 2024, we have re-opened the leaderboard with the `navtest` split. With 12k samples, the `navtest` split contains a larger set for comprehensive evaluations. In this guide, we describe how to create a valid submission and what rules apply for the new leaderboard.
 
 ### Rules
-- **Technical Reports**:
-  - We will periodically be removing all entries on the leaderboard which **do not provide an associated technical report**.
-  - The technical report can be in any format (e.g. ArXiv paper, github readme, privately hosted pdf file, etc), as long as it clearly describes the methodology used in the submission, enabling reimplementation.
-  - Technical reports must be provided by setting the `TEAM_NAME` variable of the submission file with `"<a href=Link/to/tech/report.pdf>Method name</a>"`. Note that this can also be edited on the leaderboard for an existing submission, if the report is created (or updated) after the initial submission.
+- **Open-source training code**:
+  - We will periodically (~every 6 months) be removing all entries on the leaderboard which **do not provide associated open-source training code**. Even if removed, an entry can be resubmitted once the training code needed for reproducibility is made available.
+  - Code must be provided by setting the `TEAM_NAME` variable of the submission file as `"<a href=Link/to/repository>Method name</a>"`. Note that this can also be edited on the leaderboard for an existing submission, if the repo is created (or updated) after the initial submission.
 - **Multi-seed submissions**:
   - Driving policies often differ significantly in performance when re-trained with different network initialization seeds.
   - Therefore, the leaderboard now supports (1) regular single-seed submissions and (2) multi-seed submission, which we **strongly encourage** (with a minimum of 3 training seeds).
