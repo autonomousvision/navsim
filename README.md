@@ -53,6 +53,7 @@
 ## Changelog <a name="changelog"></a>
 - **`[2024/09/03]`** NAVSIM v1.1 release
   - Leaderboard for `navtest` on [Hugging Face](https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim)
+  - Release of baseline checkpoints on [Hugging Face](https://huggingface.co/autonomousvision/navsim_baselines)
   - Updated docs for [submission](docs/submission.md) and [paper](https://arxiv.org/abs/2406.15349)
   - Code refactoring, formatting, minor fixes
 - **`[2024/04/21]`** NAVSIM v1.0 release (official devkit version for [AGC 2024](https://opendrivelab.com/challenge2024/#end_to_end_driving_at_scale))

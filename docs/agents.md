@@ -87,7 +87,7 @@ Check out the baseline for implementations of agents!
 
 ## Baselines
 
-NAVSIM provides several baselines, which serve as comparison or starting points for new end-to-end driving models.
+NAVSIM provides several baselines, which serve as comparison or starting points for new end-to-end driving models. We provide model weights for all learned baselines on [Hugging Face](https://huggingface.co/autonomousvision/navsim_baselines).
 
 ### `ConstantVelocityAgent`:
 The `ConstantVelocityAgent` is a naive baseline and follows the most simple driving logic. The agent maintains constant speed and a constant heading angle, resulting in a straight-line output trajectory. You can use the agent to familiarize yourself with the `AbstractAgent` interface or analyze samples that have a trivial solution for achieving a high PDM score.
