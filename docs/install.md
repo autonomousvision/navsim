@@ -4,18 +4,18 @@ To get started with NAVSIM:
 
 ### 1. Clone the navsim-devkit
 Clone the repository
-```
+```bash
 git clone https://github.com/autonomousvision/navsim.git
 cd navsim
 ```
-### 2. Download the demo data
+### 2. Download the dataset
 You need to download the OpenScene logs and sensor blobs, as well as the nuPlan maps.
 We provide scripts to download the nuplan maps, the mini split and the test split.
 Navigate to the download directory and download the maps
 
 **NOTE: Please check the [LICENSE file](https://motional-nuplan.s3-ap-northeast-1.amazonaws.com/LICENSE) before downloading the data.**
 
-```
+```bash
 cd download && ./download_maps
 ```
 
@@ -24,7 +24,7 @@ Note that the dataset splits do not exactly map to the recommended standardized 
 Please refer to [splits](splits.md) for an overview on the standardized training and test splits including their size and check which dataset splits you need to download in order to be able to run them.
 
 You can download the mini, trainval, test and private_test_e2e dataset split with the following scripts
-```
+```bash
 ./download_mini
 ./download_trainval
 ./download_test
@@ -52,7 +52,7 @@ This will download the splits into the download directory. From there, move it t
 ```
 Set the required environment variables, by adding the following to your `~/.bashrc` file
 Based on the structure above, the environment variables need to be defined as:
-```
+```bash
 export NUPLAN_MAP_VERSION="nuplan-maps-v1.0"
 export NUPLAN_MAPS_ROOT="$HOME/navsim_workspace/dataset/maps"
 export NAVSIM_EXP_ROOT="$HOME/navsim_workspace/exp"
@@ -63,7 +63,7 @@ export OPENSCENE_DATA_ROOT="$HOME/navsim_workspace/dataset"
 ### 3. Install the navsim-devkit
 Finally, install navsim.
 To this end, create a new environment and install the required dependencies:
-```
+```bash
 conda env create --name navsim -f environment.yml
 conda activate navsim
 pip install -e .

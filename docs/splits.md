@@ -105,3 +105,37 @@ The standard splits `trainval`, `test`, and `mini` are from the OpenScene datase
 NAVSIM provides a subset and filter of the `trainval` split, called `navtrain`. The `navtrain` split facilitates a standardized training scheme and requires significantly less sensor data storage than `travel` (445GB vs. 2100GB). If your agents don't need historical sensor inputs, you can download `navtrain` without history, which requires 300GB of storage. Note that `navtrain` can be downloaded separately via [download_navtrain.sh](https://github.com/autonomousvision/navsim/blob/main/download/download_navtrain.sh) but still requires access to the `trainval` logs. Similarly, the `navtest` split enables a standardized set for testing agents with a provided scene filter. Both `navtrain` and `navtest` are filtered to increase interesting samples in the sets. 
 
 For the challenge on Hugging Face, we provide the `warmup_test_e2e` and `private_test_e2e` for the warm-up and challenge track, respectively. Note that `private_test_e2e` requires you to download the data, while `warmup_test_e2e` is a scene filter for the `mini` split.
+
+
+## Troubleshooting
+
+As previous users reported missing files when downloading `navtrain`, we provide MD5 checksums for the `.tgz` files to identify corrupted downloads. We recommend to re-download `navtrain` without deleting the `.tgz` files (i.e. removing Line 12 and 22 in [download_navtrain.sh](https://github.com/autonomousvision/navsim/blob/main/download/download_navtrain.sh)) and running:
+
+```bash 
+echo "6f92f38d5f03ed852da7872a7122bdd2  navtrain_current_1.tgz" | md5sum -c -
+echo "7a72f0a758b5df6cbe4c565920a4869f  navtrain_current_2.tgz" | md5sum -c -
+echo "b083fce1428308abb5682a1a150cc1af  navtrain_current_3.tgz" | md5sum -c -
+echo "68354ac2c993aa1ebbfac59547fdb840  navtrain_current_4.tgz" | md5sum -c -
+echo "dc46ed34d92d5ab9cc1464d67b72fbf6  navtrain_history_1.tgz" | md5sum -c -
+echo "fab177bdb79c0c9536da1566d13e5995  navtrain_history_2.tgz" | md5sum -c -
+echo "71ed9a2387edc3849921861d7873c7f0  navtrain_history_3.tgz" | md5sum -c -
+echo "2cc13aced2f458e50fe4cc2f26d18e07  navtrain_history_4.tgz" | md5sum -c -
+```
+
+
+<details>
+<summary>Expected output:</summary>
+
+```bash 
+navtrain_current_1.tgz: OK
+navtrain_current_2.tgz: OK
+navtrain_current_3.tgz: OK
+navtrain_current_4.tgz: OK
+navtrain_history_1.tgz: OK
+navtrain_history_2.tgz: OK
+navtrain_history_3.tgz: OK
+navtrain_history_4.tgz: OK
+```
+
+</details>
+</br>

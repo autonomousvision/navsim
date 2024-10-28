@@ -11,7 +11,7 @@ for split in {1..4}; do
     tar -xzf navtrain_current_${split}.tgz
     rm navtrain_current_${split}.tgz
 
-    rsync -v current_split_${split}/* trainval_sensor_blobs/trainval
+    rsync -rv current_split_${split}/* trainval_sensor_blobs/trainval
     rm -r current_split_${split}
 done
 
@@ -21,6 +21,6 @@ for split in {1..4}; do
     tar -xzf navtrain_history_${split}.tgz
     rm navtrain_history_${split}.tgz
 
-    rsync -v history_split_${split}/* trainval_sensor_blobs/trainval
+    rsync -rv history_split_${split}/* trainval_sensor_blobs/trainval
     rm -r history_split_${split}
 done
