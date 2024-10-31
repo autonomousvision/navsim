@@ -19,6 +19,8 @@
 > <sup>1</sup>University of Tübingen, <sup>2</sup>Tübingen AI Center, <sup>3</sup>OpenDriveLab at Shanghai AI Lab, <sup>4</sup>NVIDIA Research\
 > <sup>5</sup>Robert Bosch GmbH, <sup>6</sup>Nanyang Technological University, <sup>7</sup>University of Toronto, <sup>8</sup>Vector Institute, <sup>9</sup>Stanford University
 >
+> Advances in Neural Information Processing Systems (NeurIPS), 2024 \
+> Track on Datasets and Benchmarks 
 <br/>
 
 
@@ -83,13 +85,12 @@
 All assets and code in this repository are under the [Apache 2.0 license](./LICENSE) unless specified otherwise. The datasets (including nuPlan and OpenScene) inherit their own distribution licenses. Please consider citing our paper and project if they help your research.
 
 ```BibTeX
-@article{Dauner2024ARXIV,
-    title = {NAVSIM: Data-Driven Non-Reactive Autonomous Vehicle Simulation and Benchmarking},
-    author = {Daniel Dauner and Marcel Hallgarten and Tianyu Li and Xinshuo Weng and Zhiyu Huang and Zetong Yang and Hongyang Li and Igor Gilitschenski and Boris Ivanovic and Marco Pavone and Andreas Geiger and Kashyap Chitta},
-    journal = {arXiv},
-    volume = {2406.15349},
-    year = {2024}
-} 
+@inproceedings{Dauner2024NEURIPS, 
+	author = {Daniel Dauner and Marcel Hallgarten and Tianyu Li and Xinshuo Weng and Zhiyu Huang and Zetong Yang and Hongyang Li and Igor Gilitschenski and Boris Ivanovic and Marco Pavone and Andreas Geiger and Kashyap Chitta}, 
+	title = {NAVSIM: Data-Driven Non-Reactive Autonomous Vehicle Simulation and Benchmarking}, 
+	booktitle = {Advances in Neural Information Processing Systems (NeurIPS)}, 
+	year = {2024}, 
+}
 ```
 
 ```BibTeX
