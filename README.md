@@ -3,7 +3,7 @@
 <p align="center">
   <img src="assets/navsim_transparent.png" width="600">
   <h2 align="center">Data-Driven Non-Reactive Autonomous Vehicle Simulation and Benchmarking</h1>
-  <h3 align="center"><a href="https://arxiv.org/abs/2406.15349">Paper</a> | Supplementary | <a href="https://www.youtube.com/watch?v=Qe76HRmPDe0">Talk</a> | <a href="https://opendrivelab.com/challenge2024/#end_to_end_driving_at_scale">2024 Challenge</a> | <a href="https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim">Leaderboard</a>  </h3>
+  <h3 align="center"><a href="https://arxiv.org/abs/2406.15349">Paper</a> | <a href="https://danieldauner.github.io/assets/pdf/Dauner2024NIPS_supplementary.pdf">Supplementary</a> | <a href="https://www.youtube.com/watch?v=Qe76HRmPDe0">Talk</a> | <a href="https://opendrivelab.com/challenge2024/#end_to_end_driving_at_scale">2024 Challenge</a> | <a href="https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim">Leaderboard</a>  </h3>
 </p>
 
 </div>
