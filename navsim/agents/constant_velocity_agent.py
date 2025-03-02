@@ -1,8 +1,8 @@
 import numpy as np
-
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
+
 from navsim.agents.abstract_agent import AbstractAgent
-from navsim.common.dataclasses import AgentInput, Trajectory, SensorConfig
+from navsim.common.dataclasses import AgentInput, SensorConfig, Trajectory
 
 
 class ConstantVelocityAgent(AbstractAgent):
@@ -12,9 +12,11 @@ class ConstantVelocityAgent(AbstractAgent):
 
     def __init__(
         self,
-        trajectory_sampling: TrajectorySampling = TrajectorySampling(time_horizon=4, interval_length=0.5),
+        trajectory_sampling: TrajectorySampling = TrajectorySampling(
+            time_horizon=4, interval_length=0.5
+        ),
     ):
-        self._trajectory_sampling = trajectory_sampling
+        super().__init__(trajectory_sampling)
 
     def name(self) -> str:
         """Inherited, see superclass."""
@@ -23,7 +25,6 @@ class ConstantVelocityAgent(AbstractAgent):
 
     def initialize(self) -> None:
         """Inherited, see superclass."""
-        pass
 
     def get_sensor_config(self) -> SensorConfig:
         """Inherited, see superclass."""
@@ -40,7 +41,10 @@ class ConstantVelocityAgent(AbstractAgent):
             self._trajectory_sampling.interval_length,
         )
         poses = np.array(
-            [[(time_idx + 1) * dt * ego_speed, 0.0, 0.0] for time_idx in range(num_poses)],
+            [
+                [(time_idx + 1) * dt * ego_speed, 0.0, 0.0]
+                for time_idx in range(num_poses)
+            ],
             dtype=np.float32,
         )
 

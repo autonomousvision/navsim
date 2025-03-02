@@ -1,0 +1,71 @@
+name: Squash Commits for Release and archive main branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version number (e.g., 2.1, 2.1, etc.)"
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Internal Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensure full history is available
+
+      - name: Set Version Variables
+        run: |
+          VERSION="v${{ github.event.inputs.version }}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Add Public Repository
+        run: |
+          git remote add public https://github.com/autonomousvision/navsim
+          git fetch public main || (echo "Public repo not initialized yet" && exit 1)
+
+      - name: Assert public_main Exists and Matches Public Repo
+        run: |
+          # Ensure public_main is identical to public/main
+          git fetch public main
+          git checkout public_main
+          LOCAL_HASH=$(git rev-parse public_main)
+          REMOTE_HASH=$(git rev-parse public/main)
+
+          if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
+            echo "Error: public_main is not identical to public/main!" >&2
+            exit 1
+          fi
+
+          git checkout main
+          echo "Assertion passed: public_main exists and matches public/main."
+
+      - name: Set Author
+        run: |
+          git config --global user.name "mh0797"
+          git config --global user.email "marcel.hallgarten@web.de"
+
+      - name: Create Archive Branch
+        run: |
+          git checkout -b archive_main_$VERSION main
+          git push origin archive_main_$VERSION
+
+      - name: Squash commits for Release
+        run: |
+          git checkout main
+          git reset --soft $(git merge-base public_main main)
+          git commit -m "version${{ github.event.inputs.version }}"
+
+      - name: Push to internal main
+        run: |
+          git push -f origin main
+
+      - name: Summary and Instructions to Proceed
+        run: |
+          echo "SUCCESS. Please proceed as follows:"
+          echo "1. Create a pull request to merge the changes from main to public_main."
+          echo "2. After approving the changes, merge the pull request."
+          echo "3. Upon merge, another workflow will push the changes to the public repository."
+          echo "4. Consider adding a version tag to the release commit."

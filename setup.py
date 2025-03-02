@@ -12,7 +12,7 @@ with open("requirements.txt") as f:
 # Installs
 setuptools.setup(
     name="navsim",
-    version="1.1.0",
+    version="2.0.0",
     author="University of Tuebingen",
     author_email="kashyap.chitta@uni-tuebingen.de",
     description="NAVSIM: Data-Driven Non-Reactive Autonomous Vehicle Simulation and Benchmarking",

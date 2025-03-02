@@ -15,3 +15,15 @@
 *.pkl
 *.jpg
 *.pcd
+
+# exp
+exp
+
+# data
+dataset
+
+# lsf
+*.bsub
+
+# running scripts
+scripts_dev/*

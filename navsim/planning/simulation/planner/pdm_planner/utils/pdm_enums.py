@@ -21,7 +21,9 @@ class StateIndex:
         valid_attributes = [
             attribute
             for attribute in dir(cls)
-            if attribute.startswith("_") and not attribute.startswith("__") and not callable(getattr(cls, attribute))
+            if attribute.startswith("_")
+            and not attribute.startswith("__")
+            and not callable(getattr(cls, attribute))
         ]
         return len(valid_attributes)
 
@@ -105,6 +107,13 @@ class StateIndex:
         return slice(cls._ACCELERATION_X, cls._ACCELERATION_Y + 1)
 
 
+class PointIndex(IntEnum):
+    """Index mapping for (x,y) arrays."""
+
+    X = 0
+    Y = 1
+
+
 class SE2Index(IntEnum):
     """Index mapping for state se2 (x,y,θ) arrays."""
 
@@ -158,6 +167,8 @@ class MultiMetricIndex(IntEnum):
 
     NO_COLLISION = 0
     DRIVABLE_AREA = 1
+    TRAFFIC_LIGHT_COMPLIANCE = 2
+    DRIVING_DIRECTION = 3
 
 
 class WeightedMetricIndex(IntEnum):
@@ -165,5 +176,6 @@ class WeightedMetricIndex(IntEnum):
 
     PROGRESS = 0
     TTC = 1
-    COMFORTABLE = 2
-    DRIVING_DIRECTION = 3
+    LANE_KEEPING = 2
+    HISTORY_COMFORT = 3
+    TWO_FRAME_EXTENDEND_COMFORT = 4

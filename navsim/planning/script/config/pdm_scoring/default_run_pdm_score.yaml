@@ -10,9 +10,12 @@ hydra:
 defaults:
   - default_common
   - default_evaluation
-  - default_scoring_parameters
+  - scorer: pdm_scorer
   - agent: constant_velocity_agent
   - _self_
   - override train_test_split: navtest
 
-metric_cache_path: ${oc.env:NAVSIM_EXP_ROOT}/metric_cache # path to metric cache
+simulator:
+  _target_: navsim.planning.simulation.planner.pdm_planner.simulation.pdm_simulator.PDMSimulator
+  _convert_: 'all'
+  proposal_sampling: ${proposal_sampling}

@@ -8,13 +8,14 @@ from nuplan.common.actor_state.ego_state import EgoState
 from nuplan.common.actor_state.oriented_box import OrientedBox
 from nuplan.common.actor_state.scene_object import SceneObjectMetadata
 from nuplan.common.actor_state.static_object import StaticObject
-from nuplan.common.actor_state.state_representation import StateSE2, StateVector2D
+from nuplan.common.actor_state.state_representation import StateSE2, StateVector2D, TimePoint
 from nuplan.common.actor_state.tracked_objects_types import TrackedObjectType, AGENT_TYPES
 from nuplan.common.actor_state.tracked_objects import TrackedObjects, TrackedObject
+from nuplan.common.actor_state.vehicle_parameters import VehicleParameters
 from nuplan.planning.simulation.observation.observation_type import DetectionsTracks
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
 
-from navsim.common.dataclasses import Annotations
+from navsim.common.dataclasses import Annotations, EgoStatus
 from navsim.common.enums import BoundingBoxIndex
 
 # TODO: Refactor this file
@@ -37,6 +38,18 @@ def normalize_angle(angle):
     :return: normalized angle
     """
     return np.arctan2(np.sin(angle), np.cos(angle))
+
+def ego_status_to_ego_state(ego_status: EgoStatus, vehicle_parameters: VehicleParameters, time_point: TimePoint) -> EgoState:
+    rear_axle_velocity_2d = StateVector2D(*ego_status.ego_velocity)
+    rear_axle_acceleration_2d = StateVector2D(*ego_status.ego_acceleration)
+    return EgoState.build_from_rear_axle(
+        StateSE2(*ego_status.ego_pose),
+        tire_steering_angle=0.0,
+        vehicle_parameters=vehicle_parameters,
+        time_point=time_point,
+        rear_axle_velocity_2d=rear_axle_velocity_2d,
+        rear_axle_acceleration_2d=rear_axle_acceleration_2d,
+    )
 
 
 def annotations_to_detection_tracks(annotations: Annotations, ego_state: EgoState) -> DetectionsTracks:
@@ -172,7 +185,24 @@ def sample_future_indices(
     num_samples = num_samples if num_samples else int(time_horizon / time_interval)
 
     num_intervals = int(time_horizon / time_interval) + 1
-    step_size = num_intervals // num_samples
+    step_size = int(num_intervals // num_samples)
     time_idcs = np.arange(iteration, num_intervals, step_size)
 
     return list(time_idcs)
+
+def sample_past_indices(
+    past_sampling: TrajectorySampling, iteration: int, time_horizon: float, num_samples: Optional[int]
+) -> List[int]:
+    """
+    Helper function to sample past time indices.
+    :param past_sampling: dataclass describing past sampling specification.
+    :param iteration: starting iteration to sample
+    :param time_horizon: horizon to sample for [s]
+    :param num_samples: number of past sample to extract
+    :raises ValueError: invalid input arguments
+    :return: list of integers
+    """
+    time_idcs = sample_future_indices(
+        future_sampling=past_sampling, iteration=iteration, time_horizon=time_horizon, num_samples=num_samples
+    )
+    return [-idx for idx in time_idcs[::-1]]

@@ -1,17 +1,14 @@
 _target_: navsim.agents.transfuser.transfuser_agent.TransfuserAgent
 _convert_: 'all'
 
-config:
-  _target_: navsim.agents.transfuser.transfuser_config.TransfuserConfig
-  _convert_: 'all'
-
-  trajectory_sampling:
+trajectory_sampling:
     _target_: nuplan.planning.simulation.trajectory.trajectory_sampling.TrajectorySampling
     _convert_: 'all'
     time_horizon: 4
     interval_length: 0.5
-
+config:
+  _target_: navsim.agents.transfuser.transfuser_config.TransfuserConfig
+  _convert_: 'all'
   latent: False
-
 checkpoint_path: null
 lr: 1e-4
