@@ -1,0 +1,4 @@
+defaults:
+  - scene_filter: navtest_two_stage
+
+data_split: test

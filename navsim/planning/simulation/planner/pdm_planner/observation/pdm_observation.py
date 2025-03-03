@@ -1,20 +1,30 @@
+import warnings
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import shapely.creation
-from shapely.geometry import Polygon
-
 from nuplan.common.actor_state.ego_state import EgoState
 from nuplan.common.actor_state.tracked_objects import TrackedObject
 from nuplan.common.actor_state.tracked_objects_types import TrackedObjectType
 from nuplan.common.maps.abstract_map_objects import LaneGraphEdgeMapObject
-from nuplan.common.maps.maps_datatypes import TrafficLightStatusData, TrafficLightStatusType
+from nuplan.common.maps.maps_datatypes import (
+    TrafficLightStatusData,
+    TrafficLightStatusType,
+)
 from nuplan.planning.scenario_builder.abstract_scenario import AbstractScenario
-from nuplan.planning.simulation.observation.observation_type import Observation, DetectionsTracks
+from nuplan.planning.simulation.observation.observation_type import (
+    DetectionsTracks,
+    Observation,
+)
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
+from shapely.geometry import Polygon
 
-from navsim.planning.simulation.planner.pdm_planner.observation.pdm_object_manager import PDMObjectManager
-from navsim.planning.simulation.planner.pdm_planner.observation.pdm_occupancy_map import PDMOccupancyMap
+from navsim.planning.simulation.planner.pdm_planner.observation.pdm_object_manager import (
+    PDMObjectManager,
+)
+from navsim.planning.simulation.planner.pdm_planner.observation.pdm_occupancy_map import (
+    PDMOccupancyMap,
+)
 from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import BBCoordsIndex
 
 
@@ -27,6 +37,7 @@ class PDMObservation:
         proposal_sampling: TrajectorySampling,
         map_radius: float,
         observation_sample_res: int = 2,
+        extend_observation_for_ttc: bool = True,
     ):
         """
         Constructor of PDMObservation
@@ -34,6 +45,7 @@ class PDMObservation:
         :param proposal_sampling: Sampling parameters for proposals
         :param map_radius: radius around ego to consider, defaults to 50
         :param observation_sample_res: sample resolution of forecast, defaults to 2
+        :param extend_observation_for_ttc: extend observation for TTC metric, defaults to False
         """
         assert (
             trajectory_sampling.interval_length == proposal_sampling.interval_length
@@ -42,18 +54,25 @@ class PDMObservation:
         # observation needs length of trajectory horizon or proposal horizon +1s (for TTC metric)
         self._sample_interval: float = trajectory_sampling.interval_length  # [s]
 
-        self._observation_samples: int = (
-            proposal_sampling.num_poses + int(1 / self._sample_interval)
-            if proposal_sampling.num_poses + int(1 / self._sample_interval) > trajectory_sampling.num_poses
-            else trajectory_sampling.num_poses
-        )
+        if extend_observation_for_ttc:
+            self._observation_samples: int = (
+                proposal_sampling.num_poses + int(1 / self._sample_interval)
+                if proposal_sampling.num_poses + int(1 / self._sample_interval)
+                > trajectory_sampling.num_poses
+                else trajectory_sampling.num_poses
+            )
+        else:
+            self._observation_samples: int = max(
+                trajectory_sampling.num_poses, proposal_sampling.num_poses
+            )
 
         self._map_radius: float = map_radius
         self._observation_sample_res: int = observation_sample_res
 
         # useful things
         self._global_to_local_idcs = [
-            idx // observation_sample_res for idx in range(self._observation_samples + observation_sample_res)
+            idx // observation_sample_res
+            for idx in range(self._observation_samples + observation_sample_res)
         ]
         self._collided_track_ids: List[str] = []
         self._red_light_token = "red_light"
@@ -61,6 +80,7 @@ class PDMObservation:
         # lazy loaded (during update)
         self._occupancy_maps: Optional[List[PDMOccupancyMap]] = None
         self._unique_objects: Optional[Dict[str, TrackedObject]] = None
+        self._occupancy_maps_tl: Optional[List[Tuple[List[str], np.ndarray]]] = None
 
         self._initialized: bool = False
 
@@ -71,7 +91,9 @@ class PDMObservation:
         :return: occupancy map
         """
         assert self._initialized, "PDMObservation: Has not been updated yet!"
-        assert 0 <= time_idx < len(self._global_to_local_idcs), f"PDMObservation: index {time_idx} out of range!"
+        assert (
+            0 <= time_idx < len(self._global_to_local_idcs)
+        ), f"PDMObservation: index {time_idx} out of range!"
 
         local_idx = self._global_to_local_idcs[time_idx]
         return self._occupancy_maps[local_idx]
@@ -101,6 +123,15 @@ class PDMObservation:
         """
         assert self._initialized, "PDMObservation: Has not been updated yet!"
         return self._unique_objects
+
+    @property
+    def detections_tracks(self) -> List[DetectionsTracks]:
+        """
+        Getter for detections tracks
+        :return: list of detections tracks
+        """
+        assert self._initialized, "PDMObservation: Has not been updated yet!"
+        return self._detections_tracks
 
     def update(
         self,
@@ -147,7 +178,9 @@ class PDMObservation:
             dynamic_object_dxy = dynamic_object_dxy[None, ...]
 
         if has_static_object:
-            static_object_coords[..., BBCoordsIndex.CENTER, :] = static_object_coords[..., BBCoordsIndex.FRONT_LEFT, :]
+            static_object_coords[..., BBCoordsIndex.CENTER, :] = static_object_coords[
+                ..., BBCoordsIndex.FRONT_LEFT, :
+            ]
             static_object_polygons = shapely.creation.polygons(static_object_coords)
 
         else:
@@ -170,8 +203,12 @@ class PDMObservation:
         ):
             if has_dynamic_object:
                 delta_t = float(sample) * self._sample_interval
-                dynamic_object_coords_t = dynamic_object_coords + delta_t * dynamic_object_dxy[:, None]
-                dynamic_object_polygons = shapely.creation.polygons(dynamic_object_coords_t)
+                dynamic_object_coords_t = (
+                    dynamic_object_coords + delta_t * dynamic_object_dxy[:, None]
+                )
+                dynamic_object_polygons = shapely.creation.polygons(
+                    dynamic_object_coords_t
+                )
 
             all_polygons = np.concatenate(
                 [
@@ -195,11 +232,15 @@ class PDMObservation:
 
         for intersecting_obstacle in intersecting_obstacles:
             if self._red_light_token in intersecting_obstacle:
-                within = ego_polygon.within(self._occupancy_maps[0][intersecting_obstacle])
+                within = ego_polygon.within(
+                    self._occupancy_maps[0][intersecting_obstacle]
+                )
                 if not within:
                     continue
             new_collided_track_ids.append(intersecting_obstacle)
 
+        # TODO: these are only the current tracks. Other update functions also add future tracks
+        self._detections_tracks = [DetectionsTracks(observation.tracked_objects)]
         self._collided_track_ids = self._collided_track_ids + new_collided_track_ids
         self._unique_objects = object_manager.unique_objects
         self._initialized = True
@@ -228,16 +269,48 @@ class PDMObservation:
             len(occupancy_maps) == self._observation_samples + 1
         ), f"Expected observation length {self._observation_samples + 1}, but got {len(occupancy_maps)}"
 
+        self._detections_tracks = detection_tracks
         self._occupancy_maps: List[PDMOccupancyMap] = occupancy_maps
         self._collided_track_ids = []
         self._unique_objects = unique_objects
         self._initialized = True
 
-    def update_detections_tracks(self, detection_tracks: List[DetectionsTracks]) -> None:
+    def update_detections_tracks(
+        self,
+        detection_tracks: List[DetectionsTracks],
+        traffic_light_data: Optional[List[List[TrafficLightStatusData]]] = None,
+        route_lane_dict: Optional[Dict[str, LaneGraphEdgeMapObject]] = None,
+        compute_traffic_light_data: bool = False,
+    ) -> None:
+        """
+        Updates detection tracks and update traffic light from `traffic_light_data` or existing `_occupancy_maps_tl`.
+        By default, it uses the existing `_occupancy_maps_tl` if `_occupancy_maps_tl` is not `None`.
+
+        Args:
+            detection_tracks: List of detection tracks.
+            traffic_light_data: Optional traffic light data corresponding to detection tracks.
+            route_lane_dict: Optional mapping of route lanes to lane graph edge objects.
+            compute_traffic_light_data: If 'True', the traffic light data provided in parameter 'traffic_light_data'
+                is used to compute the traffic light data occupancy map and overwrite the existing traffic light occupancy maps.
+                If 'False', the existing traffic light occupancy maps are kept. (default: False)
+
+        Logic of processing traffic light data:
+            1. If `compute_traffic_light_data` is True:
+                - Validate that both `traffic_light_data` and `route_lane_dict` are provided.
+                - Extract traffic light tokens and polygons from `traffic_light_data` for the current detection track.
+                - Append the extracted traffic light tokens and polygons to `occupancy_maps_tl`.
+            2. Otherwise (if `compute_traffic_light_data` is False):
+                - Check if `_occupancy_maps_tl` is not `None`:
+                    - If `_occupancy_maps_tl` is available, extract traffic light tokens and polygons from it for the current detection track.
+            3. Append the extracted tokens and polygons (from either source) to the current track's occupancy map.
+        """
         occupancy_maps = []
+        occupancy_maps_tl = (
+            [] if compute_traffic_light_data else self._occupancy_maps_tl
+        )
         unique_objects = {}
 
-        for detection_track in detection_tracks:
+        for idx, detection_track in enumerate(detection_tracks):
             tokens, polygons = [], []
             for tracked_object in detection_track.tracked_objects:
                 token, polygon = tracked_object.track_token, tracked_object.box.geometry
@@ -247,19 +320,75 @@ class PDMObservation:
                 if token not in unique_objects.keys():
                     unique_objects[token] = tracked_object
 
+            if compute_traffic_light_data:
+                if traffic_light_data is not None and route_lane_dict is not None:
+                    assert idx < len(
+                        traffic_light_data
+                    ), f"Length of traffic_light_data ({len(traffic_light_data)}) does not match detection_tracks ({len(detection_tracks)})."
+
+                    (
+                        traffic_light_tokens,
+                        traffic_light_polygons,
+                    ) = self._get_traffic_light_geometries(
+                        traffic_light_data[idx], route_lane_dict
+                    )
+                    traffic_light_polygons = np.array(
+                        traffic_light_polygons, dtype=np.object_
+                    )
+
+                    tokens += traffic_light_tokens
+                    polygons = np.concatenate(
+                        [polygons, traffic_light_polygons], axis=0
+                    )
+
+                    occupancy_map_tl = (traffic_light_tokens, traffic_light_polygons)
+                    occupancy_maps_tl.append(occupancy_map_tl)
+                else:
+                    warnings.warn(
+                        "compute_traffic_light_data is True, but traffic_light_data or route_lane_dict is not provided. Skipping traffic light processing."
+                    )
+            else:
+                if self._occupancy_maps_tl is not None:
+                    assert idx < len(
+                        self._occupancy_maps_tl
+                    ), f"Index {idx} exceeds the length of _occupancy_maps_tl ({len(self._occupancy_maps_tl)})."
+                    (
+                        traffic_light_tokens,
+                        traffic_light_polygons,
+                    ) = self._occupancy_maps_tl[idx]
+                    tokens += traffic_light_tokens
+                    polygons = np.concatenate(
+                        [polygons, traffic_light_polygons], axis=0
+                    )
+                else:
+                    warnings.warn(
+                        "compute_traffic_light_data is False, and _occupancy_maps_tl is None. Keeping it as None."
+                    )
+
             occupancy_map = PDMOccupancyMap(tokens, polygons)
             occupancy_maps.append(occupancy_map)
 
-        assert (
-            len(occupancy_maps) == self._observation_samples + 1
-        ), f"Expected observation length {self._observation_samples + 1}, but got {len(occupancy_maps)}"
+        # Validate occupancy_maps length
+        if len(occupancy_maps) != self._observation_samples + 1:
+            warnings.warn(
+                f"Expected length of detections_tracks {self._observation_samples + 1}, but got {len(occupancy_maps)}.\
+                Observation will be shorter than expected. This can happen if your metric cache is longer than the future horizon of the traffic agents policy.\
+                The observation will be truncated to the length of the length of the detections tracks"
+            )
 
+        # Update class state
+        self._detections_tracks = detection_tracks
         self._occupancy_maps: List[PDMOccupancyMap] = occupancy_maps
+        self._occupancy_maps_tl = (
+            occupancy_maps_tl  # Retain or update _occupancy_maps_tl
+        )
         self._collided_track_ids = []
         self._unique_objects = unique_objects
         self._initialized = True
 
-    def _get_object_manager(self, ego_state: EgoState, observation: Observation) -> PDMObjectManager:
+    def _get_object_manager(
+        self, ego_state: EgoState, observation: Observation
+    ) -> PDMObjectManager:
         """
         Creates object manager class, but adding valid tracked objects.
         :param ego_state: state of ego-vehicle
@@ -271,7 +400,10 @@ class PDMObservation:
         for object in observation.tracked_objects:
             if (
                 (object.tracked_object_type == TrackedObjectType.EGO)
-                or (self._map_radius and ego_state.center.distance_to(object.center) > self._map_radius)
+                or (
+                    self._map_radius
+                    and ego_state.center.distance_to(object.center) > self._map_radius
+                )
                 or (object.track_token in self._collided_track_ids)
             ):
                 continue
@@ -296,9 +428,13 @@ class PDMObservation:
         for data in traffic_light_data:
             lane_connector_id = str(data.lane_connector_id)
 
-            if (data.status == TrafficLightStatusType.RED) and (lane_connector_id in route_lane_dict.keys()):
+            if (data.status == TrafficLightStatusType.RED) and (
+                lane_connector_id in route_lane_dict.keys()
+            ):
                 lane_connector = route_lane_dict[lane_connector_id]
-                traffic_light_tokens.append(f"{self._red_light_token}_{lane_connector_id}")
+                traffic_light_tokens.append(
+                    f"{self._red_light_token}_{lane_connector_id}"
+                )
                 traffic_light_polygons.append(lane_connector.polygon)
 
         return traffic_light_tokens, traffic_light_polygons

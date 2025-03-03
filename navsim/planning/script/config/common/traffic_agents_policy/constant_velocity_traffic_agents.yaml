@@ -1,0 +1,3 @@
+_target_: navsim.traffic_agents_policies.constant_velocity_traffic_agents.ConstantVelocityTrafficAgents
+_convert_: all
+

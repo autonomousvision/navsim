@@ -1,23 +1,25 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Union
-from dataclasses import dataclass, asdict
-from pathlib import Path
 import io
 import os
+import pickle
+import warnings
+from dataclasses import asdict, dataclass, fields
+from pathlib import Path
+from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
-from PIL import Image
-from pyquaternion import Quaternion
-
-
-from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
 from nuplan.common.actor_state.state_representation import StateSE2
 from nuplan.common.maps.abstract_map import AbstractMap
+from nuplan.common.maps.maps_datatypes import TrafficLightStatuses
 from nuplan.common.maps.nuplan_map.map_factory import get_maps_api
 from nuplan.database.maps_db.gpkg_mapsdb import MAP_LOCATIONS
 from nuplan.database.utils.pointclouds.lidar import LidarPointCloud
+from nuplan.planning.simulation.observation.observation_type import DetectionsTracks
+from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
+from PIL import Image
+from pyquaternion import Quaternion
 
 from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import (
     convert_absolute_to_relative_se2_array,
@@ -38,6 +40,8 @@ class Camera:
     sensor2lidar_translation: Optional[npt.NDArray[np.float32]] = None
     intrinsics: Optional[npt.NDArray[np.float32]] = None
     distortion: Optional[npt.NDArray[np.float32]] = None
+
+    camera_path: Optional[Path] = None
 
 
 @dataclass
@@ -75,10 +79,15 @@ class Cameras:
                 image_path = sensor_blobs_path / camera_dict[camera_name]["data_path"]
                 data_dict[camera_identifier] = Camera(
                     image=np.array(Image.open(image_path)),
-                    sensor2lidar_rotation=camera_dict[camera_name]["sensor2lidar_rotation"],
-                    sensor2lidar_translation=camera_dict[camera_name]["sensor2lidar_translation"],
+                    sensor2lidar_rotation=camera_dict[camera_name][
+                        "sensor2lidar_rotation"
+                    ],
+                    sensor2lidar_translation=camera_dict[camera_name][
+                        "sensor2lidar_translation"
+                    ],
                     intrinsics=camera_dict[camera_name]["cam_intrinsic"],
                     distortion=camera_dict[camera_name]["distortion"],
+                    camera_path=camera_dict[camera_name]["data_path"],
                 )
             else:
                 data_dict[camera_identifier] = Camera()  # empty camera
@@ -103,6 +112,7 @@ class Lidar:
     # merged lidar point cloud as (6,n) float32 array with n points
     # first axis: (x, y, z, intensity, ring, lidar_id), see LidarIndex
     lidar_pc: Optional[npt.NDArray[np.float32]] = None
+    lidar_path: Optional[Path] = None
 
     @staticmethod
     def _load_bytes(lidar_path: Path) -> BinaryIO:
@@ -111,7 +121,9 @@ class Lidar:
             return io.BytesIO(fp.read())
 
     @classmethod
-    def from_paths(cls, sensor_blobs_path: Path, lidar_path: Path, sensor_names: List[str]) -> Lidar:
+    def from_paths(
+        cls, sensor_blobs_path: Path, lidar_path: Path, sensor_names: List[str]
+    ) -> Lidar:
         """
         Loads lidar point cloud dataclass in log loading.
         :param sensor_blobs_path: root directory to sensor data
@@ -123,8 +135,10 @@ class Lidar:
         # NOTE: this could be extended to load specific LiDARs in the merged pc
         if "lidar_pc" in sensor_names:
             global_lidar_path = sensor_blobs_path / lidar_path
-            lidar_pc = LidarPointCloud.from_buffer(cls._load_bytes(global_lidar_path), "pcd").points
-            return Lidar(lidar_pc)
+            lidar_pc = LidarPointCloud.from_buffer(
+                cls._load_bytes(global_lidar_path), "pcd"
+            ).points
+            return Lidar(lidar_pc, lidar_path)
         return Lidar()  # empty lidar
 
 
@@ -168,15 +182,22 @@ class AgentInput:
         global_ego_poses = []
         for frame_idx in range(num_history_frames):
             ego_translation = scene_dict_list[frame_idx]["ego2global_translation"]
-            ego_quaternion = Quaternion(*scene_dict_list[frame_idx]["ego2global_rotation"])
+            ego_quaternion = Quaternion(
+                *scene_dict_list[frame_idx]["ego2global_rotation"]
+            )
             global_ego_pose = np.array(
-                [ego_translation[0], ego_translation[1], ego_quaternion.yaw_pitch_roll[0]],
+                [
+                    ego_translation[0],
+                    ego_translation[1],
+                    ego_quaternion.yaw_pitch_roll[0],
+                ],
                 dtype=np.float64,
             )
             global_ego_poses.append(global_ego_pose)
 
         local_ego_poses = convert_absolute_to_relative_se2_array(
-            StateSE2(*global_ego_poses[-1]), np.array(global_ego_poses, dtype=np.float64)
+            StateSE2(*global_ego_poses[-1]),
+            np.array(global_ego_poses, dtype=np.float64),
         )
 
         ego_statuses: List[EgoStatus] = []
@@ -226,7 +247,8 @@ class Annotations:
 
     def __post_init__(self):
         annotation_lengths: Dict[str, int] = {
-            attribute_name: len(attribute) for attribute_name, attribute in vars(self).items()
+            attribute_name: len(attribute)
+            for attribute_name, attribute in vars(self).items()
         }
         assert (
             len(set(annotation_lengths.values())) == 1
@@ -238,14 +260,20 @@ class Trajectory:
     """Trajectory dataclass in NAVSIM."""
 
     poses: npt.NDArray[np.float32]  # local coordinates
-    trajectory_sampling: TrajectorySampling = TrajectorySampling(time_horizon=4, interval_length=0.5)
+    trajectory_sampling: TrajectorySampling = TrajectorySampling(
+        time_horizon=4, interval_length=0.5
+    )
 
     def __post_init__(self):
-        assert self.poses.ndim == 2, "Trajectory poses should have two dimensions for samples and poses."
+        assert (
+            self.poses.ndim == 2
+        ), "Trajectory poses should have two dimensions for samples and poses."
         assert (
             self.poses.shape[0] == self.trajectory_sampling.num_poses
         ), "Trajectory poses and sampling have unequal number of poses."
-        assert self.poses.shape[1] == 3, "Trajectory requires (x, y, heading) at last dim."
+        assert (
+            self.poses.shape[1] == 3
+        ), "Trajectory requires (x, y, heading) at last dim."
 
 
 @dataclass
@@ -259,6 +287,16 @@ class SceneMetadata:
 
     num_history_frames: int
     num_future_frames: int
+
+    #  maps between synthetic scenes and the corresponding original scene
+    #  with the same timestamp in the same log.
+    #  NOTE: this is not the corresponding first stage scene token
+    #  for original scenes this is None
+    corresponding_orignal_scene: str = None
+
+    # maps to the initial frame token (at 0.0s) of the corresponding original scene
+    # for original scenes this is None
+    corresponding_original_initial_token: str = None
 
 
 @dataclass
@@ -284,8 +322,25 @@ class Scene:
     scene_metadata: SceneMetadata
     map_api: AbstractMap
     frames: List[Frame]
+    extended_traffic_light_data: Optional[List[TrafficLightStatuses]] = None
+    extended_detections_tracks: Optional[List[DetectionsTracks]] = None
+    """
+    scene_metadata (SceneMetadata): Metadata describing the scene, including its unique identifiers and attributes.
+    map_api (AbstractMap): Map API interface providing access to map-related information such as lane geometry and topology.
+    frames (List[Frame]): A sequence of frames describing the state of the ego-vehicle and its surroundings.
+    extended_traffic_light_data (Optional[List[TrafficLightStatuses]], optional):
+        A list containing traffic light status information for each future frame after the scene ends.
+        Each `TrafficLightStatuses` entry includes a `TrafficLightStatusData` object for every lane connector
+        controlled by a traffic light. Defaults to None.
+    extended_detections_tracks (Optional[List[DetectionsTracks]], optional):
+        A list containing detection tracks for each future frame after the scene ends.
+        This can be used to provide future detections of pedestrians and objects in synthetic scenarios
+        where future frames are unavailable. Defaults to None.
+    """
 
-    def get_future_trajectory(self, num_trajectory_frames: Optional[int] = None) -> Trajectory:
+    def get_future_trajectory(
+        self, num_trajectory_frames: Optional[int] = None
+    ) -> Trajectory:
         """
         Extracts future trajectory of the human operator in local coordinates (ie. ego rear-axle).
         :param num_trajectory_frames: optional number frames to extract poses, defaults to None
@@ -298,11 +353,14 @@ class Scene:
         start_frame_idx = self.scene_metadata.num_history_frames - 1
 
         global_ego_poses = []
-        for frame_idx in range(start_frame_idx, start_frame_idx + num_trajectory_frames + 1):
+        for frame_idx in range(
+            start_frame_idx, start_frame_idx + num_trajectory_frames + 1
+        ):
             global_ego_poses.append(self.frames[frame_idx].ego_status.ego_pose)
 
         local_ego_poses = convert_absolute_to_relative_se2_array(
-            StateSE2(*global_ego_poses[0]), np.array(global_ego_poses[1:], dtype=np.float64)
+            StateSE2(*global_ego_poses[0]),
+            np.array(global_ego_poses[1:], dtype=np.float64),
         )
 
         return Trajectory(
@@ -313,7 +371,9 @@ class Scene:
             ),
         )
 
-    def get_history_trajectory(self, num_trajectory_frames: Optional[int] = None) -> Trajectory:
+    def get_history_trajectory(
+        self, num_trajectory_frames: Optional[int] = None
+    ) -> Trajectory:
         """
         Extracts past trajectory of ego vehicles in local coordinates (ie. ego rear-axle).
         :param num_trajectory_frames: optional number frames to extract poses, defaults to None
@@ -328,7 +388,9 @@ class Scene:
             global_ego_poses.append(self.frames[frame_idx].ego_status.ego_pose)
 
         origin = StateSE2(*global_ego_poses[-1])
-        local_ego_poses = convert_absolute_to_relative_se2_array(origin, np.array(global_ego_poses, dtype=np.float64))
+        local_ego_poses = convert_absolute_to_relative_se2_array(
+            origin, np.array(global_ego_poses, dtype=np.float64)
+        )
 
         return Trajectory(
             local_ego_poses,
@@ -368,7 +430,9 @@ class Scene:
     @classmethod
     def _build_map_api(cls, map_name: str) -> AbstractMap:
         """Helper classmethod to load map api from name."""
-        assert map_name in MAP_LOCATIONS, f"The map name {map_name} is invalid, must be in {MAP_LOCATIONS}"
+        assert (
+            map_name in MAP_LOCATIONS
+        ), f"The map name {map_name} is invalid, must be in {MAP_LOCATIONS}"
         return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
 
     @classmethod
@@ -462,6 +526,128 @@ class Scene:
 
         return Scene(scene_metadata=scene_metadata, map_api=map_api, frames=frames)
 
+    def save_to_disk(self, data_path: Path):
+        """
+        Save scene dataclass to disk.
+        Note: this will NOT save the images or point clouds.
+        :param data_path: root directory to save scene data
+        :param sensor_blobs_path: root directory to sensor data
+        """
+
+        assert (
+            self.scene_metadata.scene_token is not None
+        ), "Scene token cannot be 'None', when saving to disk."
+        assert data_path.is_dir(), f"Data path {data_path} is not a directory."
+
+        # collect all the relevant data for the frames
+        frames_data = []
+        for frame in self.frames:
+            camera_dict = {}
+            for camera_field in fields(frame.cameras):
+                camera_name = camera_field.name
+                camera: Camera = getattr(frame.cameras, camera_name)
+                if camera.image is not None:
+                    camera_dict[camera_name] = {
+                        "data_path": camera.camera_path,
+                        "sensor2lidar_rotation": camera.sensor2lidar_rotation,
+                        "sensor2lidar_translation": camera.sensor2lidar_translation,
+                        "cam_intrinsic": camera.intrinsics,
+                        "distortion": camera.distortion,
+                    }
+                else:
+                    camera_dict[camera_name] = {}
+
+            if frame.lidar.lidar_pc is not None:
+                lidar_path = frame.lidar.lidar_path
+            else:
+                lidar_path = None
+
+            frames_data.append(
+                {
+                    "token": frame.token,
+                    "timestamp": frame.timestamp,
+                    "roadblock_ids": frame.roadblock_ids,
+                    "traffic_lights": frame.traffic_lights,
+                    "annotations": asdict(frame.annotations),
+                    "ego_status": asdict(frame.ego_status),
+                    "lidar_path": lidar_path,
+                    "camera_dict": camera_dict,
+                }
+            )
+
+        # collect all the relevant data for the scene
+        scene_dict = {
+            "scene_metadata": asdict(self.scene_metadata),
+            "frames": frames_data,
+            "extended_traffic_light_data": self.extended_traffic_light_data,
+            "extended_detections_tracks": self.extended_detections_tracks,
+        }
+
+        # save the scene_dict to disk
+        save_path = data_path / f"{self.scene_metadata.scene_token}.pkl"
+
+        with open(save_path, "wb") as f:
+            pickle.dump(scene_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    @classmethod
+    def load_from_disk(
+        cls,
+        file_path: Path,
+        sensor_blobs_path: Path,
+        sensor_config: SensorConfig = None,
+    ) -> Scene:
+        """
+        Load scene dataclass from disk. Only used for synthesized views.
+        Regular scenes are loaded from logs.
+        :return: scene dataclass
+        """
+        if sensor_config is None:
+            sensor_config = SensorConfig.build_no_sensors()
+        # Load the metadata
+        with open(file_path, "rb") as f:
+            scene_data = pickle.load(f)
+        scene_metadata = SceneMetadata(**scene_data["scene_metadata"])
+        # build the map from the map_path
+        map_api = cls._build_map_api(scene_metadata.map_name)
+
+        scene_frames: List[Frame] = []
+        for frame_idx, frame_data in enumerate(scene_data["frames"]):
+            sensor_names = sensor_config.get_sensors_at_iteration(frame_idx)
+            lidar_path = (
+                Path(frame_data["lidar_path"]) if frame_data["lidar_path"] else None
+            )
+            lidar = Lidar.from_paths(
+                sensor_blobs_path=sensor_blobs_path,
+                lidar_path=lidar_path,
+                sensor_names=sensor_names,
+            )
+            cameras = Cameras.from_camera_dict(
+                sensor_blobs_path=sensor_blobs_path,
+                camera_dict=frame_data["camera_dict"],
+                sensor_names=sensor_names,
+            )
+
+            scene_frames.append(
+                Frame(
+                    token=frame_data["token"],
+                    timestamp=frame_data["timestamp"],
+                    roadblock_ids=frame_data["roadblock_ids"],
+                    traffic_lights=frame_data["traffic_lights"],
+                    annotations=Annotations(**frame_data["annotations"]),
+                    ego_status=EgoStatus(**frame_data["ego_status"]),
+                    lidar=lidar,
+                    cameras=cameras,
+                )
+            )
+
+        return Scene(
+            scene_metadata=scene_metadata,
+            map_api=map_api,
+            frames=scene_frames,
+            extended_traffic_light_data=scene_data["extended_traffic_light_data"],
+            extended_detections_tracks=scene_data["extended_detections_tracks"],
+        )
+
 
 @dataclass
 class SceneFilter:
@@ -475,6 +661,8 @@ class SceneFilter:
     max_scenes: Optional[int] = None
     log_names: Optional[List[str]] = None
     tokens: Optional[List[str]] = None
+    include_synthetic_scenes: bool = False
+    synthetic_scene_tokens: Optional[List[str]] = None
     # TODO: expand filter options
 
     def __post_init__(self):
@@ -482,9 +670,24 @@ class SceneFilter:
         if self.frame_interval is None:
             self.frame_interval = self.num_frames
 
-        assert self.num_history_frames >= 1, "SceneFilter: num_history_frames must greater equal one."
-        assert self.num_future_frames >= 0, "SceneFilter: num_future_frames must greater equal zero."
-        assert self.frame_interval >= 1, "SceneFilter: frame_interval must greater equal one."
+        assert (
+            self.num_history_frames >= 1
+        ), "SceneFilter: num_history_frames must greater equal one."
+        assert (
+            self.num_future_frames >= 0
+        ), "SceneFilter: num_future_frames must greater equal zero."
+        assert (
+            self.frame_interval >= 1
+        ), "SceneFilter: frame_interval must greater equal one."
+
+        if (
+            not self.include_synthetic_scenes
+            and self.synthetic_scene_tokens is not None
+            and len(self.synthetic_scene_tokens) > 0
+        ):
+            warnings.warn(
+                "SceneFilter: synthetic_scene_tokens are provided but include_synthetic_scenes is False. No synthetic scenes will be loaded."
+            )
 
     @property
     def num_frames(self) -> int:
@@ -559,10 +762,37 @@ class PDMResults:
 
     no_at_fault_collisions: float
     drivable_area_compliance: float
+    driving_direction_compliance: float
+    traffic_light_compliance: float
 
     ego_progress: float
     time_to_collision_within_bound: float
-    comfort: float
-    driving_direction_compliance: float
+    lane_keeping: float
+    history_comfort: float
 
-    score: float
+    multiplicative_metrics_prod: float
+    weighted_metrics: npt.NDArray[np.float64]
+    weighted_metrics_array: npt.NDArray[np.float64]
+
+    pdm_score: float
+
+    @classmethod
+    def get_empty_results(cls) -> PDMResults:
+        """
+        Returns an instance of the class where all values are NaN.
+        :return: empty PDM results dataclass.
+        """
+        return PDMResults(
+            no_at_fault_collisions=np.nan,
+            drivable_area_compliance=np.nan,
+            driving_direction_compliance=np.nan,
+            traffic_light_compliance=np.nan,
+            ego_progress=np.nan,
+            time_to_collision_within_bound=np.nan,
+            lane_keeping=np.nan,
+            history_comfort=np.nan,
+            multiplicative_metrics_prod=np.nan,
+            weighted_metrics=np.nan,
+            weighted_metrics_array=np.nan,
+            pdm_score=np.nan,
+        )

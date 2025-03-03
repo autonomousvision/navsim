@@ -1,0 +1,22 @@
+_target_: navsim.planning.simulation.planner.pdm_planner.scoring.pdm_and_traffic_scorer.PDMTrafficScorer
+_convert_: 'all'
+proposal_sampling: ${proposal_sampling}
+config:
+  _target_: navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer.PDMScorerConfig
+  _convert_: 'all'
+  # weighted metric weights
+  progress_weight: 5.0
+  ttc_weight: 5.0
+  lane_keeping_weight: 2.0
+  history_comfort_weight: 2.0
+  two_frame_extended_comfort_weight: 2.0
+
+  # thresholds
+  driving_direction_horizon: 1.0  # [s] (driving direction) (nuplan)
+  driving_direction_compliance_threshold: 2.0  # [m] (driving direction) (nuplan)
+  driving_direction_violation_threshold:  6.0  # [m] (driving direction) (nuplan)
+  stopped_speed_threshold: 5e-03  # [m/s] (ttc)
+  future_collision_horizon_window: 1.0  # [s] (ttc)
+  progress_distance_threshold: 5.0  # [m] (progress)
+  lane_keeping_deviation_limit: 0.5  # [m] (lane keeping) (hydraMDP++)
+  lane_keeping_horizon_window: 2.0  # [s] (lane keeping)

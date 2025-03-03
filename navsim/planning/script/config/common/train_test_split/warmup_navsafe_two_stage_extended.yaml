@@ -1,0 +1,4 @@
+defaults:
+  - scene_filter: warmup_navsafe_two_stage_extended
+
+data_split: test

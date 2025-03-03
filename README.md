@@ -26,7 +26,7 @@
 
 ## Highlights <a name="highlight"></a>
 
-🔥 NAVSIM gathers simulation-based metrics (such as progress and time to collision) for end-to-end driving by unrolling simplified bird's eye view abstractions of scenes for a short simulation horizon. It operates under the condition that the policy has no influence on the environment, which enables **efficient, open-loop metric computation** while being **better aligned with closed-loop** evaluations than traditional displacement errors. 
+🔥 NAVSIM gathers simulation-based metrics (such as progress and time to collision) for end-to-end driving by unrolling simplified bird's eye view abstractions of scenes for a short simulation horizon. It operates under the condition that the policy has limited influence on the environment, which enables **efficient, open-loop metric computation** while being **better aligned with closed-loop** evaluations than traditional displacement errors. 
 
 <p align="center">
   <img src="assets/navsim_cameras.gif" width="800">
@@ -46,13 +46,18 @@
 - [Understanding and creating agents](docs/agents.md) 
 - [Understanding the data format and classes](docs/cache.md)
 - [Dataset splits vs. filtered training / test splits](docs/splits.md)
-- [Understanding the PDM Score](docs/metrics.md)
+- [Understanding the Extended PDM Score](docs/metrics.md)
+- [Understanding the traffic simulation](docs/traffic_agents.md)
 - [Submitting to the Leaderboard](docs/submission.md)
   
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ## Changelog <a name="changelog"></a>
+- **`[2025/02/28]`** NAVSIM v2.0 release (official devkit version for 2025 warm-up phase)
+  - Extends the PDM Score with more metrics and penalties (see [metrics](docs/metrics.md))
+  - Adds a new two-stage pseudo closed-loop simulation (see [metrics](docs/metrics.md))
+  - Adds support for reactive traffic agent policies (see [traffic simulation](docs/metrics.md))
 - **`[2024/09/03]`** NAVSIM v1.1 release
   - Leaderboard for `navtest` on [Hugging Face](https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim)
   - Release of baseline checkpoints on [Hugging Face](https://huggingface.co/autonomousvision/navsim_baselines)

@@ -1,0 +1,45 @@
+name: Release code to public repo upon merge into public_main
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - public_main
+
+jobs:
+  verify-and-push:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true  # Only run for merged PRs
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Fetch public repository
+        run: |
+          # Add the remote for the public repository (replace with the actual public repo URL)
+          git remote add public https://github.com/autonomousvision/navsim
+          git fetch public main || (echo "Public repo not initialized yet" && exit 1)
+
+      - name: Assert public_main is One Commit Ahead of public/main
+        run: |
+          # Get the commit hashes of the branches
+          LOCAL_HASH=$(git rev-parse origin/public_main)
+          REMOTE_HASH=$(git rev-parse public/main)
+
+          # Get the number of commits ahead of `public/main`
+          COMMITS_AHEAD=$(git rev-list --count $REMOTE_HASH..$LOCAL_HASH)
+
+          # Check if `public_main` is exactly one commit ahead
+          if [ "$COMMITS_AHEAD" -ne 1 ]; then
+            echo "Error: public_main is not exactly one commit ahead of public/main!" >&2
+            exit 1
+          fi
+
+          echo "Assertion passed: public_main is exactly one commit ahead of public/main."
+
+      - name: Push public_main to Public Repo
+        run: |
+          # Push the changes in `public_main` to the public repository
+          git push public public_main

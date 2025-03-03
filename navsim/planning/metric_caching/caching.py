@@ -53,7 +53,13 @@ def cache_scenarios(args: List[Dict[str, Union[List[str], DictConfig]]]) -> List
             )
             scenario = NavSimScenario(scene, map_root=os.environ["NUPLAN_MAPS_ROOT"], map_version="nuplan-maps-v1.0")
 
-            return processor.compute_metric_cache(scenario)
+            return processor.compute_and_save_metric_cache(scenario)
+
+        def cache_single_synthetic_scenario(scene_path: Path, processor: MetricCacheProcessor) -> Optional[CacheMetadataEntry]:
+            scene = Scene.load_from_disk(scene_path, None, SensorConfig.build_no_sensors())
+            scenario = NavSimScenario(scene, map_root=os.environ["NUPLAN_MAPS_ROOT"], map_version="nuplan-maps-v1.0")
+
+            return processor.compute_and_save_metric_cache(scenario)
 
         node_id = int(os.environ.get("NODE_RANK", 0))
         thread_id = str(uuid.uuid4())
@@ -68,16 +74,18 @@ def cache_scenarios(args: List[Dict[str, Union[List[str], DictConfig]]]) -> List
         scene_loader = SceneLoader(
             sensor_blobs_path=None,
             data_path=Path(cfg.navsim_log_path),
+            synthetic_scenes_path=Path(cfg.synthetic_scenes_path),
             scene_filter=scene_filter,
             sensor_config=SensorConfig.build_no_sensors(),
         )
 
         # Create feature preprocessor
-        assert cfg.cache.cache_path is not None, f"Cache path cannot be None when caching, got {cfg.cache.cache_path}"
+        assert cfg.metric_cache_path is not None, f"Cache path cannot be None when caching, got {cfg.metric_cache_path}"
 
         processor = MetricCacheProcessor(
-            cache_path=cfg.cache.cache_path,
-            force_feature_computation=cfg.cache.force_feature_computation,
+            cache_path=cfg.metric_cache_path,
+            force_feature_computation=cfg.force_feature_computation,
+            proposal_sampling=instantiate(cfg.proposal_sampling),
         )
 
         logger.info(f"Extracted {len(scene_loader)} scenarios for thread_id={thread_id}, node_id={node_id}.")
@@ -86,9 +94,20 @@ def cache_scenarios(args: List[Dict[str, Union[List[str], DictConfig]]]) -> List
         all_file_cache_metadata: List[Optional[CacheMetadataEntry]] = []
         for idx, scene_dict in enumerate(scene_loader.scene_frames_dicts.values()):
             logger.info(
-                f"Processing scenario {idx + 1} / {len(scene_loader)} in thread_id={thread_id}, node_id={node_id}"
+                f"Processing scenario {idx + 1} / {len(scene_loader.scene_frames_dicts)} in thread_id={thread_id}, node_id={node_id}"
             )
             file_cache_metadata = cache_single_scenario(scene_dict, processor)
+            gc.collect()
+
+            num_failures += 0 if file_cache_metadata else 1
+            num_successes += 1 if file_cache_metadata else 0
+            all_file_cache_metadata += [file_cache_metadata]
+
+        for idx, (scene_path, _) in enumerate(scene_loader.synthetic_scenes.values()):
+            logger.info(
+                f"Processing synthetic scenario {idx + 1} / {len(scene_loader.synthetic_scenes)} in thread_id={thread_id}, node_id={node_id}"
+            )
+            file_cache_metadata = cache_single_synthetic_scenario(scene_path, processor)
             gc.collect()
 
             num_failures += 0 if file_cache_metadata else 1
@@ -118,13 +137,14 @@ def cache_data(cfg: DictConfig, worker: WorkerPool) -> None:
     :param cfg: omegaconf dictionary
     :param worker: Worker to submit tasks which can be executed in parallel
     """
-    assert cfg.cache.cache_path is not None, f"Cache path cannot be None when caching, got {cfg.cache.cache_path}"
+    assert cfg.metric_cache_path is not None, f"Cache path cannot be None when caching, got {cfg.metric_cache_path}"
 
     # Extract scenes based on scene-loader to know which tokens to distribute across workers
     # TODO: infer the tokens per log from metadata, to not have to load metric cache and scenes here
     scene_loader = SceneLoader(
         sensor_blobs_path=None,
         data_path=Path(cfg.navsim_log_path),
+        synthetic_scenes_path=Path(cfg.synthetic_scenes_path),
         scene_filter=instantiate(cfg.train_test_split.scene_filter),
         sensor_config=SensorConfig.build_no_sensors(),
     )
@@ -165,5 +185,5 @@ def cache_data(cfg: DictConfig, worker: WorkerPool) -> None:
 
     node_id = int(os.environ.get("NODE_RANK", 0))
     logger.info(f"Node {node_id}: Storing metadata csv file containing cache paths for valid features and targets...")
-    save_cache_metadata(cached_metadata, Path(cfg.cache.cache_path), node_id)
+    save_cache_metadata(cached_metadata, Path(cfg.metric_cache_path), node_id)
     logger.info("Done storing metadata csv file.")

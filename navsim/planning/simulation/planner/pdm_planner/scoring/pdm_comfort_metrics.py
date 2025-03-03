@@ -2,35 +2,50 @@ from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
+from nuplan.common.actor_state.vehicle_parameters import (
+    VehicleParameters,
+    get_pacifica_parameters,
+)
 from scipy.signal import savgol_filter
 
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_array_representation import (
+    state_array_to_center_state_array,
+)
 from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import StateIndex
 
 # TODO: Refactor & add to config
 
 # (1) ego_jerk_metric,
-max_abs_mag_jerk = 8.37  # [m/s^3]
+MAX_ABS_MAG_JERK: float = 8.37  # [m/s^3]
 
 # (2) ego_lat_acceleration_metric
-max_abs_lat_accel = 4.89  # [m/s^2]
+MAX_ABS_LAT_ACCEL: float = 4.89  # [m/s^2]
 
 # (3) ego_lon_acceleration_metric
-max_lon_accel = 2.40  # [m/s^2]
-min_lon_accel = -4.05
+MAX_LON_ACCEL: float = 2.40  # [m/s^2]
+MIN_LON_ACCEL: float = -4.05
 
 # (4) ego_yaw_acceleration_metric
-max_abs_yaw_accel = 1.93  # [rad/s^2]
+MAX_ABS_YAW_ACCEL: float = 1.93  # [rad/s^2]
 
 # (5) ego_lon_jerk_metric
-max_abs_lon_jerk = 4.13  # [m/s^3]
+MAX_ABS_LON_JERK: float = 4.13  # [m/s^3]
 
 # (6) ego_yaw_rate_metric
-max_abs_yaw_rate = 0.95  # [rad/s]
+MAX_ABS_YAW_RATE: float = 0.95  # [rad/s]
+
+
+# Extended Comfort thresholds
+acceleration_threshold: float = 0.7  # [m/s^2]
+jerk_threshold: float = 0.5  # [m/s^3]
+yaw_rate_threshold: float = 0.1  # [rad/s]
+yaw_accel_threshold: float = 0.1  # [rad/s^2]
 
 
 def _extract_ego_acceleration(
     states: npt.NDArray[np.float64],
     acceleration_coordinate: str,
+    vehicle_parameters: VehicleParameters,
     decimals: int = 8,
     poly_order: int = 2,
     window_length: int = 8,
@@ -39,6 +54,7 @@ def _extract_ego_acceleration(
     Extract acceleration of ego pose in simulation history over batch-dim
     :param states: array representation of ego state values
     :param acceleration_coordinate: string of axis to extract
+    :param vehicle_parameters: parameters of vehicle
     :param decimals: decimal precision, defaults to 8
     :param poly_order: polynomial order, defaults to 2
     :param window_length: window size for extraction, defaults to 8
@@ -47,11 +63,14 @@ def _extract_ego_acceleration(
     """
 
     n_batch, n_time, n_states = states.shape
-    if acceleration_coordinate == "x":
-        acceleration: npt.NDArray[np.float64] = states[..., StateIndex.ACCELERATION_X]
-
-    elif acceleration_coordinate == "y":
-        acceleration: npt.NDArray[np.float64] = states[..., StateIndex.ACCELERATION_Y]
+    if acceleration_coordinate in ["x", "y"]:
+        center_states = state_array_to_center_state_array(states, vehicle_parameters)
+        coordinate_index = (
+            StateIndex.ACCELERATION_X
+            if acceleration_coordinate == "x"
+            else StateIndex.ACCELERATION_Y
+        )
+        acceleration: npt.NDArray[np.float64] = center_states[..., coordinate_index]
 
     elif acceleration_coordinate == "magnitude":
         acceleration: npt.NDArray[np.float64] = np.hypot(
@@ -78,6 +97,7 @@ def _extract_ego_jerk(
     states: npt.NDArray[np.float64],
     acceleration_coordinate: str,
     time_steps_s: npt.NDArray[np.float64],
+    vehicle_parameters: VehicleParameters,
     decimals: int = 8,
     deriv_order: int = 1,
     poly_order: int = 2,
@@ -88,6 +108,7 @@ def _extract_ego_jerk(
     :param states: array representation of ego state values
     :param acceleration_coordinate: string of axis to extract
     :param time_steps_s: time steps [s] of time dim
+    :param vehicle_parameters: parameters of vehicle
     :param decimals: decimal precision, defaults to 8
     :param deriv_order: order of derivative, defaults to 1
     :param poly_order: polynomial order, defaults to 2
@@ -95,7 +116,11 @@ def _extract_ego_jerk(
     :return: array containing jerk values
     """
     n_batch, n_time, n_states = states.shape
-    ego_acceleration = _extract_ego_acceleration(states, acceleration_coordinate=acceleration_coordinate)
+    ego_acceleration = _extract_ego_acceleration(
+        states,
+        acceleration_coordinate=acceleration_coordinate,
+        vehicle_parameters=vehicle_parameters,
+    )
     jerk = _approximate_derivatives(
         ego_acceleration,
         time_steps_s,
@@ -152,7 +177,9 @@ def _phase_unwrap(headings: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
     # So adjustments[j+1] - adjustments[j] = round((headings[j+1] - headings[j]) / (2*pi)).
     two_pi = 2.0 * np.pi
     adjustments = np.zeros_like(headings)
-    adjustments[..., 1:] = np.cumsum(np.round(np.diff(headings, axis=-1) / two_pi), axis=-1)
+    adjustments[..., 1:] = np.cumsum(
+        np.round(np.diff(headings, axis=-1) / two_pi), axis=-1
+    )
     unwrapped = headings - two_pi * adjustments
     return unwrapped
 
@@ -221,100 +248,139 @@ def _within_bound(
 
 
 def _compute_lon_acceleration(
-    states: npt.NDArray[np.float64], time_steps_s: npt.NDArray[np.float64]
+    states: npt.NDArray[np.float64],
+    time_steps_s: npt.NDArray[np.float64],
+    vehicle_parameters: VehicleParameters,
 ) -> npt.NDArray[np.bool_]:
     """
     Compute longitudinal acceleration over batch-dim of simulated proposals
     :param states: array representation of ego state values
     :param time_steps_s: time steps [s] of time dim
+    :param vehicle_parameters: parameters of vehicle
     :return: longitudinal acceleration within bound
     """
-    n_batch, n_time, n_states = states.shape
-    lon_acceleration = _extract_ego_acceleration(states, acceleration_coordinate="x", window_length=n_time)
-    return _within_bound(lon_acceleration, min_bound=min_lon_accel, max_bound=max_lon_accel)
+    lon_acceleration = _extract_ego_acceleration(
+        states, acceleration_coordinate="x", vehicle_parameters=vehicle_parameters
+    )
+    return _within_bound(
+        lon_acceleration, min_bound=MIN_LON_ACCEL, max_bound=MAX_LON_ACCEL
+    )
 
 
 def _compute_lat_acceleration(
-    states: npt.NDArray[np.float64], time_steps_s: npt.NDArray[np.float64]
+    states: npt.NDArray[np.float64],
+    time_steps_s: npt.NDArray[np.float64],
+    vehicle_parameters: VehicleParameters,
 ) -> npt.NDArray[np.bool_]:
     """
     Compute lateral acceleration over batch-dim of simulated proposals
     :param states: array representation of ego state values
     :param time_steps_s: time steps [s] of time dim
+    :param vehicle_parameters: parameters of vehicle
     :return: lateral acceleration within bound
     """
-    n_batch, n_time, n_states = states.shape
-    lat_acceleration = _extract_ego_acceleration(states, acceleration_coordinate="y", window_length=n_time)
-    return _within_bound(lat_acceleration, min_bound=-max_abs_lat_accel, max_bound=max_abs_lat_accel)
+    lat_acceleration = _extract_ego_acceleration(
+        states, acceleration_coordinate="y", vehicle_parameters=vehicle_parameters
+    )
+    return _within_bound(
+        lat_acceleration, min_bound=-MAX_ABS_LAT_ACCEL, max_bound=MAX_ABS_LAT_ACCEL
+    )
 
 
 def _compute_jerk_metric(
-    states: npt.NDArray[np.float64], time_steps_s: npt.NDArray[np.float64]
+    states: npt.NDArray[np.float64],
+    time_steps_s: npt.NDArray[np.float64],
+    vehicle_parameters: VehicleParameters,
 ) -> npt.NDArray[np.bool_]:
     """
     Compute absolute jerk over batch-dim of simulated proposals
     :param states: array representation of ego state values
     :param time_steps_s: time steps [s] of time dim
+    :param vehicle_parameters: parameters of vehicle
     :return: absolute jerk within bound
     """
-    n_batch, n_time, n_states = states.shape
     jerk_metric = _extract_ego_jerk(
         states,
         acceleration_coordinate="magnitude",
         time_steps_s=time_steps_s,
-        window_length=n_time,
+        vehicle_parameters=vehicle_parameters,
     )
-    return _within_bound(jerk_metric, min_bound=-max_abs_mag_jerk, max_bound=max_abs_mag_jerk)
+    return _within_bound(
+        jerk_metric, min_bound=-MAX_ABS_MAG_JERK, max_bound=MAX_ABS_MAG_JERK
+    )
 
 
 def _compute_lon_jerk_metric(
-    states: npt.NDArray[np.float64], time_steps_s: npt.NDArray[np.float64]
+    states: npt.NDArray[np.float64],
+    time_steps_s: npt.NDArray[np.float64],
+    vehicle_parameters: VehicleParameters,
 ) -> npt.NDArray[np.bool_]:
     """
     Compute longitudinal jerk over batch-dim of simulated proposals
     :param states: array representation of ego state values
     :param time_steps_s: time steps [s] of time dim
+    :param vehicle_parameters: parameters of vehicle
     :return: longitudinal jerk within bound
     """
-    n_batch, n_time, n_states = states.shape
     lon_jerk_metric = _extract_ego_jerk(
         states,
         acceleration_coordinate="x",
         time_steps_s=time_steps_s,
-        window_length=n_time,
+        vehicle_parameters=vehicle_parameters,
     )
-    return _within_bound(lon_jerk_metric, min_bound=-max_abs_lon_jerk, max_bound=max_abs_lon_jerk)
+    return _within_bound(
+        lon_jerk_metric, min_bound=-MAX_ABS_LON_JERK, max_bound=MAX_ABS_LON_JERK
+    )
 
 
-def _compute_yaw_accel(states: npt.NDArray[np.float64], time_steps_s: npt.NDArray[np.float64]) -> npt.NDArray[np.bool_]:
+def _compute_yaw_accel(
+    states: npt.NDArray[np.float64],
+    time_steps_s: npt.NDArray[np.float64],
+    vehicle_parameters: VehicleParameters,
+) -> npt.NDArray[np.bool_]:
     """
     Compute acceleration of yaw-angle over batch-dim of simulated proposals
     :param states: array representation of ego state values
     :param time_steps_s: time steps [s] of time dim
+    :param vehicle_parameters: parameters of vehicle
     :return: acceleration of yaw-angle within bound
     """
-    n_batch, n_time, n_states = states.shape
-    yaw_accel_metric = _extract_ego_yaw_rate(states, time_steps_s, deriv_order=2, poly_order=3, window_length=n_time)
-    return _within_bound(yaw_accel_metric, min_bound=-max_abs_yaw_accel, max_bound=max_abs_yaw_accel)
+    yaw_accel_metric = _extract_ego_yaw_rate(
+        states, time_steps_s, deriv_order=2, poly_order=3
+    )
+    return _within_bound(
+        yaw_accel_metric, min_bound=-MAX_ABS_YAW_ACCEL, max_bound=MAX_ABS_YAW_ACCEL
+    )
 
 
-def _compute_yaw_rate(states: npt.NDArray[np.float64], time_steps_s: npt.NDArray[np.float64]) -> npt.NDArray[np.bool_]:
+def _compute_yaw_rate(
+    states: npt.NDArray[np.float64],
+    time_steps_s: npt.NDArray[np.float64],
+    vehicle_parameters: VehicleParameters,
+) -> npt.NDArray[np.bool_]:
     """
     Compute velocity of yaw-angle over batch-dim of simulated proposals
     :param states: array representation of ego state values
     :param time_steps_s: time steps [s] of time dim
+    :param vehicle_parameters: parameters of vehicle
     :return: velocity of yaw-angle within bound
     """
-    n_batch, n_time, n_states = states.shape
-    yaw_rate_metric = _extract_ego_yaw_rate(states, time_steps_s, window_length=n_time)
-    return _within_bound(yaw_rate_metric, min_bound=-max_abs_yaw_rate, max_bound=max_abs_yaw_rate)
+    yaw_rate_metric = _extract_ego_yaw_rate(states, time_steps_s)
+    return _within_bound(
+        yaw_rate_metric, min_bound=-MAX_ABS_YAW_RATE, max_bound=MAX_ABS_YAW_RATE
+    )
 
 
-def ego_is_comfortable(states: npt.NDArray[np.float64], time_point_s: npt.NDArray[np.float64]) -> npt.NDArray[np.bool_]:
+def ego_is_comfortable(
+    states: npt.NDArray[np.float64],
+    time_point_s: npt.NDArray[np.float64],
+    vehicle_parameters: VehicleParameters = get_pacifica_parameters(),
+) -> npt.NDArray[np.bool_]:
     """
     Accumulates all within-bound comfortability metrics
     :param states: array representation of ego state values
     :param time_point_s: time steps [s] of time dim
+    :param vehicle_parameters: parameters of vehicle
     :return: _description_
     """
     n_batch, n_time, n_states = states.shape
@@ -329,8 +395,108 @@ def ego_is_comfortable(states: npt.NDArray[np.float64], time_point_s: npt.NDArra
         _compute_yaw_accel,
         _compute_yaw_rate,
     ]
-    results: npt.NDArray[np.bool_] = np.zeros((n_batch, len(comfort_metric_functions)), dtype=np.bool_)
+    results: npt.NDArray[np.bool_] = np.zeros(
+        (n_batch, len(comfort_metric_functions)), dtype=np.bool_
+    )
     for idx, metric_function in enumerate(comfort_metric_functions):
-        results[:, idx] = metric_function(states, time_point_s)
+        results[:, idx] = metric_function(states, time_point_s, vehicle_parameters)
 
     return results
+
+
+def calculate_rms_difference(
+    feature_values: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """
+    Calculate RMS difference between consecutive frames for a given feature.
+    :param feature_values: Array of shape (n_batch, n_time) containing feature values for each time step.
+    :return: RMS differences for each trajectory in the batch.
+    """
+    differences = np.diff(
+        feature_values, axis=1
+    )  # Calculate frame-to-frame differences
+    squared_differences = differences**2  # Square the differences
+    mean_squared_diff = np.mean(squared_differences, axis=1)  # Take the mean over time
+    rms = np.sqrt(mean_squared_diff)  # Compute the square root to get RMS
+    return rms
+
+
+def calculate_rms(values: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    """
+    Compute the Root Mean Square (RMS) of the given values along the time axis.
+
+    :param values: Array containing values (n_batch, n_time).
+    :return: RMS value per batch (n_batch,).
+    """
+    squared_values = values**2  # Square the differences
+    mean_squared = np.mean(squared_values, axis=1)  # Compute mean along time axis
+    rms_values = np.sqrt(mean_squared)  # Square root to get RMS
+    return rms_values
+
+
+def extract_features(
+    states: npt.NDArray[np.float64],
+    time_point_s: npt.NDArray[np.float64],
+    vehicle_parameters: VehicleParameters = get_pacifica_parameters(),
+) -> dict:
+    """
+    Extract features needed for Extended Comfort evaluation.
+    :param states: Array of ego states (n_batch, n_time, n_features).
+    :param time_point_s: Array of time steps in seconds.
+    :param vehicle_parameters: parameters of vehicle
+    :return: A dictionary of features.
+    """
+    return {
+        "acceleration": _extract_ego_acceleration(
+            states, "magnitude", vehicle_parameters=vehicle_parameters
+        ),
+        "jerk": _extract_ego_jerk(
+            states, "magnitude", time_point_s, vehicle_parameters=vehicle_parameters
+        ),
+        "yaw_rate": _extract_ego_yaw_rate(states, time_point_s),
+        "yaw_accel": _extract_ego_yaw_rate(states, time_point_s, deriv_order=2),
+    }
+
+
+def ego_is_two_frame_extended_comfort(
+    states_1: npt.NDArray[np.float64],
+    states_2: npt.NDArray[np.float64],
+    time_point_s: npt.NDArray[np.float64],
+) -> npt.NDArray[np.bool_]:
+    """
+    Evaluate whether the differences between two consecutive trajectories satisfy the Extended Comfort metric.
+    :param states_1: First trajectory (n_batch, n_time, n_features).
+    :param states_2: Second trajectory (n_batch, n_time, n_features).
+    :param time_point_s: Array of time steps in seconds.
+    :return: Boolean array indicating whether the difference between trajectories meets the criteria.
+    """
+    assert (
+        states_1.shape == states_2.shape
+    ), "Both trajectories must have the same shape"
+
+    # Extract features for both trajectories
+    features_1 = extract_features(states_1, time_point_s)
+    features_2 = extract_features(states_2, time_point_s)
+
+    # Compute differences between corresponding time steps
+    diff_acceleration = features_1["acceleration"] - features_2["acceleration"]
+    diff_jerk = features_1["jerk"] - features_2["jerk"]
+    diff_yaw_rate = features_1["yaw_rate"] - features_2["yaw_rate"]
+    diff_yaw_accel = features_1["yaw_accel"] - features_2["yaw_accel"]
+
+    # Calculate RMS differences
+    rms_acceleration = calculate_rms(diff_acceleration)
+    rms_jerk = calculate_rms(diff_jerk)
+    rms_yaw_rate = calculate_rms(diff_yaw_rate)
+    rms_yaw_accel = calculate_rms(diff_yaw_accel)
+
+    # Compare RMS differences against thresholds
+    meets_acceleration = rms_acceleration <= acceleration_threshold
+    meets_jerk = rms_jerk <= jerk_threshold
+    meets_yaw_rate = rms_yaw_rate <= yaw_rate_threshold
+    meets_yaw_accel = rms_yaw_accel <= yaw_accel_threshold
+
+    # Combine all criteria
+    return np.logical_and.reduce(
+        [meets_acceleration, meets_jerk, meets_yaw_rate, meets_yaw_accel]
+    )
