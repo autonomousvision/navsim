@@ -21,12 +21,15 @@ repos:
     hooks:
     - id: isort
       language_version: python3.10
-      args: ["--profile", "black"]
+      args: ['--line-length=120', '--profile=black']
+      files: "\\.py$"
 -   repo: https://github.com/ambv/black
     rev: 22.3.0
     hooks:
     - id: black
       language_version: python3.10
+      args: ['--line-length=120']
+      files: "\\.py$"
 
 
 -   repo: https://github.com/myint/autoflake

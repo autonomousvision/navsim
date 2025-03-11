@@ -1,7 +1,6 @@
 from typing import Dict, List, Tuple
 
 import numpy as np
-
 from nuplan.common.actor_state.state_representation import StateSE2
 from nuplan.common.maps.abstract_map import AbstractMap
 from nuplan.common.maps.abstract_map_objects import RoadBlockGraphEdgeMapObject

@@ -1,3 +1,4 @@
+# TODO: Move & rename this file for common usage (not specific for PDM)
 from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple, Type
@@ -5,14 +6,13 @@ from typing import Any, Dict, List, Tuple, Type
 import numpy as np
 import numpy.typing as npt
 import shapely.vectorized
-from shapely.strtree import STRtree
-from shapely.geometry import Point
-
-from nuplan.common.maps.abstract_map import AbstractMap, MapObject
-from nuplan.common.maps.maps_datatypes import SemanticMapLayer
 from nuplan.common.actor_state.ego_state import EgoState
 from nuplan.common.actor_state.state_representation import Point2D
+from nuplan.common.maps.abstract_map import AbstractMap, MapObject
+from nuplan.common.maps.maps_datatypes import SemanticMapLayer
 from nuplan.planning.simulation.occupancy_map.abstract_occupancy_map import Geometry
+from shapely.geometry import Point
+from shapely.strtree import STRtree
 
 
 class PDMOccupancyMap:

@@ -1,7 +1,7 @@
-from typing import List, Optional, Type
-import warnings
-import logging
 import gc
+import logging
+import warnings
+from typing import List, Optional, Type
 
 from nuplan.planning.simulation.observation.observation_type import DetectionsTracks, Observation
 from nuplan.planning.simulation.planner.abstract_planner import PlannerInitialization, PlannerInput
@@ -9,8 +9,8 @@ from nuplan.planning.simulation.trajectory.abstract_trajectory import AbstractTr
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
 
 from navsim.planning.simulation.planner.pdm_planner.abstract_pdm_closed_planner import AbstractPDMClosedPlanner
-from navsim.planning.simulation.planner.pdm_planner.proposal.batch_idm_policy import BatchIDMPolicy
 from navsim.planning.simulation.planner.pdm_planner.observation.pdm_occupancy_map import PDMDrivableMap
+from navsim.planning.simulation.planner.pdm_planner.proposal.batch_idm_policy import BatchIDMPolicy
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 

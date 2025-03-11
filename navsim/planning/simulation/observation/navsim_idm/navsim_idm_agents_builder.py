@@ -8,14 +8,9 @@ from nuplan.common.actor_state.oriented_box import OrientedBox
 from nuplan.common.actor_state.state_representation import StateSE2, StateVector2D
 from nuplan.common.actor_state.tracked_objects_types import TrackedObjectType
 from nuplan.planning.scenario_builder.abstract_scenario import AbstractScenario
-from nuplan.planning.simulation.observation.idm.idm_agent import (
-    IDMAgent,
-    IDMInitialState,
-)
+from nuplan.planning.simulation.observation.idm.idm_agent import IDMAgent, IDMInitialState
 from nuplan.planning.simulation.observation.idm.idm_agent_manager import UniqueIDMAgents
-from nuplan.planning.simulation.observation.idm.idm_agents_builder import (
-    get_starting_segment,
-)
+from nuplan.planning.simulation.observation.idm.idm_agents_builder import get_starting_segment
 from nuplan.planning.simulation.observation.idm.idm_policy import IDMPolicy
 from nuplan.planning.simulation.observation.observation_type import DetectionsTracks
 from nuplan.planning.simulation.occupancy_map.abstract_occupancy_map import OccupancyMap
@@ -59,22 +54,16 @@ def build_idm_agents_on_map_rails(
     map_api = map_api
     ego_agent = ego_agent.agent
 
-    open_loop_detections = detections.tracked_objects.get_tracked_objects_of_types(
-        open_loop_detections_types
-    )
+    open_loop_detections = detections.tracked_objects.get_tracked_objects_of_types(open_loop_detections_types)
     # An occupancy map used only for collision checking
-    init_agent_occupancy = STRTreeOccupancyMapFactory.get_from_boxes(
-        open_loop_detections
-    )
+    init_agent_occupancy = STRTreeOccupancyMapFactory.get_from_boxes(open_loop_detections)
     init_agent_occupancy.insert(ego_agent.token, ego_agent.box.geometry)
 
     # Initialize occupancy map
     occupancy_map = STRTreeOccupancyMap({})
 
     agent: Agent
-    for agent in detections.tracked_objects.get_tracked_objects_of_type(
-        TrackedObjectType.VEHICLE
-    ):
+    for agent in detections.tracked_objects.get_tracked_objects_of_type(TrackedObjectType.VEHICLE):
         # filter for only vehicles
         if agent.track_token not in unique_agents:
 
@@ -85,14 +74,10 @@ def build_idm_agents_on_map_rails(
                 continue
 
             # Snap agent to baseline path
-            state_on_path = route.baseline_path.get_nearest_pose_from_position(
-                agent.center.point
-            )
+            state_on_path = route.baseline_path.get_nearest_pose_from_position(agent.center.point)
 
             # Ignore agents that far away from baseline
-            lateral_deviation = np.hypot(
-                state_on_path.x - agent.center.x, state_on_path.y - agent.center.y
-            )
+            lateral_deviation = np.hypot(state_on_path.x - agent.center.x, state_on_path.y - agent.center.y)
 
             if lateral_deviation > idm_snap_threshold:
                 continue
@@ -121,9 +106,7 @@ def build_idm_agents_on_map_rails(
                 )
                 velocity = StateVector2D(ego_state.dynamic_car_state.speed, 0.0)
             else:
-                velocity = StateVector2D(
-                    np.hypot(agent.velocity.x, agent.velocity.y), 0
-                )
+                velocity = StateVector2D(np.hypot(agent.velocity.x, agent.velocity.y), 0)
 
             initial_state = IDMInitialState(
                 metadata=agent.metadata,

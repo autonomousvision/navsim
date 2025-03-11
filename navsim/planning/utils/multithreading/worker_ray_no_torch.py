@@ -5,10 +5,9 @@ from pathlib import Path
 from typing import Any, Iterable, List, Optional, Union
 
 import ray
-from psutil import cpu_count
-
 from nuplan.planning.utils.multithreading.ray_execution import ray_map
 from nuplan.planning.utils.multithreading.worker_pool import Task, WorkerPool, WorkerResources
+from psutil import cpu_count
 
 logger = logging.getLogger(__name__)
 

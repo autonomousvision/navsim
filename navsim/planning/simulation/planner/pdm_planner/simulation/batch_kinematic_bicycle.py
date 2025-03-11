@@ -2,7 +2,6 @@ import copy
 
 import numpy as np
 import numpy.typing as npt
-
 from nuplan.common.actor_state.ego_state import EgoState
 from nuplan.common.actor_state.state_representation import TimePoint
 from nuplan.common.actor_state.vehicle_parameters import VehicleParameters, get_pacifica_parameters

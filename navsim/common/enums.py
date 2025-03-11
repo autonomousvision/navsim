@@ -1,10 +1,12 @@
 from enum import IntEnum
 
+
 class SceneFrameType(IntEnum):
     """Intenum for scene frame types."""
 
     ORIGINAL = 0
     SYNTHETIC = 1
+
 
 class StateSE2Index(IntEnum):
     """Intenum for SE(2) arrays."""

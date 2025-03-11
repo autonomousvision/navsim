@@ -1,12 +1,12 @@
 from typing import Any, List
 
-import numpy as np
-import numpy.typing as npt
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+import numpy.typing as npt
 
-from navsim.visualization.config import LIDAR_CONFIG
 from navsim.common.enums import LidarIndex
+from navsim.visualization.config import LIDAR_CONFIG
 
 
 def filter_lidar_pc(lidar_pc: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:

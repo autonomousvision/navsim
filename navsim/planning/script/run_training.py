@@ -1,18 +1,18 @@
-from typing import Tuple
-from pathlib import Path
 import logging
+from pathlib import Path
+from typing import Tuple
 
 import hydra
+import pytorch_lightning as pl
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader
-import pytorch_lightning as pl
 
 from navsim.agents.abstract_agent import AbstractAgent
 from navsim.common.dataclasses import SceneFilter
 from navsim.common.dataloader import SceneLoader
-from navsim.planning.training.dataset import CacheOnlyDataset, Dataset
 from navsim.planning.training.agent_lightning_module import AgentLightningModule
+from navsim.planning.training.dataset import CacheOnlyDataset, Dataset
 
 logger = logging.getLogger(__name__)
 
@@ -30,23 +30,31 @@ def build_datasets(cfg: DictConfig, agent: AbstractAgent) -> Tuple[Dataset, Data
     train_scene_filter: SceneFilter = instantiate(cfg.train_test_split.scene_filter)
     if train_scene_filter.log_names is not None:
         train_scene_filter.log_names = [
-            log_name for log_name in train_scene_filter.log_names if log_name in cfg.train_logs
+            log_name
+            for log_name in train_scene_filter.log_names
+            if log_name in cfg.train_logs
         ]
     else:
         train_scene_filter.log_names = cfg.train_logs
 
     val_scene_filter: SceneFilter = instantiate(cfg.train_test_split.scene_filter)
     if val_scene_filter.log_names is not None:
-        val_scene_filter.log_names = [log_name for log_name in val_scene_filter.log_names if log_name in cfg.val_logs]
+        val_scene_filter.log_names = [
+            log_name
+            for log_name in val_scene_filter.log_names
+            if log_name in cfg.val_logs
+        ]
     else:
         val_scene_filter.log_names = cfg.val_logs
 
     data_path = Path(cfg.navsim_log_path)
     sensor_blobs_path = Path(cfg.sensor_blobs_path)
+    navsim_blobs_path = Path(cfg.navsim_blobs_path)
     synthetic_scenes_path = Path(cfg.synthetic_scenes_path)
 
     train_scene_loader = SceneLoader(
         sensor_blobs_path=sensor_blobs_path,
+        navsim_blobs_path=navsim_blobs_path,
         data_path=data_path,
         synthetic_scenes_path=synthetic_scenes_path,
         scene_filter=train_scene_filter,
@@ -55,6 +63,7 @@ def build_datasets(cfg: DictConfig, agent: AbstractAgent) -> Tuple[Dataset, Data
 
     val_scene_loader = SceneLoader(
         sensor_blobs_path=sensor_blobs_path,
+        navsim_blobs_path=navsim_blobs_path,
         data_path=data_path,
         synthetic_scenes_path=synthetic_scenes_path,
         scene_filter=val_scene_filter,

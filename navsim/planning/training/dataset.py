@@ -1,9 +1,9 @@
-from typing import Dict, List, Optional, Tuple
-from pathlib import Path
-import logging
-import pickle
 import gzip
+import logging
 import os
+import pickle
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 import torch
 from tqdm import tqdm

@@ -66,13 +66,9 @@ class NavsimIDMAgentManager(IDMAgentManager):
                 if traffic_light_status is not None:
                     agent.plan_route(traffic_light_status)
                     # Add stop lines into occupancy map if they are impacting the agent
-                    stop_lines = self._get_relevant_stop_lines(
-                        agent, traffic_light_status
-                    )
+                    stop_lines = self._get_relevant_stop_lines(agent, traffic_light_status)
                     # Keep track of the stop lines that were inserted. This is to remove them for each agent
-                    inactive_stop_line_tokens = (
-                        self._insert_stop_lines_into_occupancy_map(stop_lines)
-                    )
+                    inactive_stop_line_tokens = self._insert_stop_lines_into_occupancy_map(stop_lines)
 
                 # Check for agents that intersects THIS agent's path
                 agent_path = path_to_linestring(agent.get_path_to_go())
@@ -80,16 +76,12 @@ class NavsimIDMAgentManager(IDMAgentManager):
                 # simplify the shapes of the occupancy map to filter out subsequent
                 # points in a geometry that are almost identical as they will lead to an
                 # exception when checking if a point is inside or outside the geometry
-                self.agent_occupancy = simplify_occupancy_map_geometries(
-                    self.agent_occupancy, tolerance=1e-5
-                )
+                self.agent_occupancy = simplify_occupancy_map_geometries(self.agent_occupancy, tolerance=1e-5)
 
                 intersecting_agents = self.agent_occupancy.intersects(
                     agent_path.buffer((agent.width / 2), cap_style=CAP_STYLE.flat)
                 )
-                assert intersecting_agents.contains(
-                    agent_token
-                ), "Agent's baseline does not intersect the agent itself"
+                assert intersecting_agents.contains(agent_token), "Agent's baseline does not intersect the agent itself"
 
                 # Checking if there are agents intersecting THIS agent's baseline.
                 # Hence, we are checking for at least 2 intersecting agents.
@@ -111,9 +103,7 @@ class NavsimIDMAgentManager(IDMAgentManager):
                     elif nearest_id in self.agents:
                         nearest_agent = self.agents[nearest_id]
                         longitudinal_velocity = nearest_agent.velocity
-                        relative_heading = (
-                            nearest_agent.to_se2().heading - agent_heading
-                        )
+                        relative_heading = nearest_agent.to_se2().heading - agent_heading
                     else:
                         longitudinal_velocity = 0.0
                         relative_heading = 0.0
@@ -121,9 +111,7 @@ class NavsimIDMAgentManager(IDMAgentManager):
                     # Wrap angle to [-pi, pi]
                     relative_heading = principal_value(relative_heading)
                     # take the longitudinal component of the projected velocity
-                    projected_velocity = rotate_angle(
-                        StateSE2(longitudinal_velocity, 0, 0), relative_heading
-                    ).x
+                    projected_velocity = rotate_angle(StateSE2(longitudinal_velocity, 0, 0), relative_heading).x
 
                     # relative_distance already takes the vehicle dimension into account.
                     # Therefore there is no need to pass in the length_rear.
@@ -167,9 +155,6 @@ class NavsimIDMAgentManager(IDMAgentManager):
             & set(traffic_light_status.get(TrafficLightStatusType.RED, []))
         )
         lane_connectors = [
-            self._map_api.get_map_object(lc_id, SemanticMapLayer.LANE_CONNECTOR)
-            for lc_id in relevant_lane_connectors
+            self._map_api.get_map_object(lc_id, SemanticMapLayer.LANE_CONNECTOR) for lc_id in relevant_lane_connectors
         ]
-        return [
-            stop_line for lc in lane_connectors if lc for stop_line in lc.stop_lines
-        ]
+        return [stop_line for lc in lane_connectors if lc for stop_line in lc.stop_lines]

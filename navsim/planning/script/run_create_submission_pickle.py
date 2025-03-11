@@ -1,9 +1,9 @@
-from typing import Dict
-from pathlib import Path
 import logging
-import traceback
-import pickle
 import os
+import pickle
+import traceback
+from pathlib import Path
+from typing import Dict
 
 import hydra
 from hydra.utils import instantiate
@@ -11,7 +11,7 @@ from omegaconf import DictConfig
 from tqdm import tqdm
 
 from navsim.agents.abstract_agent import AbstractAgent
-from navsim.common.dataclasses import Trajectory, SceneFilter
+from navsim.common.dataclasses import SceneFilter, Trajectory
 from navsim.common.dataloader import SceneLoader
 
 logger = logging.getLogger(__name__)
@@ -21,13 +21,19 @@ CONFIG_NAME = "default_run_create_submission_pickle"
 
 
 def run_test_evaluation(
-    agent: AbstractAgent, scene_filter: SceneFilter, data_path: Path, sensor_blobs_path: Path
+    agent: AbstractAgent,
+    scene_filter: SceneFilter,
+    data_path: Path,
+    sensor_blobs_path: Path,
+    navsim_blobs_path: Path,
+    synthetic_scenes_path: Path,
 ) -> Dict[str, Trajectory]:
     """
     Function to create the output file for evaluation of an agent on the testserver
     :param agent: Agent object
     :param data_path: pathlib path to navsim logs
     :param sensor_blobs_path: pathlib path to sensor blobs
+    :param synthetic_scenes_path: pathlib path to synthetic scenes
     :param save_path: pathlib path to folder where scores are stored as .csv
     """
     if agent.requires_scene:
@@ -42,6 +48,8 @@ def run_test_evaluation(
         data_path=data_path,
         scene_filter=scene_filter,
         sensor_blobs_path=sensor_blobs_path,
+        navsim_blobs_path=navsim_blobs_path,
+        synthetic_scenes_path=synthetic_scenes_path,
         sensor_config=agent.get_sensor_config(),
     )
     agent.initialize()
@@ -52,7 +60,7 @@ def run_test_evaluation(
             agent_input = input_loader.get_agent_input_from_token(token)
             trajectory = agent.compute_trajectory(agent_input)
             output.update({token: trajectory})
-        except Exception as e:
+        except Exception:
             logger.warning(f"----------- Agent failed for token {token}:")
             traceback.print_exc()
 
@@ -68,6 +76,8 @@ def main(cfg: DictConfig) -> None:
     agent = instantiate(cfg.agent)
     data_path = Path(cfg.navsim_log_path)
     sensor_blobs_path = Path(cfg.sensor_blobs_path)
+    navsim_blobs_path = Path(cfg.navsim_blobs_path)
+    synthetic_scenes_path = Path(cfg.synthetic_scenes_path)
     save_path = Path(cfg.output_dir)
     scene_filter = instantiate(cfg.train_test_split.scene_filter)
 
@@ -75,7 +85,9 @@ def main(cfg: DictConfig) -> None:
         agent=agent,
         scene_filter=scene_filter,
         data_path=data_path,
+        synthetic_scenes_path=synthetic_scenes_path,
         sensor_blobs_path=sensor_blobs_path,
+        navsim_blobs_path=navsim_blobs_path,
     )
 
     submission = {

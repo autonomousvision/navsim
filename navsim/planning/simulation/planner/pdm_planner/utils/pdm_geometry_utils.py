@@ -1,13 +1,12 @@
+# TODO: Move & rename this file for common usage (not specific for PDM)
+
 from typing import List
 
 import numpy as np
 import numpy.typing as npt
 from nuplan.common.actor_state.state_representation import StateSE2
 
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import (
-    PointIndex,
-    SE2Index,
-)
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import PointIndex, SE2Index
 
 
 def normalize_angle(angle):
@@ -19,9 +18,7 @@ def normalize_angle(angle):
     return np.arctan2(np.sin(angle), np.cos(angle))
 
 
-def parallel_discrete_path(
-    discrete_path: List[StateSE2], offset=float
-) -> List[StateSE2]:
+def parallel_discrete_path(discrete_path: List[StateSE2], offset=float) -> List[StateSE2]:
     """
     Creates a parallel discrete path for a given offset.
     :param discrete_path: baseline path (x,y,θ)
@@ -72,9 +69,7 @@ def calculate_progress(path: List[StateSE2]) -> List[float]:
     y_position = [point.y for point in path]
     x_diff = np.diff(x_position)
     y_diff = np.diff(y_position)
-    points_diff: npt.NDArray[np.float64] = np.concatenate(
-        ([x_diff], [y_diff]), axis=0, dtype=np.float64
-    )
+    points_diff: npt.NDArray[np.float64] = np.concatenate(([x_diff], [y_diff]), axis=0, dtype=np.float64)
     progress_diff = np.append(0.0, np.linalg.norm(points_diff, axis=0))
     return np.cumsum(progress_diff, dtype=np.float64)  # type: ignore
 
@@ -124,9 +119,7 @@ def convert_absolute_to_relative_point_array(
     return points_rel
 
 
-def se2_array_translate_longitudinally(
-    se2_array: npt.NDArray[np.float64], distance: float
-) -> npt.NDArray[np.float64]:
+def se2_array_translate_longitudinally(se2_array: npt.NDArray[np.float64], distance: float) -> npt.NDArray[np.float64]:
     """
     Translates an SE2 array along the heading axis by distance.
     :param se2_array: array of SE2 states with (x,y,θ) in last dim
@@ -135,12 +128,8 @@ def se2_array_translate_longitudinally(
     """
     assert se2_array.shape[-1] == len(SE2Index)
     translate_se2 = np.zeros(se2_array.shape, dtype=np.float64)
-    translate_se2[..., SE2Index.X] = (
-        se2_array[..., SE2Index.X] + np.cos(se2_array[..., SE2Index.HEADING]) * distance
-    )
-    translate_se2[..., SE2Index.Y] = (
-        se2_array[..., SE2Index.Y] + np.sin(se2_array[..., SE2Index.HEADING]) * distance
-    )
+    translate_se2[..., SE2Index.X] = se2_array[..., SE2Index.X] + np.cos(se2_array[..., SE2Index.HEADING]) * distance
+    translate_se2[..., SE2Index.Y] = se2_array[..., SE2Index.Y] + np.sin(se2_array[..., SE2Index.HEADING]) * distance
     translate_se2[..., SE2Index.HEADING] = se2_array[..., SE2Index.HEADING]
     return translate_se2
 
@@ -161,12 +150,8 @@ def get_velocity_shifted(
     assert ref_velocity_2d.shape[-1] == len(PointIndex)
     assert ref_velocity_2d.shape[:-1] == ref_angular_vel.shape
     velocity_shift_term = np.zeros(ref_velocity_2d.shape, dtype=ref_velocity_2d.dtype)
-    velocity_shift_term[..., PointIndex.X] = (
-        -displacement[..., PointIndex.Y] * ref_angular_vel
-    )
-    velocity_shift_term[..., PointIndex.Y] = (
-        displacement[..., PointIndex.X] * ref_angular_vel
-    )
+    velocity_shift_term[..., PointIndex.X] = -displacement[..., PointIndex.Y] * ref_angular_vel
+    velocity_shift_term[..., PointIndex.Y] = displacement[..., PointIndex.X] * ref_angular_vel
     return ref_velocity_2d + velocity_shift_term
 
 

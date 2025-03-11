@@ -9,17 +9,11 @@ from torch.optim.lr_scheduler import LRScheduler
 from navsim.agents.abstract_agent import AbstractAgent
 from navsim.agents.transfuser.transfuser_callback import TransfuserCallback
 from navsim.agents.transfuser.transfuser_config import TransfuserConfig
-from navsim.agents.transfuser.transfuser_features import (
-    TransfuserFeatureBuilder,
-    TransfuserTargetBuilder,
-)
+from navsim.agents.transfuser.transfuser_features import TransfuserFeatureBuilder, TransfuserTargetBuilder
 from navsim.agents.transfuser.transfuser_loss import transfuser_loss
 from navsim.agents.transfuser.transfuser_model import TransfuserModel
 from navsim.common.dataclasses import SensorConfig
-from navsim.planning.training.abstract_feature_target_builder import (
-    AbstractFeatureBuilder,
-    AbstractTargetBuilder,
-)
+from navsim.planning.training.abstract_feature_target_builder import AbstractFeatureBuilder, AbstractTargetBuilder
 
 
 class TransfuserAgent(AbstractAgent):
@@ -30,9 +24,7 @@ class TransfuserAgent(AbstractAgent):
         config: TransfuserConfig,
         lr: float,
         checkpoint_path: Optional[str] = None,
-        trajectory_sampling: TrajectorySampling = TrajectorySampling(
-            time_horizon=4, interval_length=0.5
-        ),
+        trajectory_sampling: TrajectorySampling = TrajectorySampling(time_horizon=4, interval_length=0.5),
     ):
         """
         Initializes TransFuser agent.
@@ -58,35 +50,30 @@ class TransfuserAgent(AbstractAgent):
         if torch.cuda.is_available():
             state_dict: Dict[str, Any] = torch.load(self._checkpoint_path)["state_dict"]
         else:
-            state_dict: Dict[str, Any] = torch.load(
-                self._checkpoint_path, map_location=torch.device("cpu")
-            )["state_dict"]
-        self.load_state_dict(
-            {k.replace("agent.", ""): v for k, v in state_dict.items()}
-        )
+            state_dict: Dict[str, Any] = torch.load(self._checkpoint_path, map_location=torch.device("cpu"))[
+                "state_dict"
+            ]
+        self.load_state_dict({k.replace("agent.", ""): v for k, v in state_dict.items()})
 
     def get_sensor_config(self) -> SensorConfig:
         """Inherited, see superclass."""
-        use_lidar = not self._config.latent
+        # NOTE: Transfuser only uses current frame (with index 3 by default)
+        history_steps = [3]
         return SensorConfig(
-            cam_f0=[3],
-            cam_l0=[3],
+            cam_f0=history_steps,
+            cam_l0=history_steps,
             cam_l1=False,
             cam_l2=False,
-            cam_r0=[3],
+            cam_r0=history_steps,
             cam_r1=False,
             cam_r2=False,
             cam_b0=False,
-            lidar_pc=use_lidar,
+            lidar_pc=history_steps if not self._config.latent else False,
         )
 
     def get_target_builders(self) -> List[AbstractTargetBuilder]:
         """Inherited, see superclass."""
-        return [
-            TransfuserTargetBuilder(
-                trajectory_sampling=self._trajectory_sampling, config=self._config
-            )
-        ]
+        return [TransfuserTargetBuilder(trajectory_sampling=self._trajectory_sampling, config=self._config)]
 
     def get_feature_builders(self) -> List[AbstractFeatureBuilder]:
         """Inherited, see superclass."""

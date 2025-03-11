@@ -1,8 +1,7 @@
 from typing import Any, Dict
 
-from nuplan.common.maps.abstract_map import SemanticMapLayer
 from nuplan.common.actor_state.tracked_objects_types import TrackedObjectType
-
+from nuplan.common.maps.abstract_map import SemanticMapLayer
 
 LIGHT_GREY: str = "#D3D3D3"
 

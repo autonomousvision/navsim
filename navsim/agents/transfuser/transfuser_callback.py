@@ -1,21 +1,19 @@
 from typing import Any, Dict, Optional, Union
-from PIL import ImageColor
 
 import cv2
 import numpy as np
 import numpy.typing as npt
-
+import pytorch_lightning as pl
 import torch
 import torchvision.utils as vutils
-import pytorch_lightning as pl
-
 from nuplan.common.actor_state.oriented_box import OrientedBox
 from nuplan.common.actor_state.state_representation import StateSE2
 from nuplan.common.maps.abstract_map import SemanticMapLayer
+from PIL import ImageColor
 
-from navsim.agents.transfuser.transfuser_features import BoundingBox2DIndex
 from navsim.agents.transfuser.transfuser_config import TransfuserConfig
-from navsim.visualization.config import MAP_LAYER_CONFIG, AGENT_CONFIG
+from navsim.agents.transfuser.transfuser_features import BoundingBox2DIndex
+from navsim.visualization.config import AGENT_CONFIG, MAP_LAYER_CONFIG
 
 
 class TransfuserCallback(pl.Callback):
@@ -44,7 +42,6 @@ class TransfuserCallback(pl.Callback):
 
     def on_validation_epoch_start(self, trainer: pl.Trainer, lightning_module: pl.LightningModule) -> None:
         """Inherited, see superclass."""
-        pass
 
     def on_validation_epoch_end(self, trainer: pl.Trainer, lightning_module: pl.LightningModule) -> None:
         """Inherited, see superclass."""
@@ -65,15 +62,12 @@ class TransfuserCallback(pl.Callback):
 
     def on_test_epoch_start(self, trainer: pl.Trainer, lightning_module: pl.LightningModule) -> None:
         """Inherited, see superclass."""
-        pass
 
     def on_test_epoch_end(self, trainer: pl.Trainer, lightning_module: pl.LightningModule) -> None:
         """Inherited, see superclass."""
-        pass
 
     def on_train_epoch_start(self, trainer: pl.Trainer, lightning_module: pl.LightningModule) -> None:
         """Inherited, see superclass."""
-        pass
 
     def on_train_epoch_end(
         self, trainer: pl.Trainer, lightning_module: pl.LightningModule, unused: Optional[Any] = None

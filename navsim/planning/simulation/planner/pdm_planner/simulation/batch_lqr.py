@@ -1,18 +1,17 @@
-from typing import Optional, Tuple
 from enum import IntEnum
+from typing import Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
-
 from nuplan.common.actor_state.vehicle_parameters import VehicleParameters, get_pacifica_parameters
 from nuplan.planning.simulation.simulation_time_controller.simulation_iteration import SimulationIteration
 
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import DynamicStateIndex, StateIndex
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import normalize_angle
 from navsim.planning.simulation.planner.pdm_planner.simulation.batch_lqr_utils import (
     _generate_profile_from_initial_condition_and_derivatives,
     get_velocity_curvature_profiles_with_derivatives_from_poses,
 )
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import DynamicStateIndex, StateIndex
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import normalize_angle
 
 
 class LateralStateIndex(IntEnum):
@@ -147,17 +146,11 @@ class BatchLQRTracker:
         assert self._initialized, "BatchLQRTracker: Run update first to load proposal states!"
 
         batch_size = len(initial_states)
-        (
-            initial_velocity,
-            initial_lateral_state_vector,
-        ) = self._compute_initial_velocity_and_lateral_state(
+        (initial_velocity, initial_lateral_state_vector,) = self._compute_initial_velocity_and_lateral_state(
             current_iteration, initial_states
         )  # (batch), (batch, 3)
 
-        (
-            reference_velocities,
-            curvature_profiles,
-        ) = self._compute_reference_velocity_and_curvature_profile(
+        (reference_velocities, curvature_profiles,) = self._compute_reference_velocity_and_curvature_profile(
             current_iteration
         )  # (batch), (batch, 10)
 

@@ -6,4 +6,4 @@ train_test_split=$TRAIN_TEST_SPLIT \
 agent=transfuser_agent \
 worker=single_machine_thread_pool \
 agent.checkpoint_path=$CHECKPOINT \
-experiment_name=transfuser_agent_eval 
+experiment_name=transfuser_agent_eval

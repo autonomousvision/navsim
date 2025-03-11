@@ -7,10 +7,7 @@ from torch.optim.lr_scheduler import LRScheduler
 
 from navsim.agents.abstract_agent import AbstractAgent
 from navsim.common.dataclasses import AgentInput, Scene, SensorConfig
-from navsim.planning.training.abstract_feature_target_builder import (
-    AbstractFeatureBuilder,
-    AbstractTargetBuilder,
-)
+from navsim.planning.training.abstract_feature_target_builder import AbstractFeatureBuilder, AbstractTargetBuilder
 
 
 class EgoStatusFeatureBuilder(AbstractFeatureBuilder):
@@ -29,9 +26,7 @@ class EgoStatusFeatureBuilder(AbstractFeatureBuilder):
         velocity = torch.tensor(ego_status.ego_velocity)
         acceleration = torch.tensor(ego_status.ego_acceleration)
         driving_command = torch.tensor(ego_status.driving_command)
-        ego_status_feature = torch.cat(
-            [velocity, acceleration, driving_command], dim=-1
-        )
+        ego_status_feature = torch.cat([velocity, acceleration, driving_command], dim=-1)
         return {"ego_status": ego_status_feature}
 
 
@@ -52,9 +47,7 @@ class TrajectoryTargetBuilder(AbstractTargetBuilder):
 
     def compute_targets(self, scene: Scene) -> Dict[str, torch.Tensor]:
         """Inherited, see superclass."""
-        future_trajectory = scene.get_future_trajectory(
-            num_trajectory_frames=self._trajectory_sampling.num_poses
-        )
+        future_trajectory = scene.get_future_trajectory(num_trajectory_frames=self._trajectory_sampling.num_poses)
         return {"trajectory": torch.tensor(future_trajectory.poses)}
 
 
@@ -66,9 +59,7 @@ class EgoStatusMLPAgent(AbstractAgent):
         hidden_layer_dim: int,
         lr: float,
         checkpoint_path: Optional[str] = None,
-        trajectory_sampling: TrajectorySampling = TrajectorySampling(
-            time_horizon=4, interval_length=0.5
-        ),
+        trajectory_sampling: TrajectorySampling = TrajectorySampling(time_horizon=4, interval_length=0.5),
     ):
         """
         Initializes the agent interface for EgoStatusMLP.
@@ -102,12 +93,10 @@ class EgoStatusMLPAgent(AbstractAgent):
         if torch.cuda.is_available():
             state_dict: Dict[str, Any] = torch.load(self._checkpoint_path)["state_dict"]
         else:
-            state_dict: Dict[str, Any] = torch.load(
-                self._checkpoint_path, map_location=torch.device("cpu")
-            )["state_dict"]
-        self.load_state_dict(
-            {k.replace("agent.", ""): v for k, v in state_dict.items()}
-        )
+            state_dict: Dict[str, Any] = torch.load(self._checkpoint_path, map_location=torch.device("cpu"))[
+                "state_dict"
+            ]
+        self.load_state_dict({k.replace("agent.", ""): v for k, v in state_dict.items()})
 
     def get_sensor_config(self) -> SensorConfig:
         """Inherited, see superclass."""
@@ -133,9 +122,7 @@ class EgoStatusMLPAgent(AbstractAgent):
         predictions: Dict[str, torch.Tensor],
     ) -> torch.Tensor:
         """Inherited, see superclass."""
-        return torch.nn.functional.l1_loss(
-            predictions["trajectory"], targets["trajectory"]
-        )
+        return torch.nn.functional.l1_loss(predictions["trajectory"], targets["trajectory"])
 
     def get_optimizers(
         self,

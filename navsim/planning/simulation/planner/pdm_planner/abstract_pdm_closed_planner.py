@@ -5,33 +5,17 @@ import pandas as pd
 from nuplan.common.actor_state.ego_state import EgoState
 from nuplan.common.maps.abstract_map_objects import LaneGraphEdgeMapObject
 from nuplan.planning.simulation.planner.abstract_planner import PlannerInput
-from nuplan.planning.simulation.trajectory.interpolated_trajectory import (
-    InterpolatedTrajectory,
-)
+from nuplan.planning.simulation.trajectory.interpolated_trajectory import InterpolatedTrajectory
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
 
-from navsim.planning.simulation.planner.pdm_planner.abstract_pdm_planner import (
-    AbstractPDMPlanner,
-)
-from navsim.planning.simulation.planner.pdm_planner.observation.pdm_observation import (
-    PDMObservation,
-)
-from navsim.planning.simulation.planner.pdm_planner.proposal.batch_idm_policy import (
-    BatchIDMPolicy,
-)
-from navsim.planning.simulation.planner.pdm_planner.proposal.pdm_generator import (
-    PDMGenerator,
-)
-from navsim.planning.simulation.planner.pdm_planner.proposal.pdm_proposal import (
-    PDMProposalManager,
-)
+from navsim.planning.simulation.planner.pdm_planner.abstract_pdm_planner import AbstractPDMPlanner
+from navsim.planning.simulation.planner.pdm_planner.observation.pdm_observation import PDMObservation
+from navsim.planning.simulation.planner.pdm_planner.proposal.batch_idm_policy import BatchIDMPolicy
+from navsim.planning.simulation.planner.pdm_planner.proposal.pdm_generator import PDMGenerator
+from navsim.planning.simulation.planner.pdm_planner.proposal.pdm_proposal import PDMProposalManager
 from navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer import PDMScorer
-from navsim.planning.simulation.planner.pdm_planner.simulation.pdm_simulator import (
-    PDMSimulator,
-)
-from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import (
-    parallel_discrete_path,
-)
+from navsim.planning.simulation.planner.pdm_planner.simulation.pdm_simulator import PDMSimulator
+from navsim.planning.simulation.planner.pdm_planner.utils.pdm_geometry_utils import parallel_discrete_path
 from navsim.planning.simulation.planner.pdm_planner.utils.pdm_path import PDMPath
 
 
@@ -70,9 +54,7 @@ class AbstractPDMClosedPlanner(AbstractPDMPlanner):
         self._lateral_offsets: Optional[List[float]] = lateral_offsets
 
         # observation/forecasting class
-        self._observation = PDMObservation(
-            trajectory_sampling, proposal_sampling, map_radius
-        )
+        self._observation = PDMObservation(trajectory_sampling, proposal_sampling, map_radius)
 
         # proposal/trajectory related classes
         self._generator = PDMGenerator(trajectory_sampling, proposal_sampling)
@@ -104,9 +86,7 @@ class AbstractPDMClosedPlanner(AbstractPDMPlanner):
         # update proposals
         self._proposal_manager.update(current_lane.speed_limit_mps)
 
-    def _get_proposal_paths(
-        self, current_lane: LaneGraphEdgeMapObject
-    ) -> List[PDMPath]:
+    def _get_proposal_paths(self, current_lane: LaneGraphEdgeMapObject) -> List[PDMPath]:
         """
         Returns a list of path's to follow for the proposals. Inits a centerline.
         :param current_lane: current or starting lane of path-planning
@@ -152,14 +132,10 @@ class AbstractPDMClosedPlanner(AbstractPDMPlanner):
         self._update_proposal_manager(ego_state)
 
         # 3. Generate/Unroll proposals
-        proposals_array = self._generator.generate_proposals(
-            ego_state, self._observation, self._proposal_manager
-        )
+        proposals_array = self._generator.generate_proposals(ego_state, self._observation, self._proposal_manager)
 
         # 4. Simulate proposals
-        simulated_proposals_array = self._simulator.simulate_proposals(
-            proposals_array, ego_state
-        )
+        simulated_proposals_array = self._simulator.simulate_proposals(proposals_array, ego_state)
 
         # 5. Score proposals
         pdm_results = self._scorer.score_proposals(

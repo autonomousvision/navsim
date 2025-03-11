@@ -14,9 +14,7 @@ from navsim.common.enums import StateSE2Index
 class TransfuserModel(nn.Module):
     """Torch module for Transfuser."""
 
-    def __init__(
-        self, trajectory_sampling: TrajectorySampling, config: TransfuserConfig
-    ):
+    def __init__(self, trajectory_sampling: TrajectorySampling, config: TransfuserConfig):
         """
         Initializes TransFuser torch module.
         :param trajectory_sampling: trajectory sampling specification.
@@ -33,9 +31,7 @@ class TransfuserModel(nn.Module):
         self._config = config
         self._backbone = TransfuserBackbone(config)
 
-        self._keyval_embedding = nn.Embedding(
-            8**2 + 1, config.tf_d_model
-        )  # 8x8 feature grid + trajectory
+        self._keyval_embedding = nn.Embedding(8**2 + 1, config.tf_d_model)  # 8x8 feature grid + trajectory
         self._query_embedding = nn.Embedding(sum(self._query_splits), config.tf_d_model)
 
         # usually, the BEV features are variable in size.
@@ -95,14 +91,15 @@ class TransfuserModel(nn.Module):
         """Torch module forward pass."""
 
         camera_feature: torch.Tensor = features["camera_feature"]
-        lidar_feature: torch.Tensor = features["lidar_feature"]
+        if self._config.latent:
+            lidar_feature = None
+        else:
+            lidar_feature: torch.Tensor = features["lidar_feature"]
         status_feature: torch.Tensor = features["status_feature"]
 
         batch_size = status_feature.shape[0]
 
-        bev_feature_upscale, bev_feature, _ = self._backbone(
-            camera_feature, lidar_feature
-        )
+        bev_feature_upscale, bev_feature, _ = self._backbone(camera_feature, lidar_feature)
 
         bev_feature = self._bev_downscale(bev_feature).flatten(-2, -1)
         bev_feature = bev_feature.permute(0, 2, 1)
@@ -162,12 +159,8 @@ class AgentHead(nn.Module):
         """Torch module forward pass."""
 
         agent_states = self._mlp_states(agent_queries)
-        agent_states[..., BoundingBox2DIndex.POINT] = (
-            agent_states[..., BoundingBox2DIndex.POINT].tanh() * 32
-        )
-        agent_states[..., BoundingBox2DIndex.HEADING] = (
-            agent_states[..., BoundingBox2DIndex.HEADING].tanh() * np.pi
-        )
+        agent_states[..., BoundingBox2DIndex.POINT] = agent_states[..., BoundingBox2DIndex.POINT].tanh() * 32
+        agent_states[..., BoundingBox2DIndex.HEADING] = agent_states[..., BoundingBox2DIndex.HEADING].tanh() * np.pi
 
         agent_labels = self._mlp_label(agent_queries).squeeze(dim=-1)
 
@@ -198,10 +191,6 @@ class TrajectoryHead(nn.Module):
 
     def forward(self, object_queries) -> Dict[str, torch.Tensor]:
         """Torch module forward pass."""
-        poses = self._mlp(object_queries).reshape(
-            -1, self._num_poses, StateSE2Index.size()
-        )
-        poses[..., StateSE2Index.HEADING] = (
-            poses[..., StateSE2Index.HEADING].tanh() * np.pi
-        )
+        poses = self._mlp(object_queries).reshape(-1, self._num_poses, StateSE2Index.size())
+        poses[..., StateSE2Index.HEADING] = poses[..., StateSE2Index.HEADING].tanh() * np.pi
         return {"trajectory": poses}
