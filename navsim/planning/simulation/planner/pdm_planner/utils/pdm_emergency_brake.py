@@ -2,13 +2,12 @@ from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
-
 from nuplan.common.actor_state.ego_state import EgoState
 from nuplan.common.actor_state.state_representation import StateSE2, StateVector2D, TimePoint
 from nuplan.common.geometry.convert import relative_to_absolute_poses
-
 from nuplan.planning.simulation.trajectory.interpolated_trajectory import InterpolatedTrajectory
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
+
 from navsim.planning.simulation.planner.pdm_planner.scoring.pdm_scorer import PDMScorer
 
 

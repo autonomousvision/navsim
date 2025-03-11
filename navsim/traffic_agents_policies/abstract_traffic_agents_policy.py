@@ -53,9 +53,7 @@ def extract_vehicle_trajectories_from_detections_tracks(
     def _token_extractor(scene_object: Agent) -> str:
         return scene_object.track_token
 
-    vehicle_tracks = filter_tracked_objects_by_type(
-        detections_tracks, TrackedObjectType.VEHICLE
-    )
+    vehicle_tracks = filter_tracked_objects_by_type(detections_tracks, TrackedObjectType.VEHICLE)
     tracked_objects: List[TrackedObjects] = [t.tracked_objects for t in vehicle_tracks]
     filtered_agents = filter_agents(tracked_objects, reverse=reverse_padding)
 
@@ -70,12 +68,7 @@ def extract_vehicle_trajectories_from_detections_tracks(
         for a in range(len(agent_states_horizon[0]))
     ]
     agent_trajectory_masks = [
-        np.array(
-            [
-                agent_states_horizon_masks[t][a]
-                for t in range(len(agent_states_horizon_masks))
-            ]
-        )
+        np.array([agent_states_horizon_masks[t][a] for t in range(len(agent_states_horizon_masks))])
         for a in range(len(agent_states_horizon_masks[0]))
     ]
 
@@ -94,9 +87,7 @@ def filter_tracked_objects_by_type(
     tracked_objects: List[DetectionsTracks], object_type: TrackedObjectType
 ) -> List[DetectionsTracks]:
     return [
-        DetectionsTracks(
-            TrackedObjects(p.tracked_objects.get_tracked_objects_of_type(object_type))
-        )
+        DetectionsTracks(TrackedObjects(p.tracked_objects.get_tracked_objects_of_type(object_type)))
         for p in tracked_objects
     ]
 
@@ -105,14 +96,14 @@ def filter_tracked_objects_by_types(
     tracked_objects: List[DetectionsTracks], object_types: List[TrackedObjectType]
 ) -> List[DetectionsTracks]:
     return [
-        DetectionsTracks(
-            TrackedObjects(p.tracked_objects.get_tracked_objects_of_types(object_types))
-        )
+        DetectionsTracks(TrackedObjects(p.tracked_objects.get_tracked_objects_of_types(object_types)))
         for p in tracked_objects
     ]
 
 
 class AbstractTrafficAgentsPolicy(ABC):
+    """Interface for background traffic agents in NAVSIM."""
+
     @abstractmethod
     def __init__(self, future_trajectory_sampling: TrajectorySampling) -> None:
         pass
@@ -151,16 +142,10 @@ class AbstractTrafficAgentsPolicy(ABC):
 
         remaining_object_detections_tracks = filter_tracked_objects_by_types(
             metric_cache.future_tracked_objects,
-            [
-                t
-                for t in TrackedObjectType
-                if t not in self.get_list_of_simulated_object_types()
-            ],
+            [t for t in TrackedObjectType if t not in self.get_list_of_simulated_object_types()],
         )
         # the metric cache might contain longer tracks than we simulate, so we truncate the remaining objects' tracks
-        remaining_object_detections_tracks = remaining_object_detections_tracks[
-            : len(simulated_detections_tracks)
-        ]
+        remaining_object_detections_tracks = remaining_object_detections_tracks[: len(simulated_detections_tracks)]
         assert (
             len(simulated_detections_tracks) + 1 == simulated_ego_states.shape[0]
         ), f"""

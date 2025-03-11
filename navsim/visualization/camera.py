@@ -1,17 +1,17 @@
 from typing import List, Optional, Tuple
 
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from PIL import ImageColor
-import matplotlib.pyplot as plt
 from pyquaternion import Quaternion
 
-from navsim.common.dataclasses import Camera, Lidar, Annotations
-from navsim.common.enums import LidarIndex, BoundingBoxIndex
+from navsim.common.dataclasses import Annotations, Camera, Lidar
+from navsim.common.enums import BoundingBoxIndex, LidarIndex
+from navsim.planning.scenario_builder.navsim_scenario_utils import tracked_object_types
 from navsim.visualization.config import AGENT_CONFIG
 from navsim.visualization.lidar import filter_lidar_pc, get_lidar_pc_color
-from navsim.planning.scenario_builder.navsim_scenario_utils import tracked_object_types
 
 
 def add_camera_ax(ax: plt.Axes, camera: Camera) -> plt.Axes:

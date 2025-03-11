@@ -6,10 +6,7 @@ import torch
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
 
 from navsim.common.dataclasses import AgentInput, SensorConfig, Trajectory
-from navsim.planning.training.abstract_feature_target_builder import (
-    AbstractFeatureBuilder,
-    AbstractTargetBuilder,
-)
+from navsim.planning.training.abstract_feature_target_builder import AbstractFeatureBuilder, AbstractTargetBuilder
 
 
 class AbstractAgent(torch.nn.Module, ABC):
@@ -55,17 +52,13 @@ class AbstractAgent(torch.nn.Module, ABC):
         """
         :return: List of target builders.
         """
-        raise NotImplementedError(
-            "No feature builders. Agent does not support training."
-        )
+        raise NotImplementedError("No feature builders. Agent does not support training.")
 
     def get_target_builders(self) -> List[AbstractTargetBuilder]:
         """
         :return: List of feature builders.
         """
-        raise NotImplementedError(
-            "No target builders. Agent does not support training."
-        )
+        raise NotImplementedError("No target builders. Agent does not support training.")
 
     def compute_trajectory(self, agent_input: AgentInput) -> Trajectory:
         """
@@ -103,10 +96,7 @@ class AbstractAgent(torch.nn.Module, ABC):
 
     def get_optimizers(
         self,
-    ) -> Union[
-        torch.optim.Optimizer,
-        Dict[str, Union[torch.optim.Optimizer, torch.optim.lr_scheduler.LRScheduler]],
-    ]:
+    ) -> Union[torch.optim.Optimizer, Dict[str, Union[torch.optim.Optimizer, torch.optim.lr_scheduler.LRScheduler]],]:
         """
         Returns the optimizers that are used by thy pytorch-lightning trainer.
         Has to be either a single optimizer or a dict of optimizer and lr scheduler.

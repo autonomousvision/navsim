@@ -8,18 +8,14 @@ from typing import List, Optional
 
 from nuplan.common.actor_state.ego_state import EgoState
 from nuplan.common.actor_state.state_representation import TimePoint
-from nuplan.planning.simulation.trajectory.interpolated_trajectory import InterpolatedTrajectory
-from nuplan.planning.simulation.observation.observation_type import DetectionsTracks
 from nuplan.common.utils.io_utils import save_buffer
+from nuplan.planning.simulation.observation.observation_type import DetectionsTracks
+from nuplan.planning.simulation.trajectory.interpolated_trajectory import InterpolatedTrajectory
 
 from navsim.common.dataclasses import Trajectory
 from navsim.common.enums import SceneFrameType
-from navsim.planning.simulation.planner.pdm_planner.observation.pdm_observation import (
-    PDMObservation,
-)
-from navsim.planning.simulation.planner.pdm_planner.observation.pdm_occupancy_map import (
-    PDMDrivableMap,
-)
+from navsim.planning.simulation.planner.pdm_planner.observation.pdm_observation import PDMObservation
+from navsim.planning.simulation.planner.pdm_planner.observation.pdm_occupancy_map import PDMDrivableMap
 from navsim.planning.simulation.planner.pdm_planner.utils.pdm_path import PDMPath
 
 

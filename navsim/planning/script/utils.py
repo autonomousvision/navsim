@@ -1,14 +1,12 @@
-from typing import List, Any
-from pathlib import Path
-from dataclasses import dataclass
 import logging
 import os
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, List
 
 import pandas as pd
-from omegaconf import DictConfig, OmegaConf
-
-from nuplan.common.utils.io_utils import safe_path_to_string
 from nuplan.common.utils.file_backed_barrier import distributed_sync
+from nuplan.common.utils.io_utils import safe_path_to_string
 from nuplan.planning.script.builders.folder_builder import build_simulation_experiment_folder
 from nuplan.planning.script.builders.logging_builder import build_logger
 from nuplan.planning.script.builders.main_callback_builder import build_main_multi_callback
@@ -17,9 +15,9 @@ from nuplan.planning.simulation.runner.abstract_runner import AbstractRunner
 from nuplan.planning.simulation.runner.executor import execute_runners
 from nuplan.planning.simulation.runner.runner_report import RunnerReport
 from nuplan.planning.utils.multithreading.worker_pool import WorkerPool
+from omegaconf import DictConfig, OmegaConf
 
 from navsim.planning.script.builders.worker_pool_builder import build_worker
-
 
 logger = logging.getLogger(__name__)
 

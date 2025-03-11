@@ -1,15 +1,15 @@
-from typing import Any, Callable, List, Tuple
 import io
+from typing import Any, Callable, List, Tuple
 
-from tqdm import tqdm
-from PIL import Image
 import matplotlib.pyplot as plt
+from PIL import Image
+from tqdm import tqdm
 
 from navsim.agents.abstract_agent import AbstractAgent
 from navsim.common.dataclasses import Scene
-from navsim.visualization.config import BEV_PLOT_CONFIG, TRAJECTORY_CONFIG, CAMERAS_PLOT_CONFIG
 from navsim.visualization.bev import add_configured_bev_on_ax, add_trajectory_to_bev_ax
-from navsim.visualization.camera import add_annotations_to_camera_ax, add_lidar_to_camera_ax, add_camera_ax
+from navsim.visualization.camera import add_annotations_to_camera_ax, add_camera_ax, add_lidar_to_camera_ax
+from navsim.visualization.config import BEV_PLOT_CONFIG, CAMERAS_PLOT_CONFIG, TRAJECTORY_CONFIG
 
 
 def configure_bev_ax(ax: plt.Axes) -> plt.Axes:

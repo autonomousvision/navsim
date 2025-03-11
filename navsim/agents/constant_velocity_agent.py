@@ -12,9 +12,7 @@ class ConstantVelocityAgent(AbstractAgent):
 
     def __init__(
         self,
-        trajectory_sampling: TrajectorySampling = TrajectorySampling(
-            time_horizon=4, interval_length=0.5
-        ),
+        trajectory_sampling: TrajectorySampling = TrajectorySampling(time_horizon=4, interval_length=0.5),
     ):
         super().__init__(trajectory_sampling)
 
@@ -41,10 +39,7 @@ class ConstantVelocityAgent(AbstractAgent):
             self._trajectory_sampling.interval_length,
         )
         poses = np.array(
-            [
-                [(time_idx + 1) * dt * ego_speed, 0.0, 0.0]
-                for time_idx in range(num_poses)
-            ],
+            [[(time_idx + 1) * dt * ego_speed, 0.0, 0.0] for time_idx in range(num_poses)],
             dtype=np.float32,
         )
 

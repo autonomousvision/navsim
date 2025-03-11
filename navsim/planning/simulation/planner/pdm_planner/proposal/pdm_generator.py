@@ -1,11 +1,8 @@
-from typing import Dict, List, Optional
 import copy
+from typing import Dict, List, Optional
 
 import numpy as np
 import numpy.typing as npt
-from shapely.geometry import Point, Polygon
-from shapely.geometry.base import CAP_STYLE
-
 from nuplan.common.actor_state.agent import Agent
 from nuplan.common.actor_state.car_footprint import CarFootprint
 from nuplan.common.actor_state.ego_state import EgoState
@@ -15,6 +12,8 @@ from nuplan.common.actor_state.vehicle_parameters import VehicleParameters
 from nuplan.common.geometry.transform import transform
 from nuplan.planning.simulation.trajectory.interpolated_trajectory import InterpolatedTrajectory
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
+from shapely.geometry import Point, Polygon
+from shapely.geometry.base import CAP_STYLE
 
 from navsim.planning.simulation.planner.pdm_planner.observation.pdm_observation import PDMObservation
 from navsim.planning.simulation.planner.pdm_planner.proposal.pdm_proposal import PDMProposalManager

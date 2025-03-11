@@ -3,8 +3,6 @@ import os
 from typing import List, Optional
 
 from hydra.utils import instantiate
-from omegaconf import DictConfig
-
 from nuplan.common.utils.distributed_scenario_filter import DistributedMode, DistributedScenarioFilter
 from nuplan.planning.scenario_builder.nuplan_db.nuplan_scenario_builder import NuPlanScenarioBuilder
 from nuplan.planning.script.builders.metric_builder import build_metrics_engines
@@ -22,10 +20,10 @@ from nuplan.planning.simulation.simulation_time_controller.abstract_simulation_t
     AbstractSimulationTimeController,
 )
 from nuplan.planning.utils.multithreading.worker_pool import WorkerPool
+from omegaconf import DictConfig
 
-from navsim.planning.script.builders.planner_builder import build_planners
 from navsim.planning.script.builders.observation_builder import build_observations
-
+from navsim.planning.script.builders.planner_builder import build_planners
 
 logger = logging.getLogger(__name__)
 

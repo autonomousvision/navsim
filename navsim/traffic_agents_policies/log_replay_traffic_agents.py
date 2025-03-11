@@ -8,39 +8,29 @@ from nuplan.planning.simulation.observation.observation_type import DetectionsTr
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
 
 from navsim.planning.metric_caching.metric_cache import MetricCache
-from navsim.traffic_agents_policies.abstract_traffic_agents_policy import (
-    AbstractTrafficAgentsPolicy,
-)
+from navsim.traffic_agents_policies.abstract_traffic_agents_policy import AbstractTrafficAgentsPolicy
 
 
 class LogReplayTrafficAgents(AbstractTrafficAgentsPolicy):
+    """Replayed (non-reactive) background traffic agents class."""
+
     def __init__(self, future_trajectory_sampling: TrajectorySampling):
         self.future_trajectory_sampling = future_trajectory_sampling
 
     def get_list_of_simulated_object_types(self) -> List[TrackedObjectType]:
-        """
-        inherited. See Superclass
-        """
+        """Inherited, see superclass."""
         return [t for t in TrackedObjectType]
 
     def simulate_traffic_agents(
         self, simulated_ego_states: npt.NDArray[np.float64], metric_cache: MetricCache
     ) -> List[DetectionsTracks]:
-        """
-        inherited. See Superclass
-        """
+        """Inherited, see superclass."""
         raise NotImplementedError("Use simulate_environment instead for this policy")
 
     def simulate_environment(
         self, simulated_ego_states: npt.NDArray[np.float64], metric_cache: MetricCache
     ) -> List[DetectionsTracks]:
-        """
-        Simulate traffic agents, while ensuring we remove agents that collide with `ego` in the first frame across all frames.
-
-        :param simulated_ego_states: Ego vehicle states over time.
-        :param metric_cache: The metric cache containing ego state and detected objects.
-        :return: A list of `DetectionsTracks`, with colliding agents removed across all frames.
-        """
+        """Inherited, see superclass."""
 
         ego_box = metric_cache.ego_state.car_footprint.oriented_box.geometry
 
@@ -65,8 +55,6 @@ class LogReplayTrafficAgents(AbstractTrafficAgentsPolicy):
                 for agent in frame_detections.tracked_objects.tracked_objects
                 if agent.metadata.track_token not in colliding_agents
             ]
-            cleaned_detections_tracks.append(
-                DetectionsTracks(TrackedObjects(filtered_agents))
-            )
+            cleaned_detections_tracks.append(DetectionsTracks(TrackedObjects(filtered_agents)))
 
         return cleaned_detections_tracks

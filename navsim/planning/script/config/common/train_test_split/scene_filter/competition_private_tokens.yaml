@@ -5,7 +5,7 @@ num_history_frames: 4
 num_future_frames: 10
 has_route: False
 
-max_scenes: Null 
+max_scenes: Null
 log_names: Null
 
 tokens:

@@ -1,3 +1,5 @@
+# TODO: Move & rename this file for common usage (not specific for PDM)
+# TODO: Remove @classmethod + @property decorators (deprecated in Python 3.13)
 from enum import IntEnum
 
 
@@ -21,9 +23,7 @@ class StateIndex:
         valid_attributes = [
             attribute
             for attribute in dir(cls)
-            if attribute.startswith("_")
-            and not attribute.startswith("__")
-            and not callable(getattr(cls, attribute))
+            if attribute.startswith("_") and not attribute.startswith("__") and not callable(getattr(cls, attribute))
         ]
         return len(valid_attributes)
 
@@ -178,4 +178,4 @@ class WeightedMetricIndex(IntEnum):
     TTC = 1
     LANE_KEEPING = 2
     HISTORY_COMFORT = 3
-    TWO_FRAME_EXTENDEND_COMFORT = 4
+    TWO_FRAME_EXTENDED_COMFORT = 4

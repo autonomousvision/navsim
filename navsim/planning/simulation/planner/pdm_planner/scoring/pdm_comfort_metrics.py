@@ -2,10 +2,7 @@ from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
-from nuplan.common.actor_state.vehicle_parameters import (
-    VehicleParameters,
-    get_pacifica_parameters,
-)
+from nuplan.common.actor_state.vehicle_parameters import VehicleParameters, get_pacifica_parameters
 from scipy.signal import savgol_filter
 
 from navsim.planning.simulation.planner.pdm_planner.utils.pdm_array_representation import (
@@ -65,11 +62,7 @@ def _extract_ego_acceleration(
     n_batch, n_time, n_states = states.shape
     if acceleration_coordinate in ["x", "y"]:
         center_states = state_array_to_center_state_array(states, vehicle_parameters)
-        coordinate_index = (
-            StateIndex.ACCELERATION_X
-            if acceleration_coordinate == "x"
-            else StateIndex.ACCELERATION_Y
-        )
+        coordinate_index = StateIndex.ACCELERATION_X if acceleration_coordinate == "x" else StateIndex.ACCELERATION_Y
         acceleration: npt.NDArray[np.float64] = center_states[..., coordinate_index]
 
     elif acceleration_coordinate == "magnitude":
@@ -177,9 +170,7 @@ def _phase_unwrap(headings: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
     # So adjustments[j+1] - adjustments[j] = round((headings[j+1] - headings[j]) / (2*pi)).
     two_pi = 2.0 * np.pi
     adjustments = np.zeros_like(headings)
-    adjustments[..., 1:] = np.cumsum(
-        np.round(np.diff(headings, axis=-1) / two_pi), axis=-1
-    )
+    adjustments[..., 1:] = np.cumsum(np.round(np.diff(headings, axis=-1) / two_pi), axis=-1)
     unwrapped = headings - two_pi * adjustments
     return unwrapped
 
@@ -262,9 +253,7 @@ def _compute_lon_acceleration(
     lon_acceleration = _extract_ego_acceleration(
         states, acceleration_coordinate="x", vehicle_parameters=vehicle_parameters
     )
-    return _within_bound(
-        lon_acceleration, min_bound=MIN_LON_ACCEL, max_bound=MAX_LON_ACCEL
-    )
+    return _within_bound(lon_acceleration, min_bound=MIN_LON_ACCEL, max_bound=MAX_LON_ACCEL)
 
 
 def _compute_lat_acceleration(
@@ -282,9 +271,7 @@ def _compute_lat_acceleration(
     lat_acceleration = _extract_ego_acceleration(
         states, acceleration_coordinate="y", vehicle_parameters=vehicle_parameters
     )
-    return _within_bound(
-        lat_acceleration, min_bound=-MAX_ABS_LAT_ACCEL, max_bound=MAX_ABS_LAT_ACCEL
-    )
+    return _within_bound(lat_acceleration, min_bound=-MAX_ABS_LAT_ACCEL, max_bound=MAX_ABS_LAT_ACCEL)
 
 
 def _compute_jerk_metric(
@@ -305,9 +292,7 @@ def _compute_jerk_metric(
         time_steps_s=time_steps_s,
         vehicle_parameters=vehicle_parameters,
     )
-    return _within_bound(
-        jerk_metric, min_bound=-MAX_ABS_MAG_JERK, max_bound=MAX_ABS_MAG_JERK
-    )
+    return _within_bound(jerk_metric, min_bound=-MAX_ABS_MAG_JERK, max_bound=MAX_ABS_MAG_JERK)
 
 
 def _compute_lon_jerk_metric(
@@ -328,9 +313,7 @@ def _compute_lon_jerk_metric(
         time_steps_s=time_steps_s,
         vehicle_parameters=vehicle_parameters,
     )
-    return _within_bound(
-        lon_jerk_metric, min_bound=-MAX_ABS_LON_JERK, max_bound=MAX_ABS_LON_JERK
-    )
+    return _within_bound(lon_jerk_metric, min_bound=-MAX_ABS_LON_JERK, max_bound=MAX_ABS_LON_JERK)
 
 
 def _compute_yaw_accel(
@@ -345,12 +328,8 @@ def _compute_yaw_accel(
     :param vehicle_parameters: parameters of vehicle
     :return: acceleration of yaw-angle within bound
     """
-    yaw_accel_metric = _extract_ego_yaw_rate(
-        states, time_steps_s, deriv_order=2, poly_order=3
-    )
-    return _within_bound(
-        yaw_accel_metric, min_bound=-MAX_ABS_YAW_ACCEL, max_bound=MAX_ABS_YAW_ACCEL
-    )
+    yaw_accel_metric = _extract_ego_yaw_rate(states, time_steps_s, deriv_order=2, poly_order=3)
+    return _within_bound(yaw_accel_metric, min_bound=-MAX_ABS_YAW_ACCEL, max_bound=MAX_ABS_YAW_ACCEL)
 
 
 def _compute_yaw_rate(
@@ -366,9 +345,7 @@ def _compute_yaw_rate(
     :return: velocity of yaw-angle within bound
     """
     yaw_rate_metric = _extract_ego_yaw_rate(states, time_steps_s)
-    return _within_bound(
-        yaw_rate_metric, min_bound=-MAX_ABS_YAW_RATE, max_bound=MAX_ABS_YAW_RATE
-    )
+    return _within_bound(yaw_rate_metric, min_bound=-MAX_ABS_YAW_RATE, max_bound=MAX_ABS_YAW_RATE)
 
 
 def ego_is_comfortable(
@@ -395,9 +372,7 @@ def ego_is_comfortable(
         _compute_yaw_accel,
         _compute_yaw_rate,
     ]
-    results: npt.NDArray[np.bool_] = np.zeros(
-        (n_batch, len(comfort_metric_functions)), dtype=np.bool_
-    )
+    results: npt.NDArray[np.bool_] = np.zeros((n_batch, len(comfort_metric_functions)), dtype=np.bool_)
     for idx, metric_function in enumerate(comfort_metric_functions):
         results[:, idx] = metric_function(states, time_point_s, vehicle_parameters)
 
@@ -412,9 +387,7 @@ def calculate_rms_difference(
     :param feature_values: Array of shape (n_batch, n_time) containing feature values for each time step.
     :return: RMS differences for each trajectory in the batch.
     """
-    differences = np.diff(
-        feature_values, axis=1
-    )  # Calculate frame-to-frame differences
+    differences = np.diff(feature_values, axis=1)  # Calculate frame-to-frame differences
     squared_differences = differences**2  # Square the differences
     mean_squared_diff = np.mean(squared_differences, axis=1)  # Take the mean over time
     rms = np.sqrt(mean_squared_diff)  # Compute the square root to get RMS
@@ -447,12 +420,8 @@ def extract_features(
     :return: A dictionary of features.
     """
     return {
-        "acceleration": _extract_ego_acceleration(
-            states, "magnitude", vehicle_parameters=vehicle_parameters
-        ),
-        "jerk": _extract_ego_jerk(
-            states, "magnitude", time_point_s, vehicle_parameters=vehicle_parameters
-        ),
+        "acceleration": _extract_ego_acceleration(states, "magnitude", vehicle_parameters=vehicle_parameters),
+        "jerk": _extract_ego_jerk(states, "magnitude", time_point_s, vehicle_parameters=vehicle_parameters),
         "yaw_rate": _extract_ego_yaw_rate(states, time_point_s),
         "yaw_accel": _extract_ego_yaw_rate(states, time_point_s, deriv_order=2),
     }
@@ -470,9 +439,7 @@ def ego_is_two_frame_extended_comfort(
     :param time_point_s: Array of time steps in seconds.
     :return: Boolean array indicating whether the difference between trajectories meets the criteria.
     """
-    assert (
-        states_1.shape == states_2.shape
-    ), "Both trajectories must have the same shape"
+    assert states_1.shape == states_2.shape, "Both trajectories must have the same shape"
 
     # Extract features for both trajectories
     features_1 = extract_features(states_1, time_point_s)
@@ -497,6 +464,4 @@ def ego_is_two_frame_extended_comfort(
     meets_yaw_accel = rms_yaw_accel <= yaw_accel_threshold
 
     # Combine all criteria
-    return np.logical_and.reduce(
-        [meets_acceleration, meets_jerk, meets_yaw_rate, meets_yaw_accel]
-    )
+    return np.logical_and.reduce([meets_acceleration, meets_jerk, meets_yaw_rate, meets_yaw_accel])

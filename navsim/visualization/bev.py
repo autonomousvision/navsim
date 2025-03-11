@@ -1,23 +1,22 @@
 from typing import Any, Dict, List
 
-import numpy as np
-from shapely import affinity
-from shapely.geometry import Polygon, LineString
 import matplotlib.pyplot as plt
-
-from nuplan.common.maps.abstract_map import AbstractMap, SemanticMapLayer
-from nuplan.common.actor_state.state_representation import StateSE2
-from nuplan.common.actor_state.oriented_box import OrientedBox
-from nuplan.common.actor_state.vehicle_parameters import get_pacifica_parameters
+import numpy as np
 from nuplan.common.actor_state.car_footprint import CarFootprint
+from nuplan.common.actor_state.oriented_box import OrientedBox
+from nuplan.common.actor_state.state_representation import StateSE2
 from nuplan.common.actor_state.tracked_objects_types import TrackedObjectType
+from nuplan.common.actor_state.vehicle_parameters import get_pacifica_parameters
 from nuplan.common.geometry.transform import translate_longitudinally
+from nuplan.common.maps.abstract_map import AbstractMap, SemanticMapLayer
+from shapely import affinity
+from shapely.geometry import LineString, Polygon
 
-from navsim.common.dataclasses import Frame, Annotations, Trajectory, Lidar
+from navsim.common.dataclasses import Annotations, Frame, Lidar, Trajectory
 from navsim.common.enums import BoundingBoxIndex, LidarIndex
 from navsim.planning.scenario_builder.navsim_scenario_utils import tracked_object_types
+from navsim.visualization.config import AGENT_CONFIG, BEV_PLOT_CONFIG, LIDAR_CONFIG, MAP_LAYER_CONFIG
 from navsim.visualization.lidar import filter_lidar_pc, get_lidar_pc_color
-from navsim.visualization.config import BEV_PLOT_CONFIG, MAP_LAYER_CONFIG, AGENT_CONFIG, LIDAR_CONFIG
 
 
 def add_configured_bev_on_ax(ax: plt.Axes, map_api: AbstractMap, frame: Frame) -> plt.Axes:

@@ -3,7 +3,7 @@ hydra:
     dir: ${output_dir}
   output_subdir: ${output_dir}/code/hydra           # Store hydra's config breakdown here for debugging
   searchpath:                                       # Only <exp_dir> in these paths are discoverable
-    - pkg://navsim.planning.script.config.common 
+    - pkg://navsim.planning.script.config.common
   job:
     chdir: False
 

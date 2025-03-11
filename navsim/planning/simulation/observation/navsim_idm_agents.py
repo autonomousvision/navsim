@@ -11,9 +11,7 @@ from nuplan.common.maps.maps_datatypes import TrafficLightStatusType
 from nuplan.planning.simulation.observation.idm_agents import IDMAgents
 from nuplan.planning.simulation.observation.observation_type import DetectionsTracks
 
-from navsim.planning.simulation.observation.navsim_idm.navsim_idm_agent_manager import (
-    NavsimIDMAgentManager,
-)
+from navsim.planning.simulation.observation.navsim_idm.navsim_idm_agent_manager import NavsimIDMAgentManager
 from navsim.planning.simulation.observation.navsim_idm.navsim_idm_agents_builder import (
     build_idm_agents_on_map_rails,
     get_starting_segment,
@@ -65,7 +63,6 @@ class NavsimIDMAgents(IDMAgents):
     ) -> NavsimIDMAgentManager:
         """
         Override the parent's method to dynamically initialize the IDM Agent Manager.
-
         :param ego_state: Current state of the ego vehicle.
         :param vehicle_current_tracks: Tracks of nearby vehicles.
         :param map_api: Map API for accessing map-related data.
@@ -87,9 +84,7 @@ class NavsimIDMAgents(IDMAgents):
                 map_api,
             )
             # Initialize the IDM Agent Manager
-            self._idm_agent_manager = NavsimIDMAgentManager(
-                agents, agent_occupancy, map_api
-            )
+            self._idm_agent_manager = NavsimIDMAgentManager(agents, agent_occupancy, map_api)
         return self._idm_agent_manager
 
     def get_observation(
@@ -101,18 +96,13 @@ class NavsimIDMAgents(IDMAgents):
     ) -> DetectionsTracks:
         """
         Override the parent's method to generate observations using dynamic inputs.
-
         :param ego_state: Current state of the ego vehicle.
         :param vehicle_current_tracks: Tracks of nearby vehicles.
         :param map_api: Map API for accessing map-related data.
         :param objects_future_tracks: Future tracked objects for open-loop detections.
         :return: DetectionsTracks object containing active agents and open-loop detections.
         """
-        detections = self._get_idm_agent_manager(
-            ego_state,
-            vehicle_current_tracks,
-            map_api,
-        ).get_active_agents(
+        detections = self._get_idm_agent_manager(ego_state, vehicle_current_tracks, map_api,).get_active_agents(
             self.current_iteration,
             self._planned_trajectory_samples,
             self._planned_trajectory_sample_interval,
@@ -121,9 +111,7 @@ class NavsimIDMAgents(IDMAgents):
         for object in detections.tracked_objects.tracked_objects:
             new_metadata = SceneObjectMetadata(
                 timestamp_us=ego_state.time_us,
-                token=hashlib.md5(str(uuid.uuid4()).encode()).hexdigest()[
-                    : len(object.metadata.token)
-                ],
+                token=hashlib.md5(str(uuid.uuid4()).encode()).hexdigest()[: len(object.metadata.token)],
                 track_token=object.metadata.track_token,
                 track_id=object.metadata.track_id,
                 category_name=object.metadata.category_name,
@@ -134,26 +122,21 @@ class NavsimIDMAgents(IDMAgents):
             agent
             for agent in vehicle_current_tracks.tracked_objects.tracked_objects
             if agent.track_token
-            not in {
-                active_agent.track_token
-                for active_agent in detections.tracked_objects.tracked_objects
-            }
+            not in {active_agent.track_token for active_agent in detections.tracked_objects.tracked_objects}
         ]
 
         if self._add_open_loop_parked_vehicles and inactive_vehicle_agents:
             for agent in inactive_vehicle_agents:
                 is_stationary = agent.velocity.magnitude() < 0.1
-                is_in_lanes = map_api.is_in_layer(
-                    agent.center, SemanticMapLayer.LANE
-                ) or map_api.is_in_layer(agent.center, SemanticMapLayer.INTERSECTION)
+                is_in_lanes = map_api.is_in_layer(agent.center, SemanticMapLayer.LANE) or map_api.is_in_layer(
+                    agent.center, SemanticMapLayer.INTERSECTION
+                )
 
                 # lateral deviation
                 route, _ = get_starting_segment(agent, map_api)
                 lateral_deviation = None
                 if route:
-                    state_on_path = route.baseline_path.get_nearest_pose_from_position(
-                        agent.center
-                    )
+                    state_on_path = route.baseline_path.get_nearest_pose_from_position(agent.center)
                     lateral_deviation = np.hypot(
                         state_on_path.x - agent.center.x,
                         state_on_path.y - agent.center.y,
@@ -168,11 +151,7 @@ class NavsimIDMAgents(IDMAgents):
                 )
 
                 # case1: stationary and not in lanes and not collides with active agents
-                if (
-                    is_stationary
-                    and not is_in_lanes
-                    and not collides_with_active_agents
-                ):
+                if is_stationary and not is_in_lanes and not collides_with_active_agents:
                     detections.tracked_objects.tracked_objects.append(agent)
                     continue
 
@@ -186,9 +165,7 @@ class NavsimIDMAgents(IDMAgents):
 
         if self._open_loop_detections_types:
             # Add open-loop tracked objects
-            open_loop_detections = objects_future_tracks.get_tracked_objects_of_types(
-                self._open_loop_detections_types
-            )
+            open_loop_detections = objects_future_tracks.get_tracked_objects_of_types(self._open_loop_detections_types)
             detections.tracked_objects.tracked_objects.extend(open_loop_detections)
         return detections
 
@@ -214,17 +191,11 @@ class NavsimIDMAgents(IDMAgents):
         self.current_iteration = iteration
         tspan = 0.1  # Fixed time step (e.g., 0.1 seconds)
 
-        self._get_idm_agent_manager(
-            ego_state,
-            vehicle_current_tracks,
-            map_api,
-        ).propagate_agents(
+        self._get_idm_agent_manager(ego_state, vehicle_current_tracks, map_api,).propagate_agents(
             ego_state,
             tspan,
             self.current_iteration,
-            objects_future_tracks.get_tracked_objects_of_types(
-                self._open_loop_detections_types
-            ),
+            objects_future_tracks.get_tracked_objects_of_types(self._open_loop_detections_types),
             self._radius,
             traffic_light_status,
         )
