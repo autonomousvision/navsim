@@ -4,7 +4,7 @@ EMAIL="MUST_SET"
 INSTITUTION="MUST_SET"
 COUNTRY="MUST_SET"
 
-TRAIN_TEST_SPLIT=navtest
+TRAIN_TEST_SPLIT=warmup_two_stage
 
 python $NAVSIM_DEVKIT_ROOT/navsim/planning/script/run_create_submission_pickle.py \
 train_test_split=$TRAIN_TEST_SPLIT \

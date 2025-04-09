@@ -34,7 +34,7 @@ You can download the mini, trainval, test, private_test_e2e and warmup_synthetic
 ./download_trainval
 ./download_test
 ./download_private_test_e2e
-./download_warmup_synthetic_scenes
+./download_warmup_two_stage
 ```
 
 Also, the script `./download_navtrain` can be used to download a small portion of the  `trainval` dataset split which is needed for the `navtrain` training split.
@@ -57,11 +57,15 @@ This will download the splits into the download directory. From there, move it t
     |    ├── trainval
     |    ├── private_test_e2e
     |    └── mini
-    └── synthetic_scenes
-         ├── scene_pickles
-         └── sythetic_sensor
+    └── warmup_two_stage
+         ├── openscene_meta_datas
+	 ├── sensor_blobs
+	 ├── synthetic_scene_pickles
+         └── synthetic_scenes_attributes.csv
 
 ```
+
+⚠️ **IMPORTANT:** If you have already downloaded the data for Navsim V2.0.1 and tried the Hugging Face Leaderboard, please replace the old `"synthetic_scenes"` folder with the new `"warmup_two_stage"` folder. In Navsim V2.1, the traffic agents' policy has been updated, and the old data is no longer compatible.
 
 Set the required environment variables, by adding the following to your `~/.bashrc` file
 Based on the structure above, the environment variables need to be defined as:

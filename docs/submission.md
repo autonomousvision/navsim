@@ -7,12 +7,19 @@ For the [NAVSIM challenge 2025 warmup](https://huggingface.co/spaces/AGC2025/e2e
 ### Rules
 
 - **Open-source code and models**:
+
   - We will periodically (~every 6 months) be removing all entries on the leaderboard which **do not provide associated open-source training and inference code with the corresponding pre-trained checkpoints**. Even if removed for not having this information, an entry can be resubmitted once the code needed for reproducibility is made publicly available.
   - Code must be provided by setting the `TEAM_NAME` variable of the submission file as `"<a href=Link/to/repository>Method name</a>"`. Note that this can also be edited on the leaderboard for an existing submission, if the repo is created (or updated) after the initial submission.
-- **Multi-seed submissions**:
-  - Driving policies often differ significantly in performance when re-trained with different network initialization seeds.
-  - Therefore, the leaderboard now supports (1) regular single-seed submissions and (2) multi-seed submission, which we **strongly encourage** (with a minimum of 3 training seeds).
-  - The maximum, mean and standard deviations of our evaluation metrics will be displayed for multi-seed submissions.
+
+### Run Score Locally
+
+You can reproduce your test results locally in the [NAVSIM](https://github.com/autonomousvision/navsim/blob/main/docs/install.md) repository, and they should match the results you obtain on Hugging Face. Follow the steps below:
+
+1. **Download the dataset** — refer to the [dataset](install.md) for instructions.
+2. **Cache the data** — follow the script `scripts/evaluation/run_metric_caching.sh`, and set `TRAIN_TEST_SPLIT=warmup_two_stage`
+3. **Run the evaluation** — follow the script `scripts/evaluation/run_cv_pdm_score_evaluation.sh` with your own model.
+   * If you specified `metric_cache_path` during caching, make sure to use the same path during evaluation.
+   * Set `TRAIN_TEST_SPLIT=warmup_two_stage` to ensure that the score matches the one returned by Hugging Face.
 
 ### Regular warmup submission
 
@@ -20,11 +27,7 @@ To submit to a leaderboard you need to create a pickle file that contains a traj
 
 Have a look at `run_cv_create_submission_pickle.sh` in the [NAVSIM](https://github.com/autonomousvision/navsim/blob/main/docs/install.md) repository: this file creates the pickle file for the ConstantVelocity agent. You can run it for your own agent by replacing the `agent` override. **Note that you have to set the variables `TEAM_NAME`, `AUTHORS`, `EMAIL`, `INSTITUTION`, and `COUNTRY` in `run_create_submission_pickle.sh` to generate a valid submission file**
 
-You should be able to obtain the same evaluation results as on the server by running the evaluation locally. To do so, use the override `train_test_split=warmup_navsafe_two_stage_extended` when executing the script to run the PDM scoring.
-
-### Multi-seed warmup submission
-
-For a multi-seed submission, you first have to create individual agents, i.e. trained on different seeds. Consequently, you can merge your entries to a single submission file with the `run_merge_submission_pickles.sh` bash script. Please set the override `train_test_split=warmup_navsafe_two_stage_extended ` to ensure all individual entries contain trajectories for the evaluation.
+You should be able to obtain the same evaluation results as on the server by running the evaluation locally.
 
 ## Submission Description
 

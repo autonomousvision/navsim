@@ -17,6 +17,10 @@ verbose: false
 logger_level: info                                  # Level of logger
 logger_format_string: null                          # Logger format string, set null to use the default format string
 
+
+# traffic agents (only for one-stage only simulation)
+traffic_agents: non_reactive
+
 # Execution
 max_number_of_workers: null                         # Set null to disable threading for simulation execution
 gpu: true                                           # Whether to use available GPUs during training/simulation

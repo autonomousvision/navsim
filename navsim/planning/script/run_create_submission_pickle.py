@@ -21,18 +21,19 @@ CONFIG_NAME = "default_run_create_submission_pickle"
 
 
 def run_test_evaluation(
+    cfg: DictConfig,
     agent: AbstractAgent,
     scene_filter: SceneFilter,
     data_path: Path,
-    sensor_blobs_path: Path,
-    navsim_blobs_path: Path,
+    synthetic_sensor_path: Path,
+    original_sensor_path: Path,
     synthetic_scenes_path: Path,
 ) -> Dict[str, Trajectory]:
     """
     Function to create the output file for evaluation of an agent on the testserver
     :param agent: Agent object
     :param data_path: pathlib path to navsim logs
-    :param sensor_blobs_path: pathlib path to sensor blobs
+    :param synthetic_sensor_path: pathlib path to sensor blobs
     :param synthetic_scenes_path: pathlib path to synthetic scenes
     :param save_path: pathlib path to folder where scores are stored as .csv
     """
@@ -47,24 +48,39 @@ def run_test_evaluation(
     input_loader = SceneLoader(
         data_path=data_path,
         scene_filter=scene_filter,
-        sensor_blobs_path=sensor_blobs_path,
-        navsim_blobs_path=navsim_blobs_path,
+        synthetic_sensor_path=synthetic_sensor_path,
+        original_sensor_path=original_sensor_path,
         synthetic_scenes_path=synthetic_scenes_path,
         sensor_config=agent.get_sensor_config(),
     )
     agent.initialize()
 
-    output: Dict[str, Trajectory] = {}
-    for token in tqdm(input_loader, desc="Running evaluation"):
+    # first stage output
+    first_stage_output: Dict[str, Trajectory] = {}
+    for token in tqdm(input_loader.tokens_stage_one, desc="Running first stage evaluation"):
         try:
             agent_input = input_loader.get_agent_input_from_token(token)
             trajectory = agent.compute_trajectory(agent_input)
-            output.update({token: trajectory})
+            first_stage_output.update({token: trajectory})
         except Exception:
             logger.warning(f"----------- Agent failed for token {token}:")
             traceback.print_exc()
 
-    return output
+    # second stage output 
+
+    scene_loader_tokens_stage_two = input_loader.reactive_tokens_stage_two
+
+    second_stage_output: Dict[str, Trajectory] = {}
+    for token in tqdm(scene_loader_tokens_stage_two, desc="Running second stage evaluation"):
+        try:
+            agent_input = input_loader.get_agent_input_from_token(token)
+            trajectory = agent.compute_trajectory(agent_input)
+            second_stage_output.update({token: trajectory})
+        except Exception:
+            logger.warning(f"----------- Agent failed for token {token}:")
+            traceback.print_exc()
+
+    return first_stage_output, second_stage_output
 
 
 @hydra.main(config_path=CONFIG_PATH, config_name=CONFIG_NAME, version_base=None)
@@ -75,19 +91,20 @@ def main(cfg: DictConfig) -> None:
     """
     agent = instantiate(cfg.agent)
     data_path = Path(cfg.navsim_log_path)
-    sensor_blobs_path = Path(cfg.sensor_blobs_path)
-    navsim_blobs_path = Path(cfg.navsim_blobs_path)
+    synthetic_sensor_path = Path(cfg.synthetic_sensor_path)
+    original_sensor_path = Path(cfg.original_sensor_path)
     synthetic_scenes_path = Path(cfg.synthetic_scenes_path)
     save_path = Path(cfg.output_dir)
     scene_filter = instantiate(cfg.train_test_split.scene_filter)
 
-    output = run_test_evaluation(
+    first_stage_output, second_stage_output = run_test_evaluation(
+        cfg=cfg,
         agent=agent,
         scene_filter=scene_filter,
         data_path=data_path,
         synthetic_scenes_path=synthetic_scenes_path,
-        sensor_blobs_path=sensor_blobs_path,
-        navsim_blobs_path=navsim_blobs_path,
+        synthetic_sensor_path=synthetic_sensor_path,
+        original_sensor_path=original_sensor_path,
     )
 
     submission = {
@@ -96,7 +113,8 @@ def main(cfg: DictConfig) -> None:
         "email": cfg.email,
         "institution": cfg.institution,
         "country / region": cfg.country,
-        "predictions": [output],
+        "first_stage_predictions": [first_stage_output],
+        "second_stage_predictions": [second_stage_output],
     }
 
     # pickle and save dict

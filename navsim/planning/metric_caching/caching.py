@@ -78,8 +78,8 @@ def cache_scenarios(
         scene_filter.log_names = log_names
         scene_filter.tokens = tokens
         scene_loader = SceneLoader(
-            sensor_blobs_path=None,
-            navsim_blobs_path=None,
+            synthetic_sensor_path=None,
+            original_sensor_path=None,
             data_path=Path(cfg.navsim_log_path),
             synthetic_scenes_path=Path(cfg.synthetic_scenes_path),
             scene_filter=scene_filter,
@@ -157,8 +157,8 @@ def cache_data(cfg: DictConfig, worker: WorkerPool) -> None:
     # Extract scenes based on scene-loader to know which tokens to distribute across workers
     # TODO: infer the tokens per log from metadata, to not have to load metric cache and scenes here
     scene_loader = SceneLoader(
-        sensor_blobs_path=None,
-        navsim_blobs_path=None,
+        synthetic_sensor_path=None,
+        original_sensor_path=None,
         data_path=Path(cfg.navsim_log_path),
         synthetic_scenes_path=Path(cfg.synthetic_scenes_path),
         scene_filter=instantiate(cfg.train_test_split.scene_filter),

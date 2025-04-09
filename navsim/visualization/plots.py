@@ -2,7 +2,7 @@ import io
 from typing import Any, Callable, List, Tuple
 
 import matplotlib.pyplot as plt
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 
 from navsim.agents.abstract_agent import AbstractAgent
@@ -233,4 +233,33 @@ def frame_plot_to_gif(
     :param duration: frame interval in ms, defaults to 500
     """
     images = frame_plot_to_pil(callable_frame_plot, scene, frame_indices)
+    images[0].save(file_name, save_all=True, append_images=images[1:], duration=duration, loop=0)
+
+
+
+def concat_scenes_to_gif_with_labels(
+    file_name: str,
+    callable_frame_plot: Callable[[Scene, int], Tuple[plt.Figure, Any]],
+    scenes: List[Scene],
+    frame_indices_list: List[List[int]],
+    scene_labels: List[str],
+    duration: float = 500,
+):
+    images: List[Image.Image] = []
+
+    for scene, frame_indices, label in zip(scenes, frame_indices_list, scene_labels):
+        for frame_idx in tqdm(frame_indices, desc=f"Rendering {label}"):
+            fig, ax = callable_frame_plot(scene, frame_idx)
+
+            # 🔵 Add label to the figure
+            fig.text(0.1, 0.95, label, fontsize=12, color='black', weight='bold', ha='left', va='top', bbox=dict(facecolor='white', alpha=0.6))
+
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png")
+            buf.seek(0)
+            images.append(Image.open(buf).copy())
+
+            buf.close()
+            plt.close(fig)
+
     images[0].save(file_name, save_all=True, append_images=images[1:], duration=duration, loop=0)

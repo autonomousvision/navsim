@@ -1,5 +1,5 @@
 navsim_log_path: ${oc.env:OPENSCENE_DATA_ROOT}/navsim_logs/${train_test_split.data_split} # path to log annotations
-navsim_blobs_path: ${oc.env:OPENSCENE_DATA_ROOT}/sensor_blobs/${train_test_split.data_split} # path to log annotations
-sensor_blobs_path: ${oc.env:OPENSCENE_DATA_ROOT}/synthetic_scenes/synthetic_sensor # path to sensor blobs
-synthetic_scenes_path: ${oc.env:OPENSCENE_DATA_ROOT}/synthetic_scenes/scene_pickles # path to synthetic scenes
+original_sensor_path: ${oc.env:OPENSCENE_DATA_ROOT}/sensor_blobs/${train_test_split.data_split} # path to log annotations
+synthetic_sensor_path: ${oc.env:OPENSCENE_DATA_ROOT}/warmup_two_stage/sensor_blobs # path to sensor blobs
+synthetic_scenes_path: ${oc.env:OPENSCENE_DATA_ROOT}/warmup_two_stage/synthetic_scene_pickles # path to synthetic scenes
 metric_cache_path: ${oc.env:NAVSIM_EXP_ROOT}/metric_cache # path to metric cache

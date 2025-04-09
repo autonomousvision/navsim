@@ -21,14 +21,9 @@ def filter_scenes(data_path: Path, scene_filter: SceneFilter) -> Tuple[Dict[str,
     :return: dictionary of raw logs format, and list of final frame tokens that can be used to filter synthetic scenes
     """
 
-    def split_list(
-        input_list: List[Any], num_frames: int, frame_interval: int
-    ) -> List[List[Any]]:
+    def split_list(input_list: List[Any], num_frames: int, frame_interval: int) -> List[List[Any]]:
         """Helper function to split frame list according to sampling specification."""
-        return [
-            input_list[i : i + num_frames]
-            for i in range(0, len(input_list), frame_interval)
-        ]
+        return [input_list[i : i + num_frames] for i in range(0, len(input_list), frame_interval)]
 
     filtered_scenes: Dict[str, Scene] = {}
     # keep track of the final frame tokens which refer to the original scene of potential second stage synthetic scenes
@@ -38,11 +33,7 @@ def filter_scenes(data_path: Path, scene_filter: SceneFilter) -> Tuple[Dict[str,
     # filter logs
     log_files = list(data_path.iterdir())
     if scene_filter.log_names is not None:
-        log_files = [
-            log_file
-            for log_file in log_files
-            if log_file.name.replace(".pkl", "") in scene_filter.log_names
-        ]
+        log_files = [log_file for log_file in log_files if log_file.name.replace(".pkl", "") in scene_filter.log_names]
 
     if scene_filter.tokens is not None:
         filter_tokens = True
@@ -53,21 +44,13 @@ def filter_scenes(data_path: Path, scene_filter: SceneFilter) -> Tuple[Dict[str,
     for log_pickle_path in tqdm(log_files, desc="Loading logs"):
 
         scene_dict_list = pickle.load(open(log_pickle_path, "rb"))
-        for frame_list in split_list(
-            scene_dict_list, scene_filter.num_frames, scene_filter.frame_interval
-        ):
+        for frame_list in split_list(scene_dict_list, scene_filter.num_frames, scene_filter.frame_interval):
             # Filter scenes which are too short
             if len(frame_list) < scene_filter.num_frames:
                 continue
 
             # Filter scenes with no route
-            if (
-                scene_filter.has_route
-                and len(
-                    frame_list[scene_filter.num_history_frames - 1]["roadblock_ids"]
-                )
-                == 0
-            ):
+            if scene_filter.has_route and len(frame_list[scene_filter.num_history_frames - 1]["roadblock_ids"]) == 0:
                 continue
 
             # Filter by token
@@ -80,9 +63,7 @@ def filter_scenes(data_path: Path, scene_filter: SceneFilter) -> Tuple[Dict[str,
             #  TODO: if num_future_frames > proposal_sampling frames, then the final_frame_token index is wrong
             final_frame_tokens.append(final_frame_token)
 
-            if (scene_filter.max_scenes is not None) and (
-                len(filtered_scenes) >= scene_filter.max_scenes
-            ):
+            if (scene_filter.max_scenes is not None) and (len(filtered_scenes) >= scene_filter.max_scenes):
                 stop_loading = True
                 break
 
@@ -106,11 +87,7 @@ def filter_synthetic_scenes(
         synthetic_scene = Scene.load_from_disk(scene_path, None, None)
 
         # if a token is requested specifically, we load it even if it is not related to the original scenes loaded
-        if (
-            filter_tokens
-            and synthetic_scene.scene_metadata.initial_token
-            not in scene_filter.synthetic_scene_tokens
-        ):
+        if filter_tokens and synthetic_scene.scene_metadata.initial_token not in scene_filter.synthetic_scene_tokens:
             continue
 
         # filter by log names
@@ -125,9 +102,7 @@ def filter_synthetic_scenes(
         ):
             continue
 
-        loaded_scenes.update(
-            {synthetic_scene.scene_metadata.initial_token: [scene_path, log_name]}
-        )
+        loaded_scenes.update({synthetic_scene.scene_metadata.initial_token: [scene_path, log_name]})
 
     return loaded_scenes
 
@@ -138,26 +113,24 @@ class SceneLoader:
     def __init__(
         self,
         data_path: Path,
-        sensor_blobs_path: Path,
-        navsim_blobs_path: Path,
-        synthetic_scenes_path: Path,
+        original_sensor_path: Path,
         scene_filter: SceneFilter,
+        synthetic_sensor_path: Path = None,
+        synthetic_scenes_path: Path = None,
         sensor_config: SensorConfig = SensorConfig.build_no_sensors(),
     ):
         """
         Initializes the scene data loader.
         :param data_path: root directory of log folder
-        :param sensor_blobs_path: root directory of sensor  (synthetic)
-        :param navsim_blobs_path: root directory of sensor  (original)
+        :param synthetic_sensor_path: root directory of sensor  (synthetic)
+        :param original_sensor_path: root directory of sensor  (original)
         :param scene_filter: dataclass for scene filtering specification
         :param sensor_config: dataclass for sensor loading specification, defaults to no sensors
         """
 
-        self.scene_frames_dicts, stage1_scenes_final_frames_tokens = filter_scenes(
-            data_path, scene_filter
-        )
-        self._sensor_blobs_path = sensor_blobs_path
-        self._navsim_blobs_path = navsim_blobs_path
+        self.scene_frames_dicts, stage1_scenes_final_frames_tokens = filter_scenes(data_path, scene_filter)
+        self._synthetic_sensor_path = synthetic_sensor_path
+        self._original_sensor_path = original_sensor_path
         self._scene_filter = scene_filter
         self._sensor_config = sensor_config
 
@@ -182,6 +155,62 @@ class SceneLoader:
         """
         return list(self.scene_frames_dicts.keys()) + list(self.synthetic_scenes.keys())
 
+    @property
+    def tokens_stage_one(self) -> List[str]:
+        """
+        original scenes
+        :return: list of scene identifiers for loading.
+        """
+        return list(self.scene_frames_dicts.keys())
+
+    @property
+    def reactive_tokens_stage_two(self) -> List[str]:
+        """
+        reactive synthetic scenes
+        :return: list of scene identifiers for loading.
+        """
+        reactive_synthetic_initial_tokens = self._scene_filter.reactive_synthetic_initial_tokens
+        if reactive_synthetic_initial_tokens is None:
+            return None
+        return list(set(self.synthetic_scenes_tokens) & set(reactive_synthetic_initial_tokens))
+
+    @property
+    def non_reactive_tokens_stage_two(self) -> List[str]:
+        """
+        non reactive synthetic scenes
+        :return: list of scene identifiers for loading.
+        """
+        non_reactive_synthetic_initial_tokens = self._scene_filter.non_reactive_synthetic_initial_tokens
+        if non_reactive_synthetic_initial_tokens is None:
+            return None
+        return list(set(self.synthetic_scenes_tokens) & set(non_reactive_synthetic_initial_tokens))
+
+    @property
+    def reactive_tokens(self) -> List[str]:
+        """
+        original scenes and reactive synthetic scenes
+        :return: list of scene identifiers for loading.
+        """
+        reactive_synthetic_initial_tokens = self._scene_filter.reactive_synthetic_initial_tokens
+        if reactive_synthetic_initial_tokens is None:
+            return list(self.scene_frames_dicts.keys())
+        return list(self.scene_frames_dicts.keys()) + list(
+            set(self.synthetic_scenes_tokens) & set(reactive_synthetic_initial_tokens)
+        )
+
+    @property
+    def non_reactive_tokens(self) -> List[str]:
+        """
+        original scenes and non reactive synthetic scenes
+        :return: list of scene identifiers for loading.
+        """
+        non_reactive_synthetic_initial_tokens = self._scene_filter.non_reactive_synthetic_initial_tokens
+        if non_reactive_synthetic_initial_tokens is None:
+            return list(self.scene_frames_dicts.keys())
+        return list(self.scene_frames_dicts.keys()) + list(
+            set(self.synthetic_scenes_tokens) & set(non_reactive_synthetic_initial_tokens)
+        )
+
     def __len__(self) -> int:
         """
         :return: number for scenes possible to load.
@@ -205,13 +234,13 @@ class SceneLoader:
         if token in self.synthetic_scenes:
             return Scene.load_from_disk(
                 file_path=self.synthetic_scenes[token][0],
-                sensor_blobs_path=self._sensor_blobs_path,
+                sensor_blobs_path=self._synthetic_sensor_path,
                 sensor_config=self._sensor_config,
             )
         else:
             return Scene.from_scene_dict_list(
                 self.scene_frames_dicts[token],
-                self._navsim_blobs_path,
+                self._original_sensor_path,
                 num_history_frames=self._scene_filter.num_history_frames,
                 num_future_frames=self._scene_filter.num_future_frames,
                 sensor_config=self._sensor_config,
@@ -227,13 +256,13 @@ class SceneLoader:
         if token in self.synthetic_scenes:
             return Scene.load_from_disk(
                 file_path=self.synthetic_scenes[token][0],
-                sensor_blobs_path=self._sensor_blobs_path,
+                sensor_blobs_path=self._synthetic_sensor_path,
                 sensor_config=self._sensor_config,
             ).get_agent_input()
         else:
             return AgentInput.from_scene_dict_list(
                 self.scene_frames_dicts[token],
-                self._navsim_blobs_path,
+                self._original_sensor_path,
                 num_history_frames=self._scene_filter.num_history_frames,
                 sensor_config=self._sensor_config,
             )
@@ -281,14 +310,10 @@ class MetricCacheLoader:
         :return: dictionary of token and file path
         """
         metadata_dir = cache_path / "metadata"
-        metadata_file = [
-            file for file in metadata_dir.iterdir() if ".csv" in str(file)
-        ][0]
+        metadata_file = [file for file in metadata_dir.iterdir() if ".csv" in str(file)][0]
         with open(str(metadata_file), "r") as f:
             cache_paths = f.read().splitlines()[1:]
-        metric_cache_dict = {
-            cache_path.split("/")[-2]: cache_path for cache_path in cache_paths
-        }
+        metric_cache_dict = {cache_path.split("/")[-2]: cache_path for cache_path in cache_paths}
         return metric_cache_dict
 
     @property
