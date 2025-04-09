@@ -439,9 +439,18 @@ class PDMScorer:
         )
         oncoming_progress[:, 1:] = np.linalg.norm(center_coordinates[:, 1:] - center_coordinates[:, :-1], axis=-1)
 
-        # mask out progress along the driving direction
+        # mask out points that are not in oncoming traffic
         oncoming_traffic_masks = self._ego_areas[:, :, EgoAreaIndex.ONCOMING_TRAFFIC]
-        oncoming_progress[~oncoming_traffic_masks] = 0.0
+
+        # remove intersection
+        for proposal_idx in range(self._num_proposals):
+            for time_idx in range(self.proposal_sampling.num_poses + 1):
+                ego_position = Point(*center_coordinates[proposal_idx, time_idx])
+                is_in_intersection = self._drivable_area_map.is_in_layer(
+                    ego_position, SemanticMapLayer.INTERSECTION
+                )
+                if not oncoming_traffic_masks[proposal_idx, time_idx] or is_in_intersection:
+                    oncoming_progress[proposal_idx, time_idx] = 0.0
 
         # aggregate
         driving_direction_compliance_scores = np.ones(self._num_proposals, dtype=np.float64)

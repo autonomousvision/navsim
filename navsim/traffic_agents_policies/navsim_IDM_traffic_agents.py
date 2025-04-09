@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -63,9 +63,11 @@ class NavsimIDMTrafficAgents(AbstractTrafficAgentsPolicy):
         self,
         future_trajectory_sampling: TrajectorySampling,
         idm_agents_observation: NavsimIDMAgents,
+        map_root_override: Optional[str] = None, 
     ):
         self.future_trajectory_sampling = future_trajectory_sampling
         self._idm_agents_observation: NavsimIDMAgents = idm_agents_observation
+        self._map_root_override = map_root_override 
 
     def get_list_of_simulated_object_types(self) -> List[TrackedObjectType]:
         """Inherited, see superclass."""
@@ -83,8 +85,9 @@ class NavsimIDMTrafficAgents(AbstractTrafficAgentsPolicy):
         # egostate
         initial_ego_state = metric_cache.ego_state
         # map api
+        map_root = self._map_root_override or metric_cache.map_parameters.map_root
         map_api = get_maps_api(
-            metric_cache.map_parameters.map_root,
+            map_root,
             metric_cache.map_parameters.map_version,
             metric_cache.map_parameters.map_name,
         )

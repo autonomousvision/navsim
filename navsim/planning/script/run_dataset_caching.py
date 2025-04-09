@@ -42,8 +42,8 @@ def cache_features(
     scene_filter.log_names = log_names
     scene_filter.tokens = tokens
     scene_loader = SceneLoader(
-        sensor_blobs_path=Path(cfg.sensor_blobs_path),
-        navsim_blobs_path=Path(cfg.navsim_blobs_path),
+        synthetic_sensor_path=Path(cfg.synthetic_sensor_path),
+        original_sensor_path=Path(cfg.original_sensor_path),
         data_path=Path(cfg.navsim_log_path),
         synthetic_scenes_path=Path(cfg.synthetic_scenes_path),
         scene_filter=scene_filter,
@@ -78,11 +78,11 @@ def main(cfg: DictConfig) -> None:
     logger.info("Building SceneLoader")
     scene_filter: SceneFilter = instantiate(cfg.train_test_split.scene_filter)
     data_path = Path(cfg.navsim_log_path)
-    sensor_blobs_path = Path(cfg.sensor_blobs_path)
-    navsim_blobs_path = Path(cfg.navsim_blobs_path)
+    synthetic_sensor_path = Path(cfg.synthetic_sensor_path)
+    original_sensor_path = Path(cfg.original_sensor_path)
     scene_loader = SceneLoader(
-        sensor_blobs_path=sensor_blobs_path,
-        navsim_blobs_path=navsim_blobs_path,
+        synthetic_sensor_path=synthetic_sensor_path,
+        original_sensor_path=original_sensor_path,
         data_path=data_path,
         synthetic_scenes_path=Path(cfg.synthetic_scenes_path),
         scene_filter=scene_filter,

@@ -1,5 +1,6 @@
 defaults:
-  - traffic_agents_policy: log_replay_traffic_agents
+  - traffic_agents_policy/log_replay_traffic_agents
+  - traffic_agents_policy/navsim_IDM_traffic_agents
   - default_dataset_paths
   - _self_
 

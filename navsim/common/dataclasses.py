@@ -633,7 +633,13 @@ class SceneFilter:
     log_names: Optional[List[str]] = None
     tokens: Optional[List[str]] = None
     include_synthetic_scenes: bool = False
+    all_mapping: Optional[Dict[Tuple[str, str], List[Tuple[str, str]]]] = None
     synthetic_scene_tokens: Optional[List[str]] = None
+
+    # for reactive and non_reactive
+    reactive_synthetic_initial_tokens: Optional[List[str]] = None
+    non_reactive_synthetic_initial_tokens: Optional[List[str]] = None
+
     # TODO: expand filter options
 
     def __post_init__(self):
