@@ -80,8 +80,8 @@ In Navsim-v1.1, the training/test split can bet set with a single config paramet
         <td rowspan="2">Competition</td>
         <td>warmup_two_stage</td>
         <td>Warmup test split to validate submission on hugging face. Available as a filter for test split.</td>
-        <td>-</td>
-        <td>-</td>
+        <td>27M</td>
+        <td>1.2G</td>
         <td>
         train_test_split=warmup_two_stage
         </td>

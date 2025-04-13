@@ -52,13 +52,14 @@
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Changelog <a name="changelog"></a>
+- **`[2025/04/13]`** NAVSIM v2.1.1 release (official devkit version for 2025 warm-up phase)
+  - Updated dataset for the [Hugging Face Warmup leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup) with minor fixes
 
-- **`[2025/04/09]`** NAVSIM v2.1 release (official devkit version for 2025 warm-up phase)
+    - ⚠️ **IMPORTANT**: To submit to the updated leaderboard, you need to re-download the synthetic dataset v2.1.1 (see [download](docs/install.md))
+
+- **`[2025/04/08]`** NAVSIM v2.1 release 
   - Added new dataset for the [Hugging Face Warmup leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup) (see [submission](docs/submission.md))
-
-    - ⚠️ **IMPORTANT**: To submit to the updated leaderboard, you need to re-download the synthetic dataset (see [download](docs/install.md))
   - Introduced support for two-stage reactive traffic agents (see [traffic simulation](docs/metrics.md))
-  - Code refactoring and bug fixes
 - **`[2025/02/28]`** NAVSIM v2.0 release
   - Extends the PDM Score with more metrics and penalties (see [metrics](docs/metrics.md))
   - Adds a new two-stage pseudo closed-loop simulation (see [metrics](docs/metrics.md))
@@ -67,7 +68,6 @@
   - Leaderboard for `navtest` on [Hugging Face](https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim)
   - Release of baseline checkpoints on [Hugging Face](https://huggingface.co/autonomousvision/navsim_baselines)
   - Updated docs for [submission](docs/submission.md) and [paper](https://arxiv.org/abs/2406.15349)
-  - Code refactoring, formatting, minor fixes
 - **`[2024/04/21]`** NAVSIM v1.0 release (official devkit version for [AGC 2024](https://opendrivelab.com/challenge2024/#end_to_end_driving_at_scale))
   - Parallelization of metric caching / evaluation
   - Adds [Transfuser](https://arxiv.org/abs/2205.15997) baseline (see [agents](docs/agents.md#Baselines))

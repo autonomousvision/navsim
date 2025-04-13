@@ -62,15 +62,14 @@ The new NAVSIM v2 evaluation uses a two-stage aggregation process to approximate
 
 2. **Second Stage Scoring:**
    - In addition to the initial scene, multiple potential follow-up scenes to this initial scene are included in the test set to be evaluated.
-   - The follow-up scenes were pre-computed by rolling out several simulations starting from the initial scene, each with a different 3-second plan.
+   - The follow-up scenes were pre-computed by rolling out several simulations starting from the initial scene, each with a different 4-second plan.
    - Therefore, each of these follow-up scenes starts from a state different to the endpoint of the initial scene, e.g. with a lateral offset or different speed.
    - We evaluate the submitted planner on each follow-up scene over a fixed horizon (4 seconds) using the EPDMS metric.
-   - For these scenes, we compute the EPDMS with [reactive background traffic](traffic_agents.md) instead of log-replay agents.
 
 3. **Weighting and Aggregation:**
    - To emulate the effects of closed-loop simulation, the relevance of each follow-up scene to the overall score depends on how close its starting position is to where the submitted planner actually ended in the first stage.
    - We assign higher weights to follow-up scenes that start closer to the submitted planner's end position.
-   - Finally, we compute a weighted average of all scores second-stage to produce the aggregated metric.
+   - We first compute a weighted aggregation if all second-stage scores. Finally, we aggregate the scores of the first and second stage to produce the aggregated metric.
 
 # Run an evaluation
 To evaluate the PDM score for an agent you can run:

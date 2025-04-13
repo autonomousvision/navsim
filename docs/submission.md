@@ -1,12 +1,12 @@
 # Submitting to the leaderboard
 
-NAVSIM comes with an official leaderboard ([Leaderboard 2024](https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim), [Leaderboard 2025 Warmup](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup)) on HuggingFace. The leaderboard prevents ambiguity in metric definitions between different projects, as all evaluation is performed on the server with the official evaluation script.
+NAVSIM comes with official leaderboards ([Leaderboard 2024](https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim), [Leaderboard 2025 Warmup](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup)) on HuggingFace. The leaderboards prevent ambiguity in metric definitions between different projects, as all evaluation is performed on the server with the official evaluation script.
 
-For the [NAVSIM challenge 2025 warmup](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup), we now open the leaderboard with the `warmup_navsafe_two_stage_extended` split. In this guide, we describe how to create a valid submission and what rules apply for the new leaderboard.
+For the [NAVSIM challenge 2025 warmup](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup), we now open the leaderboard with the `warmup_two_stage` split. In this guide, we describe how to create a valid submission.
 
 ### Rules
-
-- **Open-source code and models**:
+- [**General rules (for Leaderboard 2025)**](https://opendrivelab.com/challenge2025/#rule)
+- **Open-source code and models (for Leaderboard 2024)**:
 
   - We will periodically (~every 6 months) be removing all entries on the leaderboard which **do not provide associated open-source training and inference code with the corresponding pre-trained checkpoints**. Even if removed for not having this information, an entry can be resubmitted once the code needed for reproducibility is made publicly available.
   - Code must be provided by setting the `TEAM_NAME` variable of the submission file as `"<a href=Link/to/repository>Method name</a>"`. Note that this can also be edited on the leaderboard for an existing submission, if the repo is created (or updated) after the initial submission.
