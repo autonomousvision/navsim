@@ -66,7 +66,7 @@ def run_test_evaluation(
             logger.warning(f"----------- Agent failed for token {token}:")
             traceback.print_exc()
 
-    # second stage output 
+    # second stage output
 
     scene_loader_tokens_stage_two = input_loader.reactive_tokens_stage_two
 

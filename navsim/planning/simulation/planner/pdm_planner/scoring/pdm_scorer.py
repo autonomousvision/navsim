@@ -446,9 +446,7 @@ class PDMScorer:
         for proposal_idx in range(self._num_proposals):
             for time_idx in range(self.proposal_sampling.num_poses + 1):
                 ego_position = Point(*center_coordinates[proposal_idx, time_idx])
-                is_in_intersection = self._drivable_area_map.is_in_layer(
-                    ego_position, SemanticMapLayer.INTERSECTION
-                )
+                is_in_intersection = self._drivable_area_map.is_in_layer(ego_position, SemanticMapLayer.INTERSECTION)
                 if not oncoming_traffic_masks[proposal_idx, time_idx] or is_in_intersection:
                     oncoming_progress[proposal_idx, time_idx] = 0.0
 
