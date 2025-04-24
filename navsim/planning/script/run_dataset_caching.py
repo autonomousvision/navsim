@@ -22,9 +22,7 @@ CONFIG_PATH = "config/training"
 CONFIG_NAME = "default_training"
 
 
-def cache_features(
-    args: List[Dict[str, Union[List[str], DictConfig]]]
-) -> List[Optional[Any]]:
+def cache_features(args: List[Dict[str, Union[List[str], DictConfig]]]) -> List[Optional[Any]]:
     """
     Helper function to cache features and targets of learnable agent.
     :param args: arguments for caching
@@ -49,9 +47,7 @@ def cache_features(
         scene_filter=scene_filter,
         sensor_config=agent.get_sensor_config(),
     )
-    logger.info(
-        f"Extracted {len(scene_loader.tokens)} scenarios for thread_id={thread_id}, node_id={node_id}."
-    )
+    logger.info(f"Extracted {len(scene_loader.tokens)} scenarios for thread_id={thread_id}, node_id={node_id}.")
 
     dataset = Dataset(
         scene_loader=scene_loader,
@@ -88,9 +84,7 @@ def main(cfg: DictConfig) -> None:
         scene_filter=scene_filter,
         sensor_config=SensorConfig.build_no_sensors(),
     )
-    logger.info(
-        f"Extracted {len(scene_loader)} scenarios for training/validation dataset"
-    )
+    logger.info(f"Extracted {len(scene_loader)} scenarios for training/validation dataset")
 
     data_points = [
         {
@@ -102,9 +96,7 @@ def main(cfg: DictConfig) -> None:
     ]
 
     _ = worker_map(worker, cache_features, data_points)
-    logger.info(
-        f"Finished caching {len(scene_loader)} scenarios for training/validation dataset"
-    )
+    logger.info(f"Finished caching {len(scene_loader)} scenarios for training/validation dataset")
 
 
 if __name__ == "__main__":

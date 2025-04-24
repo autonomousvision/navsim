@@ -127,9 +127,7 @@ class AbstractTrafficAgentsPolicy(ABC):
         :return: DetectionsTracks object containing the simulated traffic agents
         """
 
-        simulated_detections_tracks = self.simulate_traffic_agents(
-            simulated_ego_states, metric_cache
-        )
+        simulated_detections_tracks = self.simulate_traffic_agents(simulated_ego_states, metric_cache)
 
         # assert that the simulated detectionstracks only include the object types that the policy simulates
         assert all(
@@ -158,10 +156,7 @@ class AbstractTrafficAgentsPolicy(ABC):
             DetectionsTracks(
                 TrackedObjects(
                     [obj for obj in simulated_detections_tracks[i].tracked_objects]
-                    + [
-                        obj
-                        for obj in remaining_object_detections_tracks[i].tracked_objects
-                    ]
+                    + [obj for obj in remaining_object_detections_tracks[i].tracked_objects]
                 )
             )
             for i in range(len(simulated_detections_tracks))

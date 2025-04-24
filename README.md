@@ -52,12 +52,14 @@
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Changelog <a name="changelog"></a>
-- **`[2025/04/13]`** NAVSIM v2.1.1 release (official devkit version for 2025 warm-up phase)
-  - Updated dataset for the [Hugging Face Warmup leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup) with minor fixes
-
-    - ⚠️ **IMPORTANT**: To submit to the updated leaderboard, you need to re-download the synthetic dataset v2.1.1 (see [download](docs/install.md))
-
-- **`[2025/04/08]`** NAVSIM v2.1 release 
+- **`[2025/04/24]`** NAVSIM v2.1.2 release
+  - Release of `navhard_two_stage` dataset (see [splits](docs/splits.md))
+  - Updated Extended Predictive Driver Model Score (EPDMS) for the [Hugging Face Warmup leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup). See see [metrics](docs/metrics.md) for details regarding the implementation.
+    - ⚠️ **IMPORTANT**: All entries to the warmup leaderboard have been removed. Please resubmit to obtain your score with the updated metric.
+    - The test leaderboard (coming this week) will use the same metric as this warmup leaderboard.
+- **`[2025/04/13]`** NAVSIM v2.1.1 release
+  - Updated dataset for the warmup leaderboard with minor fixes
+- **`[2025/04/08]`** NAVSIM v2.1 release
   - Added new dataset for the [Hugging Face Warmup leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup) (see [submission](docs/submission.md))
   - Introduced support for two-stage reactive traffic agents (see [traffic simulation](docs/metrics.md))
 - **`[2025/02/28]`** NAVSIM v2.0 release
@@ -77,7 +79,7 @@
   - Support for test phase frames of competition
   - Download script for trainval
   - Egostatus MLP Agent and training pipeline
-- **`[2024/03/25]`** NAVSIM v0.3 release (official devkit version for warm-up phase)
+- **`[2024/03/25]`** NAVSIM v0.3 release
   - Adds code for Leaderboard submission
 - **`[2024/03/11]`** NAVSIM v0.2 release
   - Easier installation and download

@@ -23,9 +23,7 @@ from navsim.planning.scenario_builder.navsim_scenario import NavSimScenario
 logger = logging.getLogger(__name__)
 
 
-def cache_scenarios(
-    args: List[Dict[str, Union[List[str], DictConfig]]]
-) -> List[CacheResult]:
+def cache_scenarios(args: List[Dict[str, Union[List[str], DictConfig]]]) -> List[CacheResult]:
     """
     Performs the caching of scenario DB files in parallel.
     :param args: A list of dicts containing the following items:
@@ -87,9 +85,7 @@ def cache_scenarios(
         )
 
         # Create feature preprocessor
-        assert (
-            cfg.metric_cache_path is not None
-        ), f"Cache path cannot be None when caching, got {cfg.metric_cache_path}"
+        assert cfg.metric_cache_path is not None, f"Cache path cannot be None when caching, got {cfg.metric_cache_path}"
 
         processor = MetricCacheProcessor(
             cache_path=cfg.metric_cache_path,
@@ -97,9 +93,7 @@ def cache_scenarios(
             proposal_sampling=instantiate(cfg.proposal_sampling),
         )
 
-        logger.info(
-            f"Extracted {len(scene_loader)} scenarios for thread_id={thread_id}, node_id={node_id}."
-        )
+        logger.info(f"Extracted {len(scene_loader)} scenarios for thread_id={thread_id}, node_id={node_id}.")
         num_failures = 0
         num_successes = 0
         all_file_cache_metadata: List[Optional[CacheMetadataEntry]] = []
@@ -125,9 +119,7 @@ def cache_scenarios(
             num_successes += 1 if file_cache_metadata else 0
             all_file_cache_metadata += [file_cache_metadata]
 
-        logger.info(
-            f"Finished processing scenarios for thread_id={thread_id}, node_id={node_id}"
-        )
+        logger.info(f"Finished processing scenarios for thread_id={thread_id}, node_id={node_id}")
         return [
             CacheResult(
                 failures=num_failures,
@@ -150,9 +142,7 @@ def cache_data(cfg: DictConfig, worker: WorkerPool) -> None:
     :param cfg: omegaconf dictionary
     :param worker: Worker to submit tasks which can be executed in parallel
     """
-    assert (
-        cfg.metric_cache_path is not None
-    ), f"Cache path cannot be None when caching, got {cfg.metric_cache_path}"
+    assert cfg.metric_cache_path is not None, f"Cache path cannot be None when caching, got {cfg.metric_cache_path}"
 
     # Extract scenes based on scene-loader to know which tokens to distribute across workers
     # TODO: infer the tokens per log from metadata, to not have to load metric cache and scenes here
@@ -200,8 +190,6 @@ def cache_data(cfg: DictConfig, worker: WorkerPool) -> None:
     ]
 
     node_id = int(os.environ.get("NODE_RANK", 0))
-    logger.info(
-        f"Node {node_id}: Storing metadata csv file containing cache paths for valid features and targets..."
-    )
+    logger.info(f"Node {node_id}: Storing metadata csv file containing cache paths for valid features and targets...")
     save_cache_metadata(cached_metadata, Path(cfg.metric_cache_path), node_id)
     logger.info("Done storing metadata csv file.")
