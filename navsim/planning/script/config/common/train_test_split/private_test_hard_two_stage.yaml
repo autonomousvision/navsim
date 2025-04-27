@@ -1,0 +1,4 @@
+defaults:
+- scene_filter: private_test_hard_two_stage
+data_split: private_test_hard
+reactive_all_mapping: null

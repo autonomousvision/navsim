@@ -3,7 +3,7 @@
 <p align="center">
   <img src="assets/navsim_transparent.png" width="600">
   <h2 align="center">Data-Driven Non-Reactive Autonomous Vehicle Simulation and Benchmarking</h1>
-  <h3 align="center"><a href="https://arxiv.org/abs/2406.15349">Paper</a> | <a href="https://danieldauner.github.io/assets/pdf/Dauner2024NIPS_supplementary.pdf">Supplementary</a> | <a href="https://www.youtube.com/watch?v=Qe76HRmPDe0">Talk</a> | <a href="https://opendrivelab.com/challenge2024/#end_to_end_driving_at_scale">2024 Challenge</a> | <a href="https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim">Leaderboard v1.1</a> | <a href="https://huggingface.co/spaces/AGC2025/e2e-driving-warmup">Warmup Leaderboard v2.1</a> </h3>
+  <h3 align="center"><a href="https://arxiv.org/abs/2406.15349">Paper</a> | <a href="https://danieldauner.github.io/assets/pdf/Dauner2024NIPS_supplementary.pdf">Supplementary</a> | <a href="https://www.youtube.com/watch?v=Qe76HRmPDe0">Talk</a> | <a href="https://opendrivelab.com/challenge2024/#end_to_end_driving_at_scale">2024 Challenge</a> | <a href="https://huggingface.co/spaces/AGC2025/e2e-driving-2025">Leaderboard v2</a> | <a href="https://huggingface.co/spaces/AGC2025/e2e-driving-warmup">Warmup Leaderboard v2</a> </h3>
 </p>
 
 </div>
@@ -26,6 +26,8 @@
 ## Highlights <a name="highlight"></a>
 
 🔥 NAVSIM gathers simulation-based metrics (such as progress and time to collision) for end-to-end driving by unrolling simplified bird's eye view abstractions of scenes for a short simulation horizon. It operates under the condition that the policy has limited influence on the environment, which enables **efficient, open-loop metric computation** while being **better aligned with closed-loop** evaluations than traditional displacement errors.
+
+This branch contains the code for NAVSIM v2, used in the 2025 NAVSIM challenge. For NAVSIM v1, as well as its `navtest` leaderboard, please check the [v1.1 branch](https://github.com/autonomousvision/navsim/tree/v1.1).
 
 <p align="center">
   <img src="assets/navsim_cameras.gif" width="800">
@@ -52,40 +54,44 @@
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Changelog <a name="changelog"></a>
-- **`[2025/04/24]`** NAVSIM v2.1.2 release
+- **`[2025/04/28]`** NAVSIM v2.2 release (official devkit version for [AGC 2025](https://opendrivelab.com/challenge2025/#navsim-e2e-driving))
+  - Release of `private_test_hard` dataset (see [splits](docs/splits.md)) for the [HuggingFace NAVSIM v2 End-to-End Driving Challenge 2025 Leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-2025).
+    - The submission deadline is 2025-05-11 00:00:00 UTC
+    - You are limited to one upload per day on the challenge leaderboard, which should take approximately 2 hours to evaluate after a succesful submission.
+  - Fixed bug in `openscene_meta_datas` for `navhard`
+    - ⚠️ **IMPORTANT**: If you used `navhard_two_stage/openscene_meta_datas` or `warmup_two_stage/openscene_meta_datas` to evaluate your model, please re-download and use the new data.
+- **`[2025/04/24]`** [NAVSIM v2.1.2](https://github.com/autonomousvision/navsim/tree/v2.1.2) release
   - Release of `navhard_two_stage` dataset (see [splits](docs/splits.md))
   - Updated Extended Predictive Driver Model Score (EPDMS) for the [Hugging Face Warmup leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup). See see [metrics](docs/metrics.md) for details regarding the implementation.
-    - ⚠️ **IMPORTANT**: All entries to the warmup leaderboard have been removed. Please resubmit to obtain your score with the updated metric.
-    - The test leaderboard (coming this week) will use the same metric as this warmup leaderboard.
-- **`[2025/04/13]`** NAVSIM v2.1.1 release
+- **`[2025/04/13]`** [NAVSIM v2.1.1](https://github.com/autonomousvision/navsim/tree/v2.1.1) release
   - Updated dataset for the warmup leaderboard with minor fixes
-- **`[2025/04/08]`** NAVSIM v2.1 release
+- **`[2025/04/08]`** [NAVSIM v2.1](https://github.com/autonomousvision/navsim/tree/v2.1) release
   - Added new dataset for the [Hugging Face Warmup leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup) (see [submission](docs/submission.md))
   - Introduced support for two-stage reactive traffic agents (see [traffic simulation](docs/metrics.md))
-- **`[2025/02/28]`** NAVSIM v2.0 release
+- **`[2025/02/28]`** [NAVSIM v2.0](https://github.com/autonomousvision/navsim/tree/v2.0) release
   - Extends the PDM Score with more metrics and penalties (see [metrics](docs/metrics.md))
   - Adds a new two-stage pseudo closed-loop simulation (see [metrics](docs/metrics.md))
   - Adds support for reactive traffic agent policies (see [traffic simulation](docs/metrics.md))
-- **`[2024/09/03]`** NAVSIM v1.1 release
+- **`[2024/09/03]`** [NAVSIM v1.1](https://github.com/autonomousvision/navsim/tree/v1.1) release
   - Leaderboard for `navtest` on [Hugging Face](https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim)
   - Release of baseline checkpoints on [Hugging Face](https://huggingface.co/autonomousvision/navsim_baselines)
   - Updated docs for [submission](docs/submission.md) and [paper](https://arxiv.org/abs/2406.15349)
-- **`[2024/04/21]`** NAVSIM v1.0 release (official devkit version for [AGC 2024](https://opendrivelab.com/challenge2024/#end_to_end_driving_at_scale))
+- **`[2024/04/21]`** [NAVSIM v1.0](https://github.com/autonomousvision/navsim/tree/v1.0) release (official devkit version for [AGC 2024](https://opendrivelab.com/challenge2024/#end_to_end_driving_at_scale))
   - Parallelization of metric caching / evaluation
   - Adds [Transfuser](https://arxiv.org/abs/2205.15997) baseline (see [agents](docs/agents.md#Baselines))
   - Adds standardized training and test filtered splits (see [splits](docs/splits.md))
   - Visualization tools (see [tutorial_visualization.ipynb](tutorial/tutorial_visualization.ipynb))
-- **`[2024/04/03]`** NAVSIM v0.4 release
+- **`[2024/04/03]`** [NAVSIM v0.4](https://github.com/autonomousvision/navsim/tree/v0.4) release
   - Support for test phase frames of competition
   - Download script for trainval
   - Egostatus MLP Agent and training pipeline
-- **`[2024/03/25]`** NAVSIM v0.3 release
+- **`[2024/03/25]`** [NAVSIM v0.3](https://github.com/autonomousvision/navsim/tree/v0.3) release
   - Adds code for Leaderboard submission
-- **`[2024/03/11]`** NAVSIM v0.2 release
+- **`[2024/03/11]`** [NAVSIM v0.2](https://github.com/autonomousvision/navsim/tree/v0.2) release
   - Easier installation and download
   - mini and test data split integration
   - Privileged `Human` agent
-- **`[2024/02/20]`** NAVSIM v0.1 release (initial demo)
+- **`[2024/02/20]`** [NAVSIM v0.1](https://github.com/autonomousvision/navsim/tree/v0.1) release (initial demo)
   - OpenScene-mini sensor blobs and annotation logs
   - Naive `ConstantVelocity` agent
 

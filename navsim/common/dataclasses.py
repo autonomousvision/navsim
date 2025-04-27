@@ -217,13 +217,45 @@ class AgentInput:
             lidars.append(
                 Lidar.from_paths(
                     sensor_blobs_path=sensor_blobs_path,
-                    lidar_path=Path(scene_dict_list[frame_idx]["lidar_path"]),
+                    lidar_path=Path(scene_dict_list[frame_idx]["lidar_path"]) if scene_dict_list[frame_idx]["lidar_path"] is not None else None,
                     sensor_names=sensor_names,
                 )
             )
 
         return AgentInput(ego_statuses, cameras, lidars)
 
+    @classmethod
+    def from_scene_dict_list_private(
+        cls,
+        scene_dict_list: List[Dict],
+        sensor_blobs_path: Path,
+        num_history_frames: int,
+        sensor_config: SensorConfig,
+    ) -> AgentInput:
+        """
+        Load agent input from scene dictionary.
+        :param scene_dict_list: list of scene frames (in logs).
+        :param sensor_blobs_path: root directory of sensor data
+        :param num_history_frames: number of agent input frames
+        :param sensor_config: sensor config dataclass
+        :return: agent input dataclass
+        """
+        assert len(scene_dict_list) > 0, "Scene list is empty!"
+
+        ego_statuses: List[EgoStatus] = []
+        cameras: List[EgoStatus] = []
+        lidars: List[Lidar] = []
+
+        for frame_idx in range(num_history_frames):
+            ego_statuses.append(scene_dict_list[frame_idx].ego_status)
+            cameras.append(
+                    scene_dict_list[frame_idx].cameras
+            )
+            lidars.append(
+                    scene_dict_list[frame_idx].lidar
+            )
+
+        return AgentInput(ego_statuses, cameras, lidars)
 
 @dataclass
 class Annotations:
@@ -498,6 +530,84 @@ class Scene:
             frames.append(frame)
 
         return Scene(scene_metadata=scene_metadata, map_api=map_api, frames=frames)
+    
+    @classmethod
+    def from_scene_dict_list_private(
+        cls,
+        scene_dict_list: List[Dict],
+        sensor_blobs_path: Path,
+        num_history_frames: int,
+        num_future_frames: int,
+        sensor_config: SensorConfig,
+    ) -> Scene:
+        """
+        Load scene dataclass from scene dictionary list (for log loading).
+        :param scene_dict_list: list of scene frames (in logs)
+        :param sensor_blobs_path: root directory of sensor data
+        :param num_history_frames: number of past and current frames to load
+        :param num_future_frames: number of future frames to load
+        :param sensor_config: sensor config dataclass
+        :return: scene dataclass
+        """
+        assert len(scene_dict_list) >= 0, "Scene list is empty!"
+        scene_metadata = SceneMetadata(
+            log_name=scene_dict_list[num_history_frames - 1]["log_name"],
+            scene_token=scene_dict_list[num_history_frames - 1]["scene_token"],
+            map_name=scene_dict_list[num_history_frames - 1]["map_location"],
+            initial_token=scene_dict_list[num_history_frames - 1]["token"],
+            num_history_frames=num_history_frames,
+            num_future_frames=num_future_frames,
+        )
+
+        global_ego_poses = []
+        for frame_idx in range(num_history_frames):
+            ego_translation = scene_dict_list[frame_idx]["ego2global_translation"]
+            ego_quaternion = Quaternion(*scene_dict_list[frame_idx]["ego2global_rotation"])
+            global_ego_pose = np.array(
+                [
+                    ego_translation[0],
+                    ego_translation[1],
+                    ego_quaternion.yaw_pitch_roll[0],
+                ],
+                dtype=np.float64,
+            )
+            global_ego_poses.append(global_ego_pose)
+
+        local_ego_poses = convert_absolute_to_relative_se2_array(
+            StateSE2(*global_ego_poses[-1]),
+            np.array(global_ego_poses, dtype=np.float64),
+        )
+
+        frames: List[Frame] = []
+        for frame_idx in range(len(scene_dict_list)):
+            ego_dynamic_state = scene_dict_list[frame_idx]["ego_dynamic_state"]
+            ego_status = EgoStatus(
+                ego_pose=np.array(local_ego_poses[frame_idx], dtype=np.float32),
+                ego_velocity=np.array(ego_dynamic_state[:2], dtype=np.float32),
+                ego_acceleration=np.array(ego_dynamic_state[2:], dtype=np.float32),
+                driving_command=scene_dict_list[frame_idx]["driving_command"],
+            )
+
+            sensor_names = sensor_config.get_sensors_at_iteration(frame_idx)
+            cameras = Cameras.from_camera_dict(
+                sensor_blobs_path=sensor_blobs_path,
+                camera_dict=scene_dict_list[frame_idx]["cams"],
+                sensor_names=sensor_names,
+            )
+
+            frame = Frame(
+                token=scene_dict_list[frame_idx]["token"],
+                timestamp=scene_dict_list[frame_idx]["timestamp"],
+                roadblock_ids=scene_dict_list[frame_idx]["roadblock_ids"],
+                traffic_lights=scene_dict_list[frame_idx]["traffic_lights"],
+                annotations=None,
+                ego_status=ego_status,
+                lidar=None,
+                cameras=cameras,
+            )
+            frames.append(frame)
+            
+        return Scene(scene_metadata=scene_metadata, map_api=None, frames=frames)
 
     def save_to_disk(self, data_path: Path):
         """

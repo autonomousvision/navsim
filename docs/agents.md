@@ -105,3 +105,11 @@ Link to the [implementation](https://github.com/autonomousvision/navsim/blob/mai
 In NAVSIM, we implement the Transfuser backbone from [CARLA Garage](https://github.com/autonomousvision/carla_garage) and use BEV semantic segmentation and DETR-style bounding-box detection as auxiliary tasks. To facilitate the wide-angle camera view of the Transfuser, we stitch patches of the three front-facing cameras. Transfuser is a good starting point for sensor agents and provides pre-processing for image and LiDAR sensors, training visualizations with callbacks, and more advanced loss functions (i.e., Hungarian matching for detection).
 
 Link to the [implementation](https://github.com/autonomousvision/navsim/blob/main/navsim/agents/transfuser).
+
+
+### `LatentTransfuserAgent`:
+[Latent Transfuser (LTF)](https://arxiv.org/abs/2205.15997) is a variant of the TransFuser architecture that introduces a positional encoding as a substitute for LiDAR data. This allows the model to function even when LiDAR inputs are unavailable during inference, making it more flexible. Experimental results on the CARLA leaderboard have shown that LTF significantly outperforms other image-only methods. It effectively serves as a strong baseline for image-only autonomous driving, combining the advantages of transformer-based attention with the flexibility of operating without LiDAR input.
+
+In NAVSIM, you can simply enable this feature by setting `agent.config.latent=True` based on the existing `TransfuserAgent`.
+
+Link to the [implementation](https://github.com/autonomousvision/navsim/blob/main/navsim/agents/transfuser).
