@@ -1,33 +1,26 @@
 # Submitting to the leaderboard
 
-NAVSIM comes with official leaderboards ([Leaderboard 2024](https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim), [Leaderboard 2025 Warmup](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup)) on HuggingFace. The leaderboards prevent ambiguity in metric definitions between different projects, as all evaluation is performed on the server with the official evaluation script.
+NAVSIM comes with official leaderboards ([Leaderboard 2024](https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim), [Leaderboard 2025 Warmup](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup), [Leaderboard 2025](https://huggingface.co/spaces/AGC2025/e2e-driving-2025)) on HuggingFace. The leaderboards prevent ambiguity in metric definitions between different projects, as all evaluation is performed on the server with the official evaluation script. Below, we provide the instructions relevant for the 2025 Leaderboards. In case you are interested in submitting to the Leaderboard 2024 (for NAVSIM v1, using the `navtest` evaluation split), please use the [NAVSIM v1.1 branch](https://github.com/autonomousvision/navsim/tree/v1.1).
 
-For the [NAVSIM challenge 2025 warmup](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup), we now open the leaderboard with the `warmup_two_stage` split. In this guide, we describe how to create a valid submission.
+For the [NAVSIM v2 End-to-End Driving Challenge 2025](https://huggingface.co/spaces/AGC2025/e2e-driving-2025), we will be using the leaderboard with the `private_test_hard_two_stage` split. In this guide, we describe how to create a valid submission.
 
-### Rules
+## Rules
 - [**General rules (for Leaderboard 2025)**](https://opendrivelab.com/challenge2025/#rule)
 - **Open-source code and models (for Leaderboard 2024)**:
 
   - We will periodically (~every 6 months) be removing all entries on the leaderboard which **do not provide associated open-source training and inference code with the corresponding pre-trained checkpoints**. Even if removed for not having this information, an entry can be resubmitted once the code needed for reproducibility is made publicly available.
   - Code must be provided by setting the `TEAM_NAME` variable of the submission file as `"<a href=Link/to/repository>Method name</a>"`. Note that this can also be edited on the leaderboard for an existing submission, if the repo is created (or updated) after the initial submission.
 
-### Run Score Locally
 
-You can reproduce your test results locally in the [NAVSIM](https://github.com/autonomousvision/navsim/blob/main/docs/install.md) repository, and they should match the results you obtain on Hugging Face. Follow the steps below:
+## [Leaderboard 2025](https://huggingface.co/spaces/AGC2025/e2e-driving-2025)
 
-1. **Download the dataset** — refer to the [dataset](install.md) for instructions.
-2. **Cache the data** — follow the script `scripts/evaluation/run_metric_caching.sh`, and set `TRAIN_TEST_SPLIT=warmup_two_stage`
-3. **Run the evaluation** — follow the script `scripts/evaluation/run_cv_pdm_score_evaluation.sh` with your own model.
-   * If you specified `metric_cache_path` during caching, make sure to use the same path during evaluation.
-   * Set `TRAIN_TEST_SPLIT=warmup_two_stage` to ensure that the score matches the one returned by Hugging Face.
+⏰ **Note:** To ensure fairness in the competition, we do not provide datasets with annotations. Therefore, you can only obtain your score by submitting to the leaderboard. Based on the amount of data we use for evaluation, it should take **approximately 2 hours** to obtain your results after a succesful submission.
 
-### Regular warmup submission
+### Leaderboard submission
 
 To submit to a leaderboard you need to create a pickle file that contains a trajectory for each test scenario. NAVSIM provides a script to create such a pickle file.
 
-Have a look at `run_cv_create_submission_pickle.sh` in the [NAVSIM](https://github.com/autonomousvision/navsim/blob/main/docs/install.md) repository: this file creates the pickle file for the ConstantVelocity agent. You can run it for your own agent by replacing the `agent` override. **Note that you have to set the variables `TEAM_NAME`, `AUTHORS`, `EMAIL`, `INSTITUTION`, and `COUNTRY` in `run_create_submission_pickle.sh` to generate a valid submission file**
-
-You should be able to obtain the same evaluation results as on the server by running the evaluation locally.
+Have a look at `run_cv_create_submission_pickle.sh` in the [NAVSIM](https://github.com/autonomousvision/navsim/blob/main/docs/install.md) repository: this file creates the pickle file for the ConstantVelocity agent. You can run it for your own agent by replacing the `agent` override with `TRAIN_TEST_SPLIT=private_test_hard_two_stage`. **Note that you have to set the variables `TEAM_NAME`, `AUTHORS`, `EMAIL`, `INSTITUTION`, and `COUNTRY` in `run_create_submission_pickle.sh` to generate a valid submission file**
 
 ## Submission Description
 
@@ -39,8 +32,31 @@ Then, fill in the form and upload the `submission.pkl` file.
 
 ## Submission Process
 
-1. Select `New Submission` in the left panel of the competition space. Paste the link of the Hugging Face model you created in the form. Then click `Submit` to make a new submission.
-2. **Note that you can make up to 5 submissions per day.**
+- Select `New Submission` in the left panel of the competition space. Paste the link of the Hugging Face model you created in the form. Then click `Submit` to make a new submission.
+- **Note that you can only make one submission per day.**
+
+
+## [Leaderboard 2025 Warmup](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup)
+
+The warmup leaderboard tests your model on a small set of scenes, to help ensure there are no technical issues before you attempt a submission to the formal leaderboard. We recommend the following steps:
+
+### Run Warmup Score Locally
+
+You can reproduce your warmup results locally in the [NAVSIM](https://github.com/autonomousvision/navsim/blob/main/docs/install.md) repository, and they should match the warmup results you obtain on Hugging Face. Follow the steps below:
+
+1. **Download the dataset** — refer to the [dataset](install.md) for instructions.
+2. **Cache the data** — follow the script `scripts/evaluation/run_metric_caching.sh`, and set `TRAIN_TEST_SPLIT=warmup_two_stage`
+3. **Run the evaluation** — follow the script `scripts/evaluation/run_cv_pdm_score_evaluation.sh` with your own model.
+   * If you specified `metric_cache_path` during caching, make sure to use the same path during evaluation.
+   * Set `TRAIN_TEST_SPLIT=warmup_two_stage` to ensure that the score matches the one returned by Hugging Face.
+
+### Warmup leaderboard submission
+
+To submit to a leaderboard you need to create a pickle file that contains a trajectory for each test scenario. NAVSIM provides a script to create such a pickle file.
+
+Have a look at `run_cv_create_submission_pickle_warmup.sh` in the [NAVSIM](https://github.com/autonomousvision/navsim/blob/main/docs/install.md) repository: this file creates the pickle file for the ConstantVelocity agent. You can run it for your own agent by replacing the `agent` override with `TRAIN_TEST_SPLIT=warmup_two_stage`. **Note that you have to set the variables `TEAM_NAME`, `AUTHORS`, `EMAIL`, `INSTITUTION`, and `COUNTRY` in `run_create_submission_pickle.sh` to generate a valid submission file**
+
+You should be able to obtain the same evaluation results as on the server by running the evaluation locally.
 
 ---
 

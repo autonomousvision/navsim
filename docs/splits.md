@@ -59,8 +59,8 @@ The Table belows offers an overview on the training and test splits supported by
     <tr>
         <td rowspan="3">NAVSIM</td>
         <td>navtrain</td>
-        <td>Standard split for training agents in NAVSIM with non-trivial driving scenes. Sensors available separately in <a href="https://github.com/autonomousvision/navsim/blob/main/download/download_navtrain.sh">download_navtrain.sh</a>.</td>
-        <td>-</td>
+        <td>Standard split for training agents in NAVSIM with non-trivial driving scenes. Sensors available separately in <a href="https://github.com/autonomousvision/navsim/blob/main/download/download_navtrain_aws.sh">download_navtrain_aws.sh</a> (AWS download) or <a href="https://github.com/autonomousvision/navsim/blob/main/download/download_navtrain_hf.sh">download_navtrain_hf.sh</a> (HuggingFace download).</td>
+        <td>14GB</td>
         <td>445GB*</td>
         <td>
         train_test_split=navtrain
@@ -69,8 +69,8 @@ The Table belows offers an overview on the training and test splits supported by
     <tr>
         <td>navtest</td>
         <td>Standard split for testing agents in NAVSIM with non-trivial driving scenes. Available as a filter for test split.</td>
-        <td>-</td>
-        <td>-</td>
+        <td>983MB</td>
+        <td>223GB</td>
         <td>
         train_test_split=navtest
         </td>
@@ -78,8 +78,8 @@ The Table belows offers an overview on the training and test splits supported by
     <tr>
         <td>navhard_two_stage</td>
         <td>Standard split for testing agents in NAVSIM v2 with real and synthetic driving scenes. Synthetic frames downloadable via <a href="https://github.com/autonomousvision/navsim/blob/main/download/download_navhard_two_stage.sh">download_navhard_two_stage.sh</a>.</td>
-        <td>892M</td>
-        <td>31G</td>
+        <td>892MB</td>
+        <td>31GB</td>
         <td>
         train_test_split=navhard_two_stage
         </td>
@@ -88,19 +88,19 @@ The Table belows offers an overview on the training and test splits supported by
         <td rowspan="2">Competition</td>
         <td>warmup_two_stage</td>
         <td>Warmup test split to validate submission on hugging face. Synthetic frames downloadable via <a href="https://github.com/autonomousvision/navsim/blob/main/download/download_warmup_two_stage.sh">download_warmup_two_stage.sh</a>.</td>
-        <td>27M</td>
+        <td>27MB</td>
         <td>1.2G</td>
         <td>
         train_test_split=warmup_two_stage
         </td>
     </tr>
     <tr>
-        <td>private_test_e2e</td>
-        <td>Private test split for the challenge leaderboard on hugging face.</td>
-        <td><1GB</td>
-        <td>25GB</td>
+        <td>private_test_hard_two_stage</td>
+        <td>Private test split for the challenge leaderboard on hugging face. Original and synthetic frames downloadable via <a href="https://github.com/autonomousvision/navsim/blob/main/download/download_private_test_hard_two_stage.sh">download_private_test_hard_two_stage.sh</a></td>
+        <td>14MB</td>
+        <td>11GB</td>
         <td>
-        train_test_split=private_test_e2e
+        train_test_split=private_test_hard_two_stage
         </td>
     </tr>
 </table>
@@ -111,7 +111,7 @@ The Table belows offers an overview on the training and test splits supported by
 
 The standard splits `trainval`, `test`, and `mini` are from the OpenScene dataset. Note that the data corresponds to the nuPlan dataset with a lower frequency of 2Hz. You can download all standard splits over Hugging Face with the bash scripts in [download](../download)
 
-NAVSIM provides a subset and filter of the `trainval` split, called `navtrain`. The `navtrain` split facilitates a standardized training scheme and requires significantly less sensor data storage than `travel` (445GB vs. 2100GB). If your agents don't need historical sensor inputs, you can download `navtrain` without history, which requires 300GB of storage. Note that the sensor data for `navtrain` can be downloaded separately via [download_navtrain.sh](https://github.com/autonomousvision/navsim/blob/main/download/download_navtrain.sh) but it still requires access to the `trainval` logs.
+NAVSIM provides a subset and filter of the `trainval` split, called `navtrain`. The `navtrain` split facilitates a standardized training scheme and requires significantly less sensor data storage than `travel` (445GB vs. 2100GB). If your agents don't need historical sensor inputs, you can download `navtrain` without history, which requires 300GB of storage. Note that the sensor data for `navtrain` can be downloaded separately via <a href="https://github.com/autonomousvision/navsim/blob/main/download/download_navtrain_aws.sh">download_navtrain_aws.sh</a> or <a href="https://github.com/autonomousvision/navsim/blob/main/download/download_navtrain_hf.sh">download_navtrain_hf.sh</a> but it still requires access to the `trainval` logs.
 
 The `navtest` split enables a standardized set for testing agents in NAVSIM v1 with a provided scene filter. Similarly, the `navhard_two_stage` split split facilitates pseudo closed-loop simulation for evaluation in NAVSIM v2. `navtrain`, `navtest` and `navhard_two_stage` are filtered to increase interesting samples in the sets.
 
@@ -119,7 +119,7 @@ For the challenge on Hugging Face, we provide the `warmup_two_stage` and `privat
 
 ## Troubleshooting
 
-As previous users reported missing files when downloading `navtrain`, we provide MD5 checksums for the `.tgz` files to identify corrupted downloads. We recommend to re-download `navtrain` without deleting the `.tgz` files (i.e. removing Line 12 and 22 in [download_navtrain.sh](https://github.com/autonomousvision/navsim/blob/main/download/download_navtrain.sh)) and running:
+As previous users reported missing files when downloading `navtrain`, we provide MD5 checksums for the `.tgz` files to identify corrupted downloads. We recommend to re-download `navtrain` without deleting the `.tgz` files (i.e. removing Line 12 and 22 in [download_navtrain_aws.sh](https://github.com/autonomousvision/navsim/blob/main/download/download_navtrain_aws.sh)) and running:
 
 ```bash
 echo "6f92f38d5f03ed852da7872a7122bdd2  navtrain_current_1.tgz" | md5sum -c -
