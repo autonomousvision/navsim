@@ -19,41 +19,58 @@ class PointMassModel():
         B,_ = state.shape
         Na, _ = action.shape
 
-        ret = []
+
+        all_trajs = []
+
         state = state.unsqueeze(1)
         for batch in range(B):
-            s = state[batch]
-            for i in range(self.timestep):
-                N,C = s.shape
-                s = s.unsqueeze(1).repeat(1, Na, 1)
-                mask = torch.ones((Na*N,), dtype=torch.int64, device=state.device)
-                next_state = self.step(s, action).reshape(-1,C)
+            state_seq = state[batch].unsqueeze(1) #N, T, C
+            action_seq = torch.zeros((1,1,2)) #N, T, C
+
+            for t in range(self.timestep):
+                N, T, C = state_seq.shape
+                _, _, Ca = action_seq.shape
+                state_seq = state_seq.unsqueeze(1).repeat(1, Na, 1, 1) #N, NA, T, C
+                action_seq = action_seq.unsqueeze(1).repeat(1, Na, 1, 1) #N, NA, T, C
+                
+                next_state = state_seq[:,:,-1,:].clone() # N, NA, C
+                next_state = self.step(next_state, action) # N, NA, C
+
+
+                state_seq = state_seq.reshape(-1, t+1, C) # N*NA, T, C
+                # s = s.reshape(-1, t+1, C) # N*NA, T, C
+                next_state = next_state.unsqueeze(2).reshape(-1, 1, C)
+
+                action_seq = torch.cat([action_seq, action.repeat(N,1,1).unsqueeze(2)], 2).reshape(-1,t+2,Ca)
 
                 # check bounds
-                x_idx = ((next_state[:, 0] - self.x_grid[0]) / (self.x_grid[1] - self.x_grid[0])).long()
-                y_idx = ((next_state[:, 1] - self.y_grid[0]) / (self.y_grid[1] - self.y_grid[0])).long()
-                
+                x_idx = ((next_state[:, 0, 0] - self.x_grid[0]) / (self.x_grid[1] - self.x_grid[0])).long()
+                y_idx = ((next_state[:, 0, 1] - self.y_grid[0]) / (self.y_grid[1] - self.y_grid[0])).long()
+
                 # clamp to valid range
                 x_idx = torch.clamp(x_idx, 0, drivable_area.shape[1] - 1)
                 y_idx = torch.clamp(y_idx, 0, drivable_area.shape[0] - 1)
 
                 # check if in drivable area
                 valid = drivable_area[y_idx, x_idx]
-                mask &= valid
+                valid = torch.logical_and(valid, (torch.abs(action_seq.diff(1,axis=1)[:,:,0])>(0.2*np.pi/2)).sum(1)==0)
+                valid = torch.logical_and(valid, (torch.abs(action_seq.diff(2,axis=1)[:,:,1])>(0.5*9.81)).sum(1)==0)
+                stop_idx = torch.logical_or(torch.abs(action_seq[:,-1,0])<1e-8, state_seq[:,-1,3]>1e-8)
+                valid = torch.logical_and(valid, stop_idx)
+                valid = torch.logical_and(valid, next_state[:,-1,3]<50)
+                mask = valid.bool()
 
-                # mask out invalid predictions (optional: freeze at previous position)
-                next_state = next_state[mask>0]
-                s = next_state
-            ret.append(next_state.clone())
-            print(next_state.shape)
-            plt.scatter(s[:1000,0],s[:1000,1])
-            plt.show()
+                # update only valid state
 
+                state_seq = torch.cat([state_seq[mask], next_state[mask]],1)
+                action_seq = action_seq[mask]
+                print(state_seq.shape)
+            # concatenate all timesteps for this batch
+            # trajs = torch.stack(trajs, dim=0)  # (T, valid_N, 4)
+            all_trajs.append(state_seq.clone())
 
-
-            # ret = torch.stack(ret, dim=0)  # (T, B, T, 4)
-            # ret = ret.permute(1, 2, 0, 3)  # (B, T, T, 4)
-        return ret
+        # pad and stack if needed to same shape
+        return all_trajs  # list of (T, N', 4), one per batch
 
     def step(self, state, action):
         next_state = state.clone()
@@ -113,8 +130,8 @@ if __name__ == "__main__":
     ego_status = torch.zeros((1,4))
     # ego_status[1,2:] = 1
     ego_status = torch.tensor(ego_status)
-    action1 = torch.linspace(-0.1*np.pi/2, 0.1*np.pi/2, 3)
-    action2 = torch.linspace(0.2, 1, 2)
+    action1 = torch.linspace(-0.3*np.pi/2, 0.3*np.pi/2, 5)
+    action2 = torch.linspace(0.1, 0.3, 2)*9.81   
     
     # all possible single-timestep action pairs (steering, throttle)
     single_step_actions = torch.cartesian_prod(action1, action2)  # (6, 2)
@@ -135,12 +152,12 @@ if __name__ == "__main__":
     drivable_area = torch.zeros((81,81), dtype=torch.int64)
 
     drivable_area[38:47,:]=1
-    drivable_area[:,38:47]=1
+    drivable_area[:,47:53]=1
 
     trajectories = motion_model.predict(ego_status, single_step_actions, drivable_area)
 
 
     plt.figure(2)
-    plt.plot(trajectories[1,:,:,0].permute(1,0),trajectories[1, :,:,1].permute(1,0))
+    plt.plot(trajectories[0][:,:,0].permute(1,0),trajectories[0][:,:,1].permute(1,0))
     # print(action[0], ret[0,0,:,0],ret[0,0,:,1])
     plt.show()
