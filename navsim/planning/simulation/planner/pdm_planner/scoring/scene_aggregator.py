@@ -15,30 +15,34 @@ class SceneAggregator:
     score_df: pd.DataFrame
     proposal_sampling: TrajectorySampling
     second_stage: Optional[List[Tuple[str, str]]] = None
+    sigma_squared: float = 0.1  # sigma² parameter for the Gaussian kernel
 
     def calculate_pseudo_closed_loop_weights(self, first_stage_row, second_stage_scores) -> pd.Series:
-
+        """
+        Calculate pseudo-closed-loop weights using Gaussian kernel method
+        """
         pd.options.mode.copy_on_write = True
 
-        def _calc_distance(x1, y1, x2, y2):
-            return np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
-
         second_stage_scores = second_stage_scores.copy()
-        second_stage_scores["distance"] = second_stage_scores.apply(
-            lambda x: _calc_distance(
-                first_stage_row["endpoint_x"],
-                first_stage_row["endpoint_y"],
-                x["start_point_x"],
-                x["start_point_y"],
-            ),
-            axis=1,
-        )
-        second_stage_scores["weight"] = np.exp(-second_stage_scores["distance"])
-        second_stage_scores["weight"] /= second_stage_scores["weight"].sum()
 
-        assert np.isclose(
-            second_stage_scores["weight"].sum(), 1.0, atol=1e-6
-        ), f"Second-stage weights do not sum to 1. Got {second_stage_scores['weight'].sum()}"
+        def _calc_squared_distance(row):
+            x1, y1 = first_stage_row["endpoint_x"], first_stage_row["endpoint_y"]
+            x2, y2 = row["start_point_x"], row["start_point_y"]
+
+            return (x1 - x2) ** 2 + (y1 - y2) ** 2
+
+        second_stage_scores["squared_distance"] = second_stage_scores.apply(_calc_squared_distance, axis=1)
+
+        # Calculate Gaussian kernel weights: exp(-squared_distance/(2*sigma²))
+        exponent = -second_stage_scores["squared_distance"] / (2 * self.sigma_squared)
+        second_stage_scores["weight"] = np.exp(exponent)
+
+        weight_sum = second_stage_scores["weight"].sum()
+
+        if np.isclose(weight_sum, 0.0) or np.isnan(weight_sum):
+            second_stage_scores["weight"] = 1.0 / len(second_stage_scores)
+        else:
+            second_stage_scores["weight"] /= weight_sum
 
         return second_stage_scores[["weight"]].reset_index()
 

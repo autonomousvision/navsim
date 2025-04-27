@@ -240,23 +240,54 @@ def calculate_weighted_average_score(df: pd.DataFrame) -> pd.Series:
 
 
 def calculate_individual_mapping_scores(
-    df: pd.DataFrame, all_mappings: Dict[Tuple[str, str], List[Tuple[str, str]]]
-) -> pd.DataFrame:
+    pdm_score_df: pd.DataFrame, all_mappings: Dict[Tuple[str, str], List[Tuple[str, str]]]
+) -> pd.Series:
     """
-    Compute the weighted average score for each mapping (now + prev),
-    return a DataFrame where each row corresponds to one mapping.
+    Args:
+        pdm_score_df: DataFrame containing scores for all tokens
+        all_mappings: Two-stage mapping dictionary
+    Returns:
+        Average score calculated using group multiplication
     """
-    mapping_level_averages = []
+    all_group_scores = []
+    stage1_group_scores = []
+    stage2_group_scores = []
 
-    for (first_now, first_prev), second_stage in all_mappings.items():
+    for (orig_token, prev_token), second_stage_pairs in all_mappings.items():
 
-        tokens = [first_now, first_prev] + [tok for pair in second_stage for tok in pair]
-        mapping_df = df[df["token"].isin(tokens)]
+        first_tokens = [pair[0] for pair in second_stage_pairs if len(pair) > 0]
+        second_tokens = [pair[1] for pair in second_stage_pairs if len(pair) > 1]
 
-        mapping_avg = calculate_weighted_average_score(mapping_df)
-        mapping_level_averages.append(mapping_avg)
+        group1_stage1_df = pdm_score_df[pdm_score_df["token"] == orig_token]
+        group1_stage2_df = pdm_score_df[pdm_score_df["token"].isin(first_tokens)]
 
-    return pd.DataFrame(mapping_level_averages).mean(skipna=True)
+        group2_stage1_df = pdm_score_df[pdm_score_df["token"] == prev_token]
+        group2_stage2_df = pdm_score_df[pdm_score_df["token"].isin(second_tokens)]
+
+        group1_stage1_scores = calculate_weighted_average_score(group1_stage1_df)
+        group1_stage2_scores = calculate_weighted_average_score(group1_stage2_df)
+
+        group2_stage1_scores = calculate_weighted_average_score(group2_stage1_df)
+        group2_stage2_scores = calculate_weighted_average_score(group2_stage2_df)
+
+        stage1_group_scores.append(group1_stage1_scores)
+        stage1_group_scores.append(group2_stage1_scores)
+
+        stage2_group_scores.append(group1_stage2_scores)
+        stage2_group_scores.append(group2_stage2_scores)
+
+        group1_scores = group1_stage1_scores * group1_stage2_scores
+
+        group2_scores = group2_stage1_scores * group2_stage2_scores
+
+        avg_scores = (group1_scores + group2_scores) / 2
+        all_group_scores.append(avg_scores)
+
+    return (
+        pd.DataFrame(all_group_scores).mean(),
+        pd.DataFrame(stage1_group_scores).mean(),
+        pd.DataFrame(stage2_group_scores).mean(),
+    )
 
 
 def create_scene_aggregators(
@@ -369,29 +400,62 @@ def main(cfg: DictConfig) -> None:
         )
     ]
 
-    # Calculate average score of all frames
-    average_all_frames_extended_pdm_score_row = pdm_score_df[score_cols].mean(skipna=True)
-    average_all_frames_extended_pdm_score_row["token"] = "average_all_frames_extended_pdm_score"
-    average_all_frames_extended_pdm_score_row["valid"] = pdm_score_df["valid"].all()
-
-    # Calculate pseudo closed loop score with weighted average
-    extended_pdm_score_row = calculate_individual_mapping_scores(
+    pcl_group_score, pcl_stage1_score, pcl_stage2_score = calculate_individual_mapping_scores(
         pdm_score_df[score_cols + ["token", "weight"]], all_mappings
     )
-    extended_pdm_score_row["token"] = "extended_pdm_score"
-    extended_pdm_score_row["valid"] = pseudo_closed_loop_valid
 
-    # Original frames average
-    original_frames = pdm_score_df[pdm_score_df["frame_type"] == SceneFrameType.ORIGINAL]
-    average_expert_frames_extended_pdm_score_row = original_frames[score_cols].mean(skipna=True)
-    average_expert_frames_extended_pdm_score_row["token"] = "average_expert_frames_extended_pdm_score"
-    average_expert_frames_extended_pdm_score_row["valid"] = original_frames["valid"].all()
+    for col in score_cols:
+        stage_one_mask = pdm_score_df["frame_type"] == SceneFrameType.ORIGINAL
+        stage_two_mask = pdm_score_df["frame_type"] == SceneFrameType.SYNTHETIC
 
-    # append average and pseudo closed loop scores
+        pdm_score_df.loc[stage_one_mask, f"{col}_stage_one"] = pdm_score_df.loc[stage_one_mask, col]
+        pdm_score_df.loc[stage_two_mask, f"{col}_stage_two"] = pdm_score_df.loc[stage_two_mask, col]
+
+    pdm_score_df.drop(columns=score_cols, inplace=True)
+    pdm_score_df["score"] = pdm_score_df["score_stage_one"].combine_first(pdm_score_df["score_stage_two"])
+    pdm_score_df.drop(columns=["score_stage_one", "score_stage_two"], inplace=True)
+
+    stage1_cols = [f"{col}_stage_one" for col in score_cols if col != "score"]
+    stage2_cols = [f"{col}_stage_two" for col in score_cols if col != "score"]
+    score_cols = stage1_cols + stage2_cols + ["score"]
+
     pdm_score_df = pdm_score_df[["token", "valid"] + score_cols]
-    pdm_score_df.loc[len(pdm_score_df)] = average_all_frames_extended_pdm_score_row
-    pdm_score_df.loc[len(pdm_score_df)] = average_expert_frames_extended_pdm_score_row
-    pdm_score_df.loc[len(pdm_score_df)] = extended_pdm_score_row
+
+    summary_rows = []
+
+    stage1_row = pd.Series(index=pdm_score_df.columns, dtype=object)
+    stage1_row["token"] = "extended_pdm_score_stage_one"
+    stage1_row["valid"] = pseudo_closed_loop_valid
+    stage1_row["score"] = pcl_stage1_score.get("score", np.nan)
+    for col in pcl_stage1_score.index:
+        if col not in ["token", "valid", "score"]:
+            stage1_row[f"{col}_stage_one"] = pcl_stage1_score[col]
+    summary_rows.append(stage1_row)
+
+    stage2_row = pd.Series(index=pdm_score_df.columns, dtype=object)
+    stage2_row["token"] = "extended_pdm_score_stage_two"
+    stage2_row["valid"] = pseudo_closed_loop_valid
+    stage2_row["score"] = pcl_stage2_score.get("score", np.nan)
+    for col in pcl_stage2_score.index:
+        if col not in ["token", "valid", "score"]:
+            stage2_row[f"{col}_stage_two"] = pcl_stage2_score[col]
+    summary_rows.append(stage2_row)
+
+    combined_row = pd.Series(index=pdm_score_df.columns, dtype=object)
+    combined_row["token"] = "extended_pdm_score_combined"
+    combined_row["valid"] = pseudo_closed_loop_valid
+    combined_row["score"] = pcl_group_score["score"]
+
+    for col in pcl_stage1_score.index:
+        if col not in ["token", "valid", "score"]:
+            combined_row[f"{col}_stage_one"] = pcl_stage1_score[col]
+
+    for col in pcl_stage2_score.index:
+        if col not in ["token", "valid", "score"]:
+            combined_row[f"{col}_stage_two"] = pcl_stage2_score[col]
+    summary_rows.append(combined_row)
+
+    pdm_score_df = pd.concat([pdm_score_df, pd.DataFrame(summary_rows)], ignore_index=True)
 
     save_path = Path(cfg.output_dir)
     timestamp = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
@@ -402,7 +466,7 @@ def main(cfg: DictConfig) -> None:
         Finished running evaluation.
             Number of successful scenarios: {num_sucessful_scenarios}.
             Number of failed scenarios: {num_failed_scenarios}.
-            Final extended pdm score of valid results: {pdm_score_df[pdm_score_df["token"] == "extended_pdm_score"]["score"].iloc[0]}.
+            Final extended pdm score of valid results: {pdm_score_df[pdm_score_df["token"] == "extended_pdm_score_combined"]["score"].iloc[0]}.
             Results are stored in: {save_path / f"{timestamp}.csv"}.
         """
     )
