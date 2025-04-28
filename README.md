@@ -58,7 +58,7 @@ This branch contains the code for NAVSIM v2, used in the 2025 NAVSIM challenge. 
   - Release of `private_test_hard` dataset (see [splits](docs/splits.md)) for the [HuggingFace NAVSIM v2 End-to-End Driving Challenge 2025 Leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-2025).
     - The submission deadline is 2025-05-11 00:00:00 UTC
     - You are limited to one upload per day on the challenge leaderboard, which should take approximately 2 hours to evaluate after a succesful submission.
-  - Fixed bug in `openscene_meta_datas` for `navhard`
+  - Fixed bug in `openscene_meta_datas` for `navhard` and `warmup`
     - ⚠️ **IMPORTANT**: If you used `navhard_two_stage/openscene_meta_datas` or `warmup_two_stage/openscene_meta_datas` to evaluate your model, please re-download and use the new data.
 - **`[2025/04/24]`** [NAVSIM v2.1.2](https://github.com/autonomousvision/navsim/tree/v2.1.2) release
   - Release of `navhard_two_stage` dataset (see [splits](docs/splits.md))
