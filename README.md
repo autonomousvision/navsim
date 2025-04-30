@@ -59,7 +59,10 @@ This branch contains the code for NAVSIM v2, used in the 2025 NAVSIM challenge. 
     - The submission deadline is 2025-05-11 00:00:00 UTC
     - You are limited to one upload per day on the challenge leaderboard, which should take approximately 2 hours to evaluate after a succesful submission.
   - Fixed bug in `openscene_meta_datas` for `navhard` and `warmup`
-    - ⚠️ **IMPORTANT**: If you used `navhard_two_stage/openscene_meta_datas` or `warmup_two_stage/openscene_meta_datas` to evaluate your model, please re-download and use the new data.
+    - If you used `navhard_two_stage/openscene_meta_datas` or `warmup_two_stage/openscene_meta_datas` to evaluate your model, please re-download and use the new data.
+  - ⚠️ **IMPORTANT**: Using the `test`/`navtest`/`navhard_two_stage`/`warmup_two_stage`/`private_test_two_stage` splits for training your challenge submissions is not allowed.
+    - Using any other publicly available datasets or pretrained weights is allowed.
+    - Furthermore, to be eligible for awards, the use of data must be described explicitly in the technical report for your submission.
 - **`[2025/04/24]`** [NAVSIM v2.1.2](https://github.com/autonomousvision/navsim/tree/v2.1.2) release
   - Release of `navhard_two_stage` dataset (see [splits](docs/splits.md))
   - Updated Extended Predictive Driver Model Score (EPDMS) for the [Hugging Face Warmup leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup). See see [metrics](docs/metrics.md) for details regarding the implementation.
