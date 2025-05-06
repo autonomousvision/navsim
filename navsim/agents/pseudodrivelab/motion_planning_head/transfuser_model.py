@@ -95,7 +95,7 @@ class TransfuserModel(nn.Module):
             lidar_feature: torch.Tensor = features["lidar_feature"]
         status_feature: torch.Tensor = features["status_feature"]
         # 궤적 vocabulary 입력 추가
-        trajectory_vocab: torch.Tensor = features["trajectory_vocab"]  # [batch_size, voca_size, time_steps, features]
+        trajectory_vocab: torch.Tensor = features["trajectory_vocab"]  # [voca_size, time_steps, features]
 
         batch_size = status_feature.shape[0]
 
@@ -191,7 +191,7 @@ class PDMScorer(nn.Module):
         """
         super(PDMScorer, self).__init__()
         
-        # 궤적 인코더 - 단순 MLP 구조로 (batch_size, voca_size, time_steps, features) -> (batch_size, voca_size, d_model)
+        # 궤적 인코더 - 단순 MLP 구조로 (voca_size, time_steps, features) -> (voca_size, d_model)
         self.trajectory_encoder = nn.Sequential(
             nn.Linear(8 * 3, d_ffn),  # 8 time steps, 3 features (x, y, heading)
             nn.ReLU(),
@@ -222,25 +222,25 @@ class PDMScorer(nn.Module):
     def forward(self, trajectory_vocab, keyval):
         """
         PDM 점수 계산
-        :param trajectory_vocab: 궤적 vocabulary, shape: [batch_size, voca_size, time_steps, features]
+        :param trajectory_vocab: 궤적 vocabulary, shape: [voca_size, time_steps, features]
         :param keyval: BEV+상태 특징, shape: [batch_size, seq_len, d_model]
         :return: 각 궤적에 대한 PDM 점수를 포함하는 딕셔너리
         """
-        batch_size, voca_size, time_steps, features = trajectory_vocab.shape
+        voca_size, time_steps, features = trajectory_vocab.shape
         
         # 궤적 인코딩
-        traj_flat = trajectory_vocab.reshape(batch_size * voca_size, -1)  # [batch_size * voca_size, time_steps * features]
-        traj_encoding = self.trajectory_encoder(traj_flat)  # [batch_size * voca_size, d_model]
-        traj_encoding = traj_encoding.reshape(batch_size, voca_size, -1)  # [batch_size, voca_size, d_model]
+        traj_flat = trajectory_vocab.reshape(voca_size, -1)  # [voca_size, time_steps * features]
+        traj_encoding = self.trajectory_encoder(traj_flat)  # [voca_size, d_model]
         
         # BEV+상태 특징과 크로스 어텐션
         # keyval은 [batch_size, seq_len, d_model] 형태
         # 각 배치에 대해 크로스 어텐션 수행
+        batch_size = keyval.shape[0]
         attn_outputs = []
         for i in range(batch_size):
             # [voca_size, d_model], [seq_len, d_model] -> [voca_size, d_model]
             attn_output, _ = self.cross_attention(
-                query=traj_encoding[i],
+                query=traj_encoding,
                 key=keyval[i],
                 value=keyval[i]
             )
