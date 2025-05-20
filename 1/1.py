@@ -1,1 +1,4 @@
 print("<<")
+print("<<")
+print("<<")
+print("<<")
