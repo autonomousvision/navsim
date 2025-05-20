@@ -740,6 +740,7 @@ def camera_feature_improve(camera_feature):
         # else:  
         #     dd['Elastic'] = elastic_transform
         dd['Zoom Blur'] = zoom_blur
+        # dzx
         camera_feature = save_distorted_images_from_numpy(image_np, dd)
         camera_feature = camera_feature.to(original_device)
         return camera_feature
