@@ -724,22 +724,22 @@ def camera_feature_improve(camera_feature):
 
         # noise
         dd = collections.OrderedDict()
-        import random
-        idx=random.randint(1,60)
+        # import random
+        # idx=random.randint(1,60)
         # dd['Motion Blur'] = motion_blur
-        if idx<11:
-            dd['Motion Blur'] = motion_blur
-        elif idx<21:
-            dd['Zoom Blur'] = zoom_blur   
-        elif idx<31:
-            dd['JPEG'] = jpeg_compression
-        elif idx<41:
-            dd['Pixelate'] = pixelate
-        elif idx<51:
-            dd['Defocus Blur'] = defocus_blur
-        else:  
-            dd['Elastic'] = elastic_transform
-        # dd['Zoom Blur'] = zoom_blur
+        # if idx<11:
+        #     dd['Motion Blur'] = motion_blur
+        # elif idx<21:
+        #     dd['Zoom Blur'] = zoom_blur   
+        # elif idx<31:
+        #     dd['JPEG'] = jpeg_compression
+        # elif idx<41:
+        #     dd['Pixelate'] = pixelate
+        # elif idx<51:
+        #     dd['Defocus Blur'] = defocus_blur
+        # else:  
+        #     dd['Elastic'] = elastic_transform
+        dd['Zoom Blur'] = zoom_blur
         camera_feature = save_distorted_images_from_numpy(image_np, dd)
         camera_feature = camera_feature.to(original_device)
         return camera_feature
@@ -906,27 +906,27 @@ class CacheOnlyDataset(torch.utils.data.Dataset):
             data_dict = load_feature_target_from_pickle(data_dict_path)
             targets.update(data_dict)
         # rotate
-        # import random
-        # random_int = random.randint(1, 100)
-        # random_int1 = random.randint(1, 100)
-        # random_int2 = random.randint(1, 100)
+        import random
+        random_int = random.randint(1, 100)
+        random_int1 = random.randint(1, 100)
+        random_int2 = random.randint(1, 100)
         
         # # camera_feature = torch.rand(3, 512, 2048) 
-        # # features["camera_feature"]=tensor_to_np_tensor_1024(features["camera_feature"])
-        # # 微调不用
-        # if random_int1<61:
-        #     features["camera_feature"]=camera_feature_rotate(features["camera_feature"])
-        # if random_int<61:
-        # # noise_image
-        #     features["camera_feature"] = camera_feature_improve(features["camera_feature"])
-        # # noise_status_feature
-        # if random_int2<61:
-        #     velo = features["status_feature"][4:]
-        #     sigma = 0.2 * torch.abs(velo)
-        #     noise = torch.normal(mean=0.0, std=sigma)
-        #     velo += noise
-        #     command=features["status_feature"][:4]
-        #     features["status_feature"]=torch.cat([command,velo],dim=0)
+        # features["camera_feature"]=tensor_to_np_tensor_1024(features["camera_feature"])
+        # 微调不用
+        if random_int1<61:
+            features["camera_feature"]=camera_feature_rotate(features["camera_feature"])
+        if random_int<61:
+        # noise_image
+            features["camera_feature"] = camera_feature_improve(features["camera_feature"])
+        # noise_status_feature
+        if random_int2<61:
+            velo = features["status_feature"][4:]
+            sigma = 0.2 * torch.abs(velo)
+            noise = torch.normal(mean=0.0, std=sigma)
+            velo += noise
+            command=features["status_feature"][:4]
+            features["status_feature"]=torch.cat([command,velo],dim=0)
         # feature
         
         # 修改变成一维
@@ -943,7 +943,6 @@ class CacheOnlyDataset(torch.utils.data.Dataset):
             tag_acc=tag_vle
         else:
             tag_acc=-1*tag_vle
-        
         
         vle_acc=torch.tensor([tag_vle*vle,tag_acc*acc],dtype=torch.float32)
         command=features["status_feature"][:4]
