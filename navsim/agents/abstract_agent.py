@@ -68,18 +68,23 @@ class AbstractAgent(torch.nn.Module, ABC):
         """
         self.eval()
         features: Dict[str, torch.Tensor] = {}
+        # targets: Dict[str, torch.Tensor] = {}
         # build features
         for builder in self.get_feature_builders():
             features.update(builder.compute_features(agent_input))
 
+        # build targets
+        # for builder in self.get_target_builders():
+        #     targets.update(builder.compute_targets(agent_input))
+
         # add batch dimension
         features = {k: v.unsqueeze(0) for k, v in features.items()}
-
+        # targets = {k: v.unsqueeze(0) for k, v in targets.items()}
         # forward pass
         with torch.no_grad():
             predictions = self.forward(features)
             poses = predictions["trajectory"].squeeze(0).numpy()
-
+        # print("huatu")
         # extract trajectory
         return Trajectory(poses, self._trajectory_sampling)
 

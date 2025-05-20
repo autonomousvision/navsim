@@ -34,8 +34,8 @@ def add_configured_bev_on_ax(ax: plt.Axes, map_api: AbstractMap, frame: Frame) -
     if "annotations" in BEV_PLOT_CONFIG["layers"]:
         add_annotations_to_bev_ax(ax, frame.annotations)
 
-    if "lidar" in BEV_PLOT_CONFIG["layers"]:
-        add_lidar_to_bev_ax(ax, frame.lidar)
+    # if "lidar" in BEV_PLOT_CONFIG["layers"]:
+    #     add_lidar_to_bev_ax(ax, frame.lidar)
 
     return ax
 
@@ -167,11 +167,21 @@ def add_trajectory_to_bev_ax(ax: plt.Axes, trajectory: Trajectory, config: Dict[
         alpha=config["line_color_alpha"],
         linewidth=config["line_width"],
         linestyle=config["line_style"],
-        marker=config["marker"],
+        # marker=config["marker"],
         markersize=config["marker_size"],
         markeredgecolor=config["marker_edge_color"],
         zorder=config["zorder"],
     )
+
+    if "fill_color" in config:
+        ax.fill_between(
+            poses[:, 1], 
+            poses[:, 0] - 0.5, 
+            poses[:, 0] + 0.5,
+            color=config["fill_color"],
+            alpha=config.get("fill_alpha", 0.3),
+            zorder=config["zorder"] - 1
+        )
     return ax
 
 

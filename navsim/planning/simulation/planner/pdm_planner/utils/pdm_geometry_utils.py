@@ -83,6 +83,9 @@ def convert_absolute_to_relative_se2_array(
     :param state_se2_array: array of SE2 states with (x,y,θ) in last dim
     :return: SE2 coords array in relative coordinates
     """
+    # print(len(SE2Index))
+    # print(state_se2_array.shape[-1])
+    # print(">>>>")
     assert len(SE2Index) == state_se2_array.shape[-1]
 
     theta = -origin.heading

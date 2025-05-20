@@ -103,6 +103,8 @@ class TransfuserModel(nn.Module):
 
         bev_feature = self._bev_downscale(bev_feature).flatten(-2, -1)
         bev_feature = bev_feature.permute(0, 2, 1)
+        # import pdb;pdb.set_trace()
+        # status_feature=status_feature[:,-1,[0,1,2,3,7,8,9,10]]
         status_encoding = self._status_encoding(status_feature)
 
         keyval = torch.concatenate([bev_feature, status_encoding[:, None]], dim=1)

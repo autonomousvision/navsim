@@ -100,4 +100,4 @@ class TransfuserAgent(AbstractAgent):
 
     def get_training_callbacks(self) -> List[pl.Callback]:
         """Inherited, see superclass."""
-        return [TransfuserCallback(self._config)]
+        return [TransfuserCallback(self._config),pl.callbacks.ModelCheckpoint(every_n_epochs=5, save_top_k=-1)]

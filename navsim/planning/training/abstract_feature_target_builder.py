@@ -44,3 +44,4 @@ class AbstractTargetBuilder:
         Outputs a dictionary where each item has a unique identifier and maps to a single target tensor.
         One TargetBuilder can return a dict with multiple TargetTensors.
         """
+        pass

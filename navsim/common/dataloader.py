@@ -216,7 +216,7 @@ class SceneLoader:
                 num_future_frames=self._scene_filter.num_future_frames,
                 sensor_config=self._sensor_config,
             )
-
+    
     def get_agent_input_from_token(self, token: str) -> AgentInput:
         """
         Loads agent input given a scene identifier string (token).

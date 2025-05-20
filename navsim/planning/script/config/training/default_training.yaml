@@ -14,6 +14,9 @@ defaults:
   - agent: ego_status_mlp_agent
   - _self_
 
+# - default_train_val_test_log_split
+  # - train_val_syn_split
+
 split: trainval
 cache_path: ${oc.env:NAVSIM_EXP_ROOT}/training_cache
 use_cache_without_dataset: false # load the training samples from the cache. scene-filter will be ignored
@@ -23,9 +26,9 @@ seed: 0
 dataloader:
   params:
     batch_size: 64  # number of samples per batch
-    num_workers: 4  # number of workers for data loading
+    num_workers: 4  # 4 number of workers for data loading
     pin_memory: true  # pin memory for faster GPU transfer
-    prefetch_factor: 2  # number of samples loaded in advance by each worker
+    prefetch_factor: 2  # 2 number of samples loaded in advance by each worker
 
 trainer:
   params:

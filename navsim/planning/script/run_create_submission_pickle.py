@@ -10,7 +10,7 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig
 from tqdm import tqdm
 
-from navsim.agents.abstract_agent import AbstractAgent
+from navsim.agents.abstract_agent_diffusiondrive import AbstractAgent
 from navsim.common.dataclasses import SceneFilter, Trajectory
 from navsim.common.dataloader import SceneLoader
 
@@ -58,7 +58,8 @@ def run_test_evaluation(
     for token in tqdm(input_loader, desc="Running evaluation"):
         try:
             agent_input = input_loader.get_agent_input_from_token(token)
-            trajectory = agent.compute_trajectory(agent_input)
+            poses,_ = agent.compute_trajectory(agent_input)
+            trajectory=Trajectory(poses)
             output.update({token: trajectory})
         except Exception:
             logger.warning(f"----------- Agent failed for token {token}:")

@@ -33,7 +33,11 @@ def add_lidar_to_camera_ax(ax: plt.Axes, camera: Camera, lidar: Lidar) -> plt.Ax
     :param lidar: navsim lidar dataclass
     :return: ax object with image
     """
-
+    image = camera.image.copy()
+    # ax.imshow(image)  # 直接显示图像
+    # return 
+    # import pdb;pdb.set_trace();
+    # image, lidar_pc = camera.image.copy(), camera.image.copy()
     image, lidar_pc = camera.image.copy(), lidar.lidar_pc.copy()
     image_height, image_width = image.shape[:2]
 

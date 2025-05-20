@@ -5,12 +5,12 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from tqdm import tqdm
 
-from navsim.agents.abstract_agent import AbstractAgent
-from navsim.common.dataclasses import Scene
+from navsim.agents.abstract_agent_diffusiondrive import AbstractAgent
+from navsim.common.dataclasses import Scene,Trajectory
 from navsim.visualization.bev import add_configured_bev_on_ax, add_trajectory_to_bev_ax
 from navsim.visualization.camera import add_annotations_to_camera_ax, add_camera_ax, add_lidar_to_camera_ax
 from navsim.visualization.config import BEV_PLOT_CONFIG, CAMERAS_PLOT_CONFIG, TRAJECTORY_CONFIG
-
+import numpy as np;
 
 def configure_bev_ax(ax: plt.Axes) -> plt.Axes:
     """
@@ -71,26 +71,71 @@ def plot_bev_frame(scene: Scene, frame_idx: int) -> Tuple[plt.Figure, plt.Axes]:
     return fig, ax
 
 
-def plot_bev_with_agent(scene: Scene, agent: AbstractAgent) -> Tuple[plt.Figure, plt.Axes]:
+def plot_bev_with_agent(
+    scene: Scene, 
+    agent: AbstractAgent,
+    poses: np.ndarray,
+    anchor_poses: np.ndarray,
+    anchor_colors: List[str] = None
+) -> Tuple[plt.Figure, plt.Axes]:
     """
-    Plots agent and human trajectory in birds-eye-view visualization
-    :param scene: navsim scene dataclass
-    :param agent: navsim agent
-    :return: figure and ax object of matplotlib
+    绘制BEV视图下的真实轨迹、预测轨迹及Anchor轨迹
+    :param anchor_trajectories: Anchor轨迹数组 (num_anchors, N, 3)
+    :param anchor_colors: 每个Anchor的颜色列表
     """
+    # 获取轨迹数据
+    # human_trajectory = scene.get_future_trajectory()
 
-    human_trajectory = scene.get_future_trajectory()
-    agent_trajectory = agent.compute_trajectory(scene.get_agent_input())
-
+    # 创建画布
     frame_idx = scene.scene_metadata.num_history_frames - 1
     fig, ax = plt.subplots(1, 1, figsize=BEV_PLOT_CONFIG["figure_size"])
+    
+    # 绘制基础地图
     add_configured_bev_on_ax(ax, scene.map_api, scene.frames[frame_idx])
-    add_trajectory_to_bev_ax(ax, human_trajectory, TRAJECTORY_CONFIG["human"])
-    add_trajectory_to_bev_ax(ax, agent_trajectory, TRAJECTORY_CONFIG["agent"])
+    # 绘制真实轨迹
+    # add_trajectory_to_bev_ax(ax, human_trajectory, TRAJECTORY_CONFIG["human"])
+    
+    num_anchors = 20
+    if anchor_colors is None:
+        cmap = plt.cm.get_cmap('tab10', num_anchors)
+        anchor_colors = [cmap(i) for i in range(num_anchors)]
+    # 20*64绘制所有Anchor轨迹
+    anchor_config = TRAJECTORY_CONFIG["agent"].copy()
+    for i in range(num_anchors):
+            for j in range(64):
+                trajectory = Trajectory(anchor_poses[i][j])
+                anchor_config.update({
+                    "line_color": anchor_colors[i],
+                    "line_color_alpha": 0.4,
+                    "label": f"Anchor {i+1}"
+                })
+                add_trajectory_to_bev_ax(ax, trajectory, anchor_config)
+    
+    # 配置坐标轴和图例
     configure_bev_ax(ax)
     configure_ax(ax)
-
+    # ax.legend(loc="upper right")
     return fig, ax
+# def plot_bev_with_agent(scene: Scene, agent: AbstractAgent) -> Tuple[plt.Figure, plt.Axes]:
+#     """
+#     Plots agent and human trajectory in birds-eye-view visualization
+#     :param scene: navsim scene dataclass
+#     :param agent: navsim agent
+#     :return: figure and ax object of matplotlib
+#     """
+
+#     human_trajectory = scene.get_future_trajectory()
+#     agent_trajectory = agent.compute_trajectory(scene.get_agent_input())
+
+#     frame_idx = scene.scene_metadata.num_history_frames - 1
+#     fig, ax = plt.subplots(1, 1, figsize=BEV_PLOT_CONFIG["figure_size"])
+#     add_configured_bev_on_ax(ax, scene.map_api, scene.frames[frame_idx])
+#     add_trajectory_to_bev_ax(ax, human_trajectory, TRAJECTORY_CONFIG["human"])
+#     add_trajectory_to_bev_ax(ax, agent_trajectory, TRAJECTORY_CONFIG["agent"])
+#     configure_bev_ax(ax)
+#     configure_ax(ax)
+
+#     return fig, ax
 
 
 def plot_cameras_frame(scene: Scene, frame_idx: int) -> Tuple[plt.Figure, Any]:

@@ -42,84 +42,8 @@ from navsim.visualization.plots import plot_bev_with_agent
 from pathlib import Path
 import matplotlib.pyplot as plt  
 
-
-
 from pathlib import Path
 import shutil
-
-# 定义全局路径和摄像头列表
-
-def save_cameras_by_token(agent_input,tokens):
-    navsim_root = Path("/data42/DATASET/openscene/OpenDriveLab___OpenScene/openscene-v1.1/openscene-v1.1/sensor_blobs/test")
-    synthetic_root = Path("/data/hdd01/dingzx/dataset/synthetic_scenes/synthetic_sensor")
-    camera_names = ["cam_b0", "cam_f0", "cam_l0", "cam_l1", "cam_l2", "cam_r0", "cam_r1", "cam_r2"]
-
-    output_dir = Path(f"/data/hdd01/dingzx/navsim_exp/image_bev_hechen/{tokens}")
-    output_dir.mkdir(parents=True, exist_ok=True)
-    print(f"创建文件夹: {output_dir.resolve()}")
-
-    for cam_name in camera_names:
-        camera = getattr(agent_input.cameras[-1], cam_name, None)
-        if not camera or not camera.camera_path:
-            print(f"警告: 摄像头 {cam_name} 路径无效")
-            continue
-
-        source_path = synthetic_root / camera.camera_path
-        target_path = output_dir / f"{tokens}_{cam_name}.jpg"
-        source_path1 = navsim_root / camera.camera_path
-        if source_path.exists():
-            shutil.copy(source_path, target_path)
-            print(f"保存成功: {target_path.name}")
-        else:# zhenshi
-            shutil.copy(source_path1, target_path)
-            print(f"保存成功: {target_path.name}")
-
-def plot_bev(scene: Scene, token: str, 
-    poses: np.ndarray,anchor_poses: np.ndarray,
-    agent: TransfuserAgent,
-    agent_input: AgentInput
-    ):
-    save_cameras_by_token(agent_input,token)
-    """保存包含所有轨迹的BEV图像"""
-    output_dir = Path(f"/data/hdd01/dingzx/navsim_exp/image_bev_hechen/{token}").expanduser()
-    output_dir.mkdir(parents=True, exist_ok=True)
-    # output_path = output_dir / f"{token}.png"
-    output_path = output_dir / f"random_command_{token}.png"
-    agent=agent
-    fig, ax = plot_bev_with_agent(
-        scene=scene,
-        agent=agent,
-        poses=poses,
-        anchor_poses=anchor_poses
-    )
-    
-    ax.set_title(f"BEV Trajectory - {token}", fontsize=14)
-    fig.savefig(output_path, dpi=300, bbox_inches="tight")
-
-    plt.close(fig)
-# def plot_bev(scene: Scene,token: str,anchor_trajectories: np.ndarray):
-#     """
-#     self._config = config
-#         self._lr = lr
-#         self._checkpoint_path = checkpoint_path
-#         self._transfuser_model = TransfuserModel(config)
-#     """
-#     output_dir = Path("~/navsim_exp/image_trajectory").expanduser()  # 跨平台路径处理
-#     filename = f"{token}.png"          # 动态文件名
-#     output_path = output_dir / filename
-#     output_dir.mkdir(parents=True, exist_ok=True)         # 自动创建目录
-#     agent = TransfuserAgent(config=TransfuserConfig,lr=6e-4,
-#         checkpoint_path="/data/hdd01/dingzx/navsim_exp/training_diffusiondrive_agent/2025.03.28.23.58.29/lightning_logs/version_0/checkpoints/99.ckpt"
-#         )
-#     # 生成图像
-#     fig, ax = plot_bev_with_agent(scene, agent)
-#     # 自定义图例和标题（可选）
-#     ax.legend(["真实轨迹", "预测轨迹"], loc="upper left")
-#     ax.set_title("BEV Trajectory Comparison", fontsize=14)
-#     # 保存图像
-#     fig.savefig(output_path,dpi=300, bbox_inches="tight")
-#     import pdb;pdb.set_trace()
-
 
 def run_pdm_score(args: List[Dict[str, Union[List[str], DictConfig]]]) -> List[pd.DataFrame]:
     """
@@ -171,42 +95,60 @@ def run_pdm_score(args: List[Dict[str, Union[List[str], DictConfig]]]) -> List[p
     # zero_score_df = df[df['score'] == 0.0]
     # tokens_zero = zero_score_df['token'].tolist()
 
+    # goalflow /data/hdd01/dingzx/goalflow_image/2025.04.04.17.54.33.csv
+    # diffusiondrive /data/hdd01/dingzx/navsim_exp/diffusiondrive_agent_eval/2025.04.03.16.07.33/2025.04.03.16.26.38.csv
+    # goalflow /data/hdd01/dingzx/goalflow_image/submission.pkl
+    # diffusiondrive /data/hdd01/dingzx/navsim_exp/submission_cv_agent/2025.04.03.18.47.15/submission.pkl
+
+    import pickle
+    import pandas as pd
+    with open('/data/hdd01/dingzx/goalflow_image/submission.pkl', 'rb') as f:
+        tra_goalflow = pickle.load(f)
+    with open('/data/hdd01/dingzx/navsim_exp/submission_cv_agent/2025.04.03.18.47.15/submission.pkl', 'rb') as f:
+        tra_diffusiondrive = pickle.load(f)
+    file_path = "/data/hdd01/dingzx/goalflow_image/2025.04.04.17.54.33.csv"
+    target_column = "two_frame_extended_comfort"
+    df = pd.read_csv(file_path)
+    empty_tokens = df[df[target_column].isna()]["token"].tolist()
+
+    file1_path = "/data/hdd01/dingzx/navsim_exp/diffusiondrive_agent_eval/2025.04.08.00.16.45/2025.04.08.00.32.26.csv"
+    file2_path = "/data/hdd01/dingzx/navsim_exp/diffusiondrive_agent_eval/2025.04.08.11.03.38/2025.04.08.11.21.44.csv"
+
+    # 读取文件
+    df1 = pd.read_csv(file1_path)
+    df2 = pd.read_csv(file2_path)
+
+    # diffusion 不为零的token
+    valid_tokens_file1 = df1[df1["drivable_area_compliance"] != 0.0]["token"].tolist()
+
+    # goalflow 为零的token
+    invalid_tokens_file2 = df2[df2["drivable_area_compliance"] == 0.0]["token"].tolist()
+
+    result_tokens = list(set(valid_tokens_file1) & set(invalid_tokens_file2))
+        
     for idx, (token) in enumerate(tokens_to_evaluate):
 
         logger.info(
             f"Processing scenario {idx + 1} / {len(tokens_to_evaluate)} in thread_id={thread_id}, node_id={node_id}"
         )
         try:
-            # 0a5a2eee51272b898 ego_statuses driving_command
-            # print(">>>>>>>>>")
             metric_cache = metric_cache_loader.get_from_token(token)
-            agent_input = scene_loader.get_agent_input_from_token(token)
+            # # 直接出
+            # if token=='e1ab42145c177ba50':
+            #     trajectory=tra_diffusiondrive['predictions'][0][token]
+            # elif token in empty_tokens:
+            #     trajectory=tra_goalflow['predictions'][0][token]
+            # else:
+            #     trajectory=tra_diffusiondrive['predictions'][0][token]
             
-            # if token=='0a5a2eee51272b898' or token=='0aac715400ac14881' :
-            #     agent_input.ego_statuses[-1].driving_command=np.array([0, 0, 1, 0], dtype=np.int64)
-            # if token in tokens_zero:
-            #     idx=random.randint(0,2)
-            #     random_command=np.array([0,0,0,0],dtype=np.int64)
-            #     random_command[idx]=1
-            #     agent_input.ego_statuses[-1].driving_command=random_command
-            
-            scene = scene_loader.get_scene_from_token(token)
-            # a=scene.get_future_trajectory()
-            if agent.requires_scene:
-                poses,anchor_poses = agent.compute_trajectory(agent_input)
-            else:
-                poses,anchor_poses = agent.compute_trajectory(agent_input)
-            trajectory=Trajectory(poses)
-            # plot
-            # if token=='0a5a2eee51272b898' or token=='0aac715400ac14881':
-                # print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-                # plot_bev(scene, token, poses,anchor_poses,agent,agent_input)
-            # plot_bev(scene, token, poses,anchor_poses,agent,agent_input)
-            
-            # if token in tokens_zero:
-                # plot_bev(scene, token, poses,anchor_poses,agent,agent_input)
-            
+            # trajectory=tra_goalflow['predictions'][0][token]
 
+            if token=='e1ab42145c177ba50' or token in result_tokens:
+                trajectory=tra_diffusiondrive['predictions'][0][token]
+            else:
+                trajectory=tra_goalflow['predictions'][0][token]
+
+            # trajectory=tra_diffusiondrive['predictions'][0][token]
             score_row, ego_simulated_states = pdm_score(
                 metric_cache=metric_cache,
                 model_trajectory=trajectory,
@@ -528,6 +470,8 @@ def main(cfg: DictConfig) -> None:
     tokens_to_evaluate = list(set(scene_loader.tokens) & set(metric_cache_loader.tokens))
     num_missing_metric_cache_tokens = len(set(scene_loader.tokens) - set(metric_cache_loader.tokens))
     num_unused_metric_cache_tokens = len(set(metric_cache_loader.tokens) - set(scene_loader.tokens))
+    
+    
     if num_missing_metric_cache_tokens > 0:
         logger.warning(f"Missing metric cache for {num_missing_metric_cache_tokens} tokens. Skipping these tokens.")
     if num_unused_metric_cache_tokens > 0:
@@ -661,4 +605,3 @@ def main(cfg: DictConfig) -> None:
 
 if __name__ == "__main__":
     main()
-

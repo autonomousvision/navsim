@@ -8,7 +8,7 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader
 
-from navsim.agents.abstract_agent import AbstractAgent
+from navsim.agents.abstract_agent_diffusiondrive import AbstractAgent
 from navsim.common.dataclasses import SceneFilter
 from navsim.common.dataloader import SceneLoader
 from navsim.planning.training.agent_lightning_module import AgentLightningModule
@@ -95,7 +95,7 @@ def main(cfg: DictConfig) -> None:
     Main entrypoint for training an agent.
     :param cfg: omegaconf dictionary
     """
-
+    # print(">>>>>")
     pl.seed_everything(cfg.seed, workers=True)
     logger.info(f"Global Seed set to {cfg.seed}")
 
@@ -103,12 +103,20 @@ def main(cfg: DictConfig) -> None:
 
     logger.info("Building Agent")
     agent: AbstractAgent = instantiate(cfg.agent)
-
+    # import pdb;pdb.set_trace()
+    # print("dzx")
     logger.info("Building Lightning Module")
+    # if cfg.agent.checkpoint_path:
+    #     lightning_module = AgentLightningModule.load_from_checkpoint(
+    #         cfg.agent.checkpoint_path,agent=agent
+    #     )
+    # else:    
     lightning_module = AgentLightningModule(
         agent=agent,
     )
-
+    # import pdb;pdb.set_trace()
+    # print("dzx")
+    # print("dzx")    
     if cfg.use_cache_without_dataset:
         logger.info("Using cached data without building SceneLoader")
         assert (
@@ -133,7 +141,6 @@ def main(cfg: DictConfig) -> None:
         logger.info("Building SceneLoader")
         train_data, val_data = build_datasets(cfg, agent)
 
-
     logger.info("Building Datasets")
     train_dataloader = DataLoader(train_data, **cfg.dataloader.params, shuffle=True)
     logger.info("Num training samples: %d", len(train_data))
@@ -143,14 +150,53 @@ def main(cfg: DictConfig) -> None:
     logger.info("Building Trainer")
     trainer = pl.Trainer(**cfg.trainer.params, callbacks=agent.get_training_callbacks())
 
+    # from pytorch_lightning.strategies import DDPStrategy
+    # trainer = pl.Trainer(
+    #     **{
+    #         **cfg.trainer.params,
+    #         "strategy": DDPStrategy(find_unused_parameters=True),
+    #     },
+    #     callbacks=agent.get_training_callbacks()
+    # )
+    # trainer = pl.Trainer(
+    #     **cfg.trainer.params,callbacks=agent.get_training_callbacks()
+    # )
     logger.info("Starting Training")
     # import pdb;pdb.set_trace()
+    
+    # checkpoint_path = "/data/hdd01/dingzx/navsim_exp/training_diffusiondrive_agent/2025.04.30.20.01.08/lightning_logs/version_0/checkpoints/89.ckpt"
+    # 初始化 Trainer 并恢复训练
+    # trainer = pl.Trainer(
+    #     resume_from_checkpoint=checkpoint_path,  # PyTorch Lightning <2.0 的写法
+    #     # ckpt_path=checkpoint_path,   
+    # )
+
     trainer.fit(
         model=lightning_module,
         train_dataloaders=train_dataloader,
         val_dataloaders=val_dataloader,
     )
-
+    # if cfg.agent.checkpoint_path:
+    #     # trainer.max_epochs = 134 #70个
+    #     trainer.fit(
+    #         model=lightning_module,
+    #         train_dataloaders=train_dataloader,
+    #         val_dataloaders=val_dataloader,
+    #         ckpt_path=cfg.agent.checkpoint_path
+    #     )
+    # else:
+    #     trainer.fit(
+    #         model=lightning_module,
+    #         train_dataloaders=train_dataloader,
+    #         val_dataloaders=val_dataloader
+    #     )
+    # trainer.fit(
+    #     model=lightning_module,
+    #     train_dataloaders=train_dataloader,
+    #     val_dataloaders=val_dataloader,
+    #     ckpt_path=checkpoint_path
+    # )
 
 if __name__ == "__main__":
     main()
+

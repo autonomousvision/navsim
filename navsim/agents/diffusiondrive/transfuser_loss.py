@@ -1,14 +1,16 @@
 from typing import Dict
+from scipy.optimize import linear_sum_assignment
 
 import torch
 import torch.nn.functional as F
-from scipy.optimize import linear_sum_assignment
 
-from navsim.agents.transfuser.transfuser_config import TransfuserConfig
-from navsim.agents.transfuser.transfuser_features import BoundingBox2DIndex
+from navsim.agents.diffusiondrive.transfuser_config import TransfuserConfig
+from navsim.agents.diffusiondrive.transfuser_features import BoundingBox2DIndex
 
 
-def transfuser_loss(targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.Tensor], config: TransfuserConfig):
+def transfuser_loss(
+    targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.Tensor], config: TransfuserConfig
+):
     """
     Helper function calculating complete loss of Transfuser
     :param targets: dictionary of name tensor pairings
@@ -16,21 +18,46 @@ def transfuser_loss(targets: Dict[str, torch.Tensor], predictions: Dict[str, tor
     :param config: global Transfuser config
     :return: combined loss value
     """
-    # import pdb;pdb.set_trace()
-    # print("??")
-    trajectory_loss = F.l1_loss(predictions["trajectory"], targets["trajectory"])
+    # 修改target轨迹
+    # import ipdb; ipdb.set_trace()D
+    if "trajectory_loss" in predictions:
+        trajectory_loss = predictions["trajectory_loss"]
+    else:
+        trajectory_loss = F.l1_loss(predictions["trajectory"], targets["trajectory"])
+    # # 微调不需要
     agent_class_loss, agent_box_loss = _agent_loss(targets, predictions, config)
-    bev_semantic_loss = F.cross_entropy(predictions["bev_semantic_map"], targets["bev_semantic_map"].long())
+    bev_semantic_loss = F.cross_entropy(
+        predictions["bev_semantic_map"], targets["bev_semantic_map"].long()
+    )
+    if 'diffusion_loss' in predictions:
+        diffusion_loss = predictions['diffusion_loss']
+    else:
+        diffusion_loss = 0
     loss = (
         config.trajectory_weight * trajectory_loss
+        + config.diff_loss_weight * diffusion_loss
         + config.agent_class_weight * agent_class_loss
         + config.agent_box_weight * agent_box_loss
         + config.bev_semantic_weight * bev_semantic_loss
     )
-    return loss
+    loss_dict = {
+        'loss': loss,
+        'trajectory_loss': config.trajectory_weight*trajectory_loss,
+        'diffusion_loss': config.diff_loss_weight*diffusion_loss,
+        'agent_class_loss': config.agent_class_weight*agent_class_loss,
+        'agent_box_loss': config.agent_box_weight*agent_box_loss,
+        'bev_semantic_loss': config.bev_semantic_weight*bev_semantic_loss
+    }
+    if "trajectory_loss_dict" in predictions:
+        trajectory_loss_dict = predictions["trajectory_loss_dict"]
+        loss_dict.update(trajectory_loss_dict)
+    # import ipdb; ipdb.set_trace()
+    return loss_dict
 
 
-def _agent_loss(targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.Tensor], config: TransfuserConfig):
+def _agent_loss(
+    targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.Tensor], config: TransfuserConfig
+):
     """
     Hungarian matching loss for agent detection
     :param targets: dictionary of name tensor pairings
@@ -66,7 +93,10 @@ def _agent_loss(targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.T
     cost = cost.cpu()
 
     indices = [linear_sum_assignment(c) for i, c in enumerate(cost)]
-    matching = [(torch.as_tensor(i, dtype=torch.int64), torch.as_tensor(j, dtype=torch.int64)) for i, j in indices]
+    matching = [
+        (torch.as_tensor(i, dtype=torch.int64), torch.as_tensor(j, dtype=torch.int64))
+        for i, j in indices
+    ]
     idx = _get_src_permutation_idx(matching)
 
     pred_states_idx = pred_states[idx]
@@ -100,7 +130,9 @@ def _get_ce_cost(gt_valid: torch.Tensor, pred_logits: torch.Tensor) -> torch.Ten
     pred_logits_expanded = pred_logits[:, None, :].detach()  # (b, 1, n)
 
     max_val = torch.relu(-pred_logits_expanded)
-    helper_term = max_val + torch.log(torch.exp(-max_val) + torch.exp(-pred_logits_expanded - max_val))
+    helper_term = max_val + torch.log(
+        torch.exp(-max_val) + torch.exp(-pred_logits_expanded - max_val)
+    )
     ce_cost = (1 - gt_valid_expanded) * pred_logits_expanded + helper_term  # (b, n, n)
     ce_cost = ce_cost.permute(0, 2, 1)
 
@@ -108,7 +140,9 @@ def _get_ce_cost(gt_valid: torch.Tensor, pred_logits: torch.Tensor) -> torch.Ten
 
 
 @torch.no_grad()
-def _get_l1_cost(gt_states: torch.Tensor, pred_states: torch.Tensor, gt_valid: torch.Tensor) -> torch.Tensor:
+def _get_l1_cost(
+    gt_states: torch.Tensor, pred_states: torch.Tensor, gt_valid: torch.Tensor
+) -> torch.Tensor:
     """
     Function to calculate L1 cost for cost matrix.
     :param gt_states: tensor of ground-truth bounding boxes
@@ -119,7 +153,9 @@ def _get_l1_cost(gt_states: torch.Tensor, pred_states: torch.Tensor, gt_valid: t
 
     gt_states_expanded = gt_states[:, :, None, :2].detach()  # (b, n, 1, 2)
     pred_states_expanded = pred_states[:, None, :, :2].detach()  # (b, 1, n, 2)
-    l1_cost = gt_valid[..., None].float() * (gt_states_expanded - pred_states_expanded).abs().sum(dim=-1)
+    l1_cost = gt_valid[..., None].float() * (gt_states_expanded - pred_states_expanded).abs().sum(
+        dim=-1
+    )
     l1_cost = l1_cost.permute(0, 2, 1)
     return l1_cost
 
