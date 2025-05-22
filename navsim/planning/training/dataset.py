@@ -907,47 +907,48 @@ class CacheOnlyDataset(torch.utils.data.Dataset):
             data_dict = load_feature_target_from_pickle(data_dict_path)
             targets.update(data_dict)
         # rotate
-        import random
-        random_int = random.randint(1, 100)
-        random_int1 = random.randint(1, 100)
-        random_int2 = random.randint(1, 100)
+        # import random
+        # random_int = random.randint(1, 100)
+        # random_int1 = random.randint(1, 100)
+        # random_int2 = random.randint(1, 100)
         
+        # # 微调不用
         # # camera_feature = torch.rand(3, 512, 2048) 
-        # features["camera_feature"]=tensor_to_np_tensor_1024(features["camera_feature"])
-        # 微调不用
-        if random_int1<61:
-            features["camera_feature"]=camera_feature_rotate(features["camera_feature"])
-        if random_int<61:
-        # noise_image
-            features["camera_feature"] = camera_feature_improve(features["camera_feature"])
-        # noise_status_feature
-        if random_int2<61:
-            velo = features["status_feature"][4:]
-            sigma = 0.2 * torch.abs(velo)
-            noise = torch.normal(mean=0.0, std=sigma)
-            velo += noise
-            command=features["status_feature"][:4]
-            features["status_feature"]=torch.cat([command,velo],dim=0)
-        # feature
+        # # features["camera_feature"]=tensor_to_np_tensor_1024(features["camera_feature"])
         
-        # 修改变成一维
-        import math
-        vle=math.sqrt(features["status_feature"][4]**2 + features["status_feature"][5]**2)
-        acc=math.sqrt(features["status_feature"][6]**2 + features["status_feature"][7]**2)
-        tag_vle=1
-        tag_acc=1
-        if features["status_feature"][4]<0:
-            tag_vle=-1
+        # if random_int1<61:
+        #     features["camera_feature"]=camera_feature_rotate(features["camera_feature"])
+        # if random_int<61:
+        # # noise_image
+        #     features["camera_feature"] = camera_feature_improve(features["camera_feature"])
+        # # noise_status_feature
+        # if random_int2<61:
+        #     velo = features["status_feature"][4:]
+        #     sigma = 0.2 * torch.abs(velo)
+        #     noise = torch.normal(mean=0.0, std=sigma)
+        #     velo += noise
+        #     command=features["status_feature"][:4]
+        #     features["status_feature"]=torch.cat([command,velo],dim=0)
+        # # feature
         
-        dot_product = np.dot(features["status_feature"][4:6], features["status_feature"][6:8])
-        if dot_product>0:
-            tag_acc=tag_vle
-        else:
-            tag_acc=-1*tag_vle
+        # # 修改变成一维
+        # import math
+        # vle=math.sqrt(features["status_feature"][4]**2 + features["status_feature"][5]**2)
+        # acc=math.sqrt(features["status_feature"][6]**2 + features["status_feature"][7]**2)
+        # tag_vle=1
+        # tag_acc=1
+        # if features["status_feature"][4]<0:
+        #     tag_vle=-1
         
-        vle_acc=torch.tensor([tag_vle*vle,tag_acc*acc],dtype=torch.float32)
-        command=features["status_feature"][:4]
-        features["status_feature"]=torch.cat([command,vle_acc],dim=0)
+        # dot_product = np.dot(features["status_feature"][4:6], features["status_feature"][6:8])
+        # if dot_product>0:
+        #     tag_acc=tag_vle
+        # else:
+        #     tag_acc=-1*tag_vle
+        
+        # vle_acc=torch.tensor([tag_vle*vle,tag_acc*acc],dtype=torch.float32)
+        # command=features["status_feature"][:4]
+        # features["status_feature"]=torch.cat([command,vle_acc],dim=0)
         return (features, targets)
 
 

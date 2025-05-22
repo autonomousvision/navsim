@@ -1,12 +1,9 @@
 export HYDRA_FULL_ERROR=1
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
-FEATURE_CACHE='/data/hdd01/xingzb/navsim_exp/training_cache'
-# FEATURE_CACHE='/data/hdd01/dingzx/dataset/lpai/volumes/ad-e2e-vol-ga/zhengyupeng/socket/navsim_exp/metric_cache_syn_2048'
+FEATURE_CACHE='/data/hdd01/dingzx/dzx_navsim_exp/training_cache_noise_6_zoom_vleacc_1_rotate_vleaccnoise'
+# 5.20训的noise_6_zoom_vleacc_1_rotate_vleaccnoise
+
 TRAIN_TEST_SPLIT=navtrain
-# dzx
-# CHECKPOINT='/data/hdd01/dingzx/navsim_exp/training_diffusiondrive_agent/2025.04.30.20.01.08/lightning_logs/version_0/checkpoints/64.ckpt'
-# CHECKPOINT='/data/hdd01/dingzx/navsim_exp/training_diffusiondrive_agent/2025.04.30.20.01.08/lightning_logs/version_0/checkpoints/59.ckpt'
-# # FREEZE_PERCEPTION=False 
 export NAVSIM_DEVKIT_ROOT="/data/hdd01/dingzx/workspace/navsim"
 # export PYTHONPATH="${PYTHONPATH}:/data/hdd01/dingzx/workspace1/navsim"
 cd /data/hdd01/dingzx/workspace/navsim/
