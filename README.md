@@ -122,7 +122,7 @@ All assets and code in this repository are under the [Apache 2.0 license](./LICE
 	title={Pseudo-Simulation for Autonomous Driving}, 
         author={Wei Cao and Marcel Hallgarten and Tianyu Li and Daniel Dauner and Xunjiang Gu and Caojun Wang and Yakov Miron and Marco Aiello and Hongyang Li and Igor Gilitschenski and Boris Ivanovic and Marco Pavone and Andreas Geiger and Kashyap Chitta},
 	journal = {arXiv},
-    	volume = {2406.15349},
+    	volume = {2506.04218},
 	year = {2025},
 }
 ```
