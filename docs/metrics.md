@@ -17,7 +17,7 @@ i.e., `PDMS = NC * DAC * (5*TTC + 5*EP + 2*C + 0*DDC) / 12`
 
 
 To evaluate the PDM score for an agent you can run:
-```
+```bash
 cd $NAVSIM_DEVKIT_ROOT/scripts/
 ./run_cv_pdm_score_evaluation.sh
 ```

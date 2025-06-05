@@ -3,7 +3,7 @@
 <p align="center">
   <img src="assets/navsim_transparent.png" width="600">
   <h2 align="center">Data-Driven Non-Reactive Autonomous Vehicle Simulation and Benchmarking</h1>
-  <h3 align="center"><a href="https://arxiv.org/abs/2406.15349">Paper</a> | Supplementary | <a href="https://youtu.be/QKy2ZDCGbqE?si=l9ghG3pbiFgl8bmx&t=2345">Talk</a> | <a href="https://opendrivelab.com/challenge2024/#end_to_end_driving_at_scale">2024 Challenge</a> | <a href="https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim">Leaderboard</a>  </h3>
+  <h3 align="center"><a href="https://arxiv.org/abs/2406.15349">Paper</a> | <a href="https://danieldauner.github.io/assets/pdf/Dauner2024NIPS_supplementary.pdf">Supplementary</a> | <a href="https://www.youtube.com/watch?v=Qe76HRmPDe0">Talk</a> | <a href="https://opendrivelab.com/challenge2024/#end_to_end_driving_at_scale">2024 Challenge</a> | <a href="https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim">Leaderboard</a>  </h3>
 </p>
 
 </div>
@@ -19,6 +19,8 @@
 > <sup>1</sup>University of Tübingen, <sup>2</sup>Tübingen AI Center, <sup>3</sup>OpenDriveLab at Shanghai AI Lab, <sup>4</sup>NVIDIA Research\
 > <sup>5</sup>Robert Bosch GmbH, <sup>6</sup>Nanyang Technological University, <sup>7</sup>University of Toronto, <sup>8</sup>Vector Institute, <sup>9</sup>Stanford University
 >
+> Advances in Neural Information Processing Systems (NeurIPS), 2024 \
+> Track on Datasets and Benchmarks 
 <br/>
 
 
@@ -53,6 +55,7 @@
 ## Changelog <a name="changelog"></a>
 - **`[2024/09/03]`** NAVSIM v1.1 release
   - Leaderboard for `navtest` on [Hugging Face](https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim)
+  - Release of baseline checkpoints on [Hugging Face](https://huggingface.co/autonomousvision/navsim_baselines)
   - Updated docs for [submission](docs/submission.md) and [paper](https://arxiv.org/abs/2406.15349)
   - Code refactoring, formatting, minor fixes
 - **`[2024/04/21]`** NAVSIM v1.0 release (official devkit version for [AGC 2024](https://opendrivelab.com/challenge2024/#end_to_end_driving_at_scale))
@@ -82,13 +85,12 @@
 All assets and code in this repository are under the [Apache 2.0 license](./LICENSE) unless specified otherwise. The datasets (including nuPlan and OpenScene) inherit their own distribution licenses. Please consider citing our paper and project if they help your research.
 
 ```BibTeX
-@article{Dauner2024ARXIV,
-    title = {NAVSIM: Data-Driven Non-Reactive Autonomous Vehicle Simulation and Benchmarking},
-    author = {Daniel Dauner and Marcel Hallgarten and Tianyu Li and Xinshuo Weng and Zhiyu Huang and Zetong Yang and Hongyang Li and Igor Gilitschenski and Boris Ivanovic and Marco Pavone and Andreas Geiger and Kashyap Chitta},
-    journal = {arXiv},
-    volume = {2406.15349},
-    year = {2024}
-} 
+@inproceedings{Dauner2024NEURIPS, 
+	author = {Daniel Dauner and Marcel Hallgarten and Tianyu Li and Xinshuo Weng and Zhiyu Huang and Zetong Yang and Hongyang Li and Igor Gilitschenski and Boris Ivanovic and Marco Pavone and Andreas Geiger and Kashyap Chitta}, 
+	title = {NAVSIM: Data-Driven Non-Reactive Autonomous Vehicle Simulation and Benchmarking}, 
+	booktitle = {Advances in Neural Information Processing Systems (NeurIPS)}, 
+	year = {2024}, 
+}
 ```
 
 ```BibTeX
