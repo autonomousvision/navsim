@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from navsim.agents.abstract_agent import AbstractAgent
 from navsim.common.dataclasses import SceneFilter, Trajectory
-from navsim.common.dataloader_private import SceneLoader
+from navsim.common.dataloader import SceneLoader
 
 logger = logging.getLogger(__name__)
 
