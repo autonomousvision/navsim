@@ -115,7 +115,7 @@ NAVSIM provides a subset and filter of the `trainval` split, called `navtrain`. 
 
 The `navtest` split enables a standardized set for testing agents in NAVSIM v1 with a provided scene filter. Similarly, the `navhard_two_stage` split split facilitates pseudo closed-loop simulation for evaluation in NAVSIM v2. `navtrain`, `navtest` and `navhard_two_stage` are filtered to increase interesting samples in the sets.
 
-For the challenge on Hugging Face, we provide the `warmup_two_stage` and `private_test_e2e` for the warm-up and challenge track, respectively.
+For the challenge on Hugging Face, we provide the `warmup_two_stage` and `private_test_hard_two_stage` for the warm-up and challenge track, respectively. Using the `test`/`navtest`/`navhard_two_stage`/`warmup_two_stage`/`private_test_two_stage` splits for training your challenge submissions is not allowed. Using any other publicly available datasets or pretrained weights is allowed. Furthermore, to be eligible for awards, the use of data must be described explicitly in the technical report for your submission.
 
 ## Troubleshooting
 
