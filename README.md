@@ -3,7 +3,8 @@
 <p align="center">
   <img src="assets/navsim_transparent.png" width="600">
   <h2 align="center">Pseudo-Simulation for Autonomous Driving</h1>
-  <h3 align="center"><a href="https://arxiv.org/abs/2506.04218">Paper</a> | <a href="https://huggingface.co/spaces/AGC2025/e2e-driving-2025">Leaderboard v2</a> | <a href="https://huggingface.co/spaces/AGC2025/e2e-driving-warmup">Warmup Leaderboard v2</a> |  <a href="https://opendrivelab.com/challenge2025/#navsim-e2e-driving">Challenge Results (CVPR Phase)</a> </h3>
+  <h3 align="center"><a href="https://arxiv.org/abs/2506.04218">Paper</a> | <a href="https://huggingface.co/spaces/AGC2025/e2e-driving-navhard"> Public Leaderboard v2 (navhard)</a> | <a href="https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim"> Public Leaderboard v1 (navtest)</a> </h3>
+  <h3 align="center"><a href="https://huggingface.co/spaces/AGC2025/e2e-driving-2025">Challenge Leaderboard v2 (ICCV)</a> | <a href="https://huggingface.co/spaces/AGC2025/e2e-driving-warmup">Warmup Leaderboard v2 (ICCV)</a> |  <a href="https://opendrivelab.com/challenge2025/#navsim-e2e-driving">Challenge Results (CVPR Phase)</a> </h3>
 </p>
 
 </div>
