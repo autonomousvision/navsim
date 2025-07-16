@@ -1,6 +1,6 @@
 # Submitting to the leaderboard
 
-NAVSIM comes with official leaderboards ([Leaderboard 2024](https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim), [Leaderboard 2025 Warmup](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup), [Leaderboard 2025](https://huggingface.co/spaces/AGC2025/e2e-driving-2025)) on HuggingFace. The leaderboards prevent ambiguity in metric definitions between different projects, as all evaluation is performed on the server with the official evaluation script. Below, we provide the instructions relevant for the 2025 Leaderboards. In case you are interested in submitting to the Leaderboard 2024 (for NAVSIM v1, using the `navtest` evaluation split), please use the [NAVSIM v1.1 branch](https://github.com/autonomousvision/navsim/tree/v1.1).
+NAVSIM comes with official leaderboards ([Leaderboard 2024](https://huggingface.co/spaces/AGC2024-P/e2e-driving-navsim), [Leaderboard 2025 Warmup](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup-iccv), [Leaderboard 2025](https://huggingface.co/spaces/AGC2025/e2e-driving-2025)) on HuggingFace. The leaderboards prevent ambiguity in metric definitions between different projects, as all evaluation is performed on the server with the official evaluation script. Below, we provide the instructions relevant for the 2025 Leaderboards. In case you are interested in submitting to the Leaderboard 2024 (for NAVSIM v1, using the `navtest` evaluation split), please use the [NAVSIM v1.1 branch](https://github.com/autonomousvision/navsim/tree/v1.1).
 
 For the [NAVSIM v2 End-to-End Driving Challenge 2025](https://huggingface.co/spaces/AGC2025/e2e-driving-2025), we will be using the leaderboard with the `private_test_hard_two_stage` split. In this guide, we describe how to create a valid submission.
 
@@ -36,7 +36,7 @@ Then, fill in the form and upload the `submission.pkl` file.
 - **Note that you can only make one submission per day.**
 
 
-## [Leaderboard 2025 Warmup](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup)
+## [Leaderboard 2025 Warmup](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup-iccv)
 
 The warmup leaderboard tests your model on a small set of scenes, to help ensure there are no technical issues before you attempt a submission to the formal leaderboard. We recommend the following steps:
 
