@@ -4,7 +4,7 @@
   <img src="assets/navsim_transparent.png" width="600">
   <h2 align="center">Pseudo-Simulation for Autonomous Driving</h1>
   <h3 align="center"><a href="https://arxiv.org/abs/2506.04218">Paper</a> | <a href="https://vveicao.github.io/projects/NavsimV2/Cao2025_supp.pdf">Supplementary</a> | <a href="https://huggingface.co/spaces/AGC2025/e2e-driving-navhard"> Public Leaderboard v2 (navhard)</a> | <a href="https://huggingface.co/spaces/AGC2024-P/e2e-driving-navtest"> Public Leaderboard v1 (navtest)</a> </h3>
-  <h3 align="center"><a href="https://huggingface.co/spaces/AGC2025/e2e-driving-2025">Challenge Leaderboard v2 (ICCV)</a> | <a href="https://huggingface.co/spaces/AGC2025/e2e-driving-warmup">Warmup Leaderboard v2 (ICCV)</a> |  <a href="https://opendrivelab.com/challenge2025/#navsim-e2e-driving">Challenge Results (CVPR Phase)</a> </h3>
+  <h3 align="center"><a href="https://huggingface.co/spaces/AGC2025/e2e-driving-2025">Challenge Leaderboard v2 (ICCV)</a> | <a href="https://huggingface.co/spaces/AGC2025/e2e-driving-warmup-iccv">Warmup Leaderboard v2 (ICCV)</a> |  <a href="https://opendrivelab.com/challenge2025/#navsim-e2e-driving">Challenge Results (CVPR Phase)</a> </h3>
 </p>
 
 </div>
@@ -68,6 +68,10 @@ The main branch contains the code for NAVSIM v2, used in the 2025 NAVSIM challen
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Changelog <a name="changelog"></a>
+- **`[2025/07/16]`** **[[ICCV] Hugging Face Warmup leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup-iccv)**   release 
+  - This release introduces a **registration system**:  
+    - After logging in with your Hugging Face account, click Register and fill in your team information  
+    - The admin will review your registration request within 24 hours  
 - **`[2025/04/28]`** NAVSIM v2.2 release (official devkit version for [AGC 2025](https://opendrivelab.com/challenge2025/#navsim-e2e-driving))
   - Release of `private_test_hard` dataset (see [splits](docs/splits.md)) for the [HuggingFace NAVSIM v2 End-to-End Driving Challenge 2025 Leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-2025).
     - The submission deadline is 2025-05-11 00:00:00 UTC
@@ -79,11 +83,11 @@ The main branch contains the code for NAVSIM v2, used in the 2025 NAVSIM challen
     - Furthermore, to be eligible for awards, the use of data must be described explicitly in the technical report for your submission.
 - **`[2025/04/24]`** [NAVSIM v2.1.2](https://github.com/autonomousvision/navsim/tree/v2.1.2) release
   - Release of `navhard_two_stage` dataset (see [splits](docs/splits.md))
-  - Updated Extended Predictive Driver Model Score (EPDMS) for the [Hugging Face Warmup leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup). See see [metrics](docs/metrics.md) for details regarding the implementation.
+  - Updated Extended Predictive Driver Model Score (EPDMS) for the [Hugging Face Warmup leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup-iccv). See see [metrics](docs/metrics.md) for details regarding the implementation.
 - **`[2025/04/13]`** [NAVSIM v2.1.1](https://github.com/autonomousvision/navsim/tree/v2.1.1) release
   - Updated dataset for the warmup leaderboard with minor fixes
 - **`[2025/04/08]`** [NAVSIM v2.1](https://github.com/autonomousvision/navsim/tree/v2.1) release
-  - Added new dataset for the [Hugging Face Warmup leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup) (see [submission](docs/submission.md))
+  - Added new dataset for the [Hugging Face Warmup leaderboard](https://huggingface.co/spaces/AGC2025/e2e-driving-warmup-iccv) (see [submission](docs/submission.md))
   - Introduced support for two-stage reactive traffic agents (see [traffic simulation](docs/metrics.md))
 - **`[2025/02/28]`** [NAVSIM v2.0](https://github.com/autonomousvision/navsim/tree/v2.0) release
   - Extends the PDM Score with more metrics and penalties (see [metrics](docs/metrics.md))
