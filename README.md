@@ -18,6 +18,8 @@
 >
 > <sup>1</sup>University of Tübingen, Tübingen AI Center, <sup>2</sup>NVIDIA Research, <sup>3</sup>Robert Bosch GmbH\
 > <sup>4</sup>OpenDriveLab at Shanghai Innovation Institute, <sup>5</sup>University of Stuttgart, <sup>6</sup>University of Toronto, <sup>7</sup>Vector Institute, <sup>8</sup>Stanford University
+>
+> Conference on Robot Learning (CoRL), 2025
 <br/>
 
 The main branch contains the code for NAVSIM v2, used in the 2025 NAVSIM challenge. <b style='color:red;'>For NAVSIM v1, as well as its `navtest` leaderboard, which are also part of this repository, please check the [v1.1 branch](https://github.com/autonomousvision/navsim/tree/v1.1).</b>
@@ -123,12 +125,11 @@ The main branch contains the code for NAVSIM v2, used in the 2025 NAVSIM challen
 All assets and code in this repository are under the [Apache 2.0 license](./LICENSE) unless specified otherwise. The datasets (including nuPlan and OpenScene) inherit their own distribution licenses. Please consider citing our papers if they help your research.
 
 ```BibTeX
-@article{Cao2025ARXIV,
-	title={Pseudo-Simulation for Autonomous Driving}, 
-        author={Wei Cao and Marcel Hallgarten and Tianyu Li and Daniel Dauner and Xunjiang Gu and Caojun Wang and Yakov Miron and Marco Aiello and Hongyang Li and Igor Gilitschenski and Boris Ivanovic and Marco Pavone and Andreas Geiger and Kashyap Chitta},
-	journal = {arXiv},
-    	volume = {2506.04218},
-	year = {2025},
+@inproceedings{Cao2025CORL, 
+	author = {Wei Cao and Marcel Hallgarten and Tianyu Li and Daniel Dauner and Xunjiang Gu and Caojun Wang and Yakov Miron and Marco Aiello and Hongyang Li and Igor Gilitschenski and Boris Ivanovic and Marco Pavone and Andreas Geiger and Kashyap Chitta}, 
+	title = {Pseudo-Simulation for Autonomous Driving}, 
+	booktitle = {Conference on Robot Learning (CoRL)}, 
+	year = {2025}, 
 }
 ```
 
