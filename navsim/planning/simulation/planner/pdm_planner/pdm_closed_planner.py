@@ -30,6 +30,8 @@ class PDMClosedPlanner(AbstractPDMClosedPlanner):
         idm_policies: BatchIDMPolicy,
         lateral_offsets: Optional[List[float]],
         map_radius: float,
+        pdm_search_depth_backward: int = 15,
+        pdm_search_depth_forward: int = 30,
     ):
         """
         Constructor for PDMClosedPlanner
@@ -38,6 +40,8 @@ class PDMClosedPlanner(AbstractPDMClosedPlanner):
         :param idm_policies: BatchIDMPolicy class
         :param lateral_offsets: centerline offsets for proposals (optional)
         :param map_radius: radius around ego to consider
+        :param pdm_search_depth_backward: depth of backward BFS search for route correction
+        :param pdm_search_depth_forward: depth of forward BFS search for route correction
         """
         super(PDMClosedPlanner, self).__init__(
             trajectory_sampling,
@@ -45,6 +49,8 @@ class PDMClosedPlanner(AbstractPDMClosedPlanner):
             idm_policies,
             lateral_offsets,
             map_radius,
+            pdm_search_depth_backward,
+            pdm_search_depth_forward,
         )
 
     def initialize(self, initialization: PlannerInitialization) -> None:

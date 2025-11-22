@@ -38,14 +38,20 @@ class MetricCacheProcessor:
         cache_path: Optional[str],
         force_feature_computation: bool,
         proposal_sampling: TrajectorySampling,
+        pdm_search_depth_backward: int = 15,
+        pdm_search_depth_forward: int = 30,
     ):
         """
         Initialize class.
         :param cache_path: Whether to cache features.
         :param force_feature_computation: If true, even if cache exists, it will be overwritten.
+        :param pdm_search_depth_backward: depth of backward BFS search for route correction
+        :param pdm_search_depth_forward: depth of forward BFS search for route correction
         """
         self._cache_path = pathlib.Path(cache_path) if cache_path else None
         self._force_feature_computation = force_feature_computation
+        self._pdm_search_depth_backward = pdm_search_depth_backward
+        self._pdm_search_depth_forward = pdm_search_depth_forward
 
         # 1s additional observation for ttc metric
         future_poses = proposal_sampling.num_poses + int(1.0 / proposal_sampling.interval_length)
@@ -66,6 +72,8 @@ class MetricCacheProcessor:
             ),
             lateral_offsets=[-1.0, 1.0],
             map_radius=self._map_radius,
+            pdm_search_depth_backward=self._pdm_search_depth_backward,
+            pdm_search_depth_forward=self._pdm_search_depth_forward,
         )
 
     def _get_planner_inputs(self, scenario: AbstractScenario) -> Tuple[PlannerInput, PlannerInitialization]:
