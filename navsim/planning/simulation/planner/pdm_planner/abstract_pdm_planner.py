@@ -26,13 +26,19 @@ class AbstractPDMPlanner(AbstractPlanner, ABC):
     def __init__(
         self,
         map_radius: float,
+        pdm_search_depth_backward: int = 15,
+        pdm_search_depth_forward: int = 30,
     ):
         """
         Constructor of AbstractPDMPlanner.
         :param map_radius: radius around ego to consider
+        :param pdm_search_depth_backward: depth of backward BFS search for route correction
+        :param pdm_search_depth_forward: depth of forward BFS search for route correction
         """
 
         self._map_radius: int = map_radius  # [m]
+        self._pdm_search_depth_backward = pdm_search_depth_backward
+        self._pdm_search_depth_forward = pdm_search_depth_forward
         self._iteration: int = 0
 
         # lazy loaded
@@ -68,7 +74,13 @@ class AbstractPDMPlanner(AbstractPlanner, ABC):
         Corrects the roadblock route and reloads lane-graph dictionaries.
         :param ego_state: state of the ego vehicle.
         """
-        route_roadblock_ids = route_roadblock_correction(ego_state.rear_axle, self._map_api, self._route_roadblock_dict)
+        route_roadblock_ids = route_roadblock_correction(
+            ego_state.rear_axle,
+            self._map_api,
+            self._route_roadblock_dict,
+            search_depth_backward=self._pdm_search_depth_backward,
+            search_depth_forward=self._pdm_search_depth_forward,
+        )
         self._load_route_dicts(route_roadblock_ids)
 
     def _get_discrete_centerline(self, current_lane: LaneGraphEdgeMapObject, search_depth: int = 30) -> List[StateSE2]:

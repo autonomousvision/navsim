@@ -31,6 +31,8 @@ class AbstractPDMClosedPlanner(AbstractPDMPlanner):
         idm_policies: BatchIDMPolicy,
         lateral_offsets: Optional[List[float]],
         map_radius: float,
+        pdm_search_depth_backward: int = 15,
+        pdm_search_depth_forward: int = 30,
     ):
         """
         Constructor for AbstractPDMClosedPlanner
@@ -39,9 +41,15 @@ class AbstractPDMClosedPlanner(AbstractPDMPlanner):
         :param idm_policies: BatchIDMPolicy class
         :param lateral_offsets: centerline offsets for proposals (optional)
         :param map_radius: radius around ego to consider
+        :param pdm_search_depth_backward: depth of backward BFS search for route correction
+        :param pdm_search_depth_forward: depth of forward BFS search for route correction
         """
 
-        super(AbstractPDMClosedPlanner, self).__init__(map_radius)
+        super(AbstractPDMClosedPlanner, self).__init__(
+            map_radius,
+            pdm_search_depth_backward=pdm_search_depth_backward,
+            pdm_search_depth_forward=pdm_search_depth_forward,
+        )
 
         assert (
             trajectory_sampling.interval_length == proposal_sampling.interval_length

@@ -14,4 +14,8 @@ defaults:
 
 force_feature_computation: True
 
+# PDM Planner Route Correction Parameters
+pdm_search_depth_backward: 15
+pdm_search_depth_forward: 30
+
 output_dir: ${metric_cache_path}/metadata

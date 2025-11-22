@@ -91,6 +91,8 @@ def cache_scenarios(args: List[Dict[str, Union[List[str], DictConfig]]]) -> List
             cache_path=cfg.metric_cache_path,
             force_feature_computation=cfg.force_feature_computation,
             proposal_sampling=instantiate(cfg.proposal_sampling),
+            pdm_search_depth_backward=cfg.pdm_search_depth_backward,
+            pdm_search_depth_forward=cfg.pdm_search_depth_forward,
         )
 
         logger.info(f"Extracted {len(scene_loader)} scenarios for thread_id={thread_id}, node_id={node_id}.")
