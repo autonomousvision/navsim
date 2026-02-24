@@ -383,6 +383,7 @@ def main(cfg: DictConfig) -> None:
         traceback.print_exc()
         pdm_score_df["weight"] = 1.0
         pseudo_closed_loop_valid = False
+        all_mappings = {}
 
     num_sucessful_scenarios = pdm_score_df["valid"].sum()
     num_failed_scenarios = len(pdm_score_df) - num_sucessful_scenarios
