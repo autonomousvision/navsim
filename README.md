@@ -47,6 +47,7 @@
 - [Understanding the data format and classes](docs/cache.md)
 - [Dataset splits vs. filtered training / test splits](docs/splits.md)
 - [Understanding the PDM Score](docs/metrics.md)
+- [Evaluating exported candidate trajectories](docs/candidate_scoring.md)
 - [Submitting to the Leaderboard](docs/submission.md)
   
 <p align="right">(<a href="#top">back to top</a>)</p>
