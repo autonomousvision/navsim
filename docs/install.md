@@ -103,3 +103,25 @@ conda env create --name navsim -f environment.yml
 conda activate navsim
 pip install -e .
 ```
+
+### Troubleshooting
+
+**PDM scores close to zero / wrong `np.linalg.pinv` results.**
+The NumPy version pinned in `requirements.txt` (1.23.4) ships with OpenBLAS 0.3.20.
+On CPUs with AVX512-BF16 (e.g. Intel Sapphire Rapids), this OpenBLAS version selects a kernel that silently returns wrong results for several linear algebra routines, including `np.linalg.pinv`.
+The LQR tracker of the PDM simulator relies on `np.linalg.pinv`, so the simulated trajectories are invalid:
+drivable area compliance, ego progress and comfort drop to (almost) zero for every agent, including the human agent, while the collision-based metrics look plausible (see [#28](https://github.com/autonomousvision/navsim/issues/28)).
+The devkit checks for this problem and raises an error when the tracker is created.
+
+You can fix the problem by selecting a different OpenBLAS kernel before starting Python (e.g. in your `~/.bashrc`):
+
+```bash
+export OPENBLAS_CORETYPE=Haswell
+```
+
+The metric cache contains a trajectory that is computed with the same simulator. Thus, delete and re-create any metric cache that was computed on an affected machine without this setting.
+You can test your machine with the following command, which should print a value close to zero (e.g. `1e-15`):
+
+```bash
+python -c "import numpy as np; m = 4 * np.eye(40) - np.eye(40, k=1) - np.eye(40, k=-1); print(np.abs(np.einsum('ij,jk', np.linalg.pinv(m), m) - np.eye(40)).max())"
+```

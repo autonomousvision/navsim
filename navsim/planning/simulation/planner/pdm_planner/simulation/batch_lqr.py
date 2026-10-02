@@ -8,6 +8,7 @@ from nuplan.planning.simulation.simulation_time_controller.simulation_iteration 
 
 from navsim.planning.simulation.planner.pdm_planner.simulation.batch_lqr_utils import (
     _generate_profile_from_initial_condition_and_derivatives,
+    check_pinv_reliability,
     get_velocity_curvature_profiles_with_derivatives_from_poses,
 )
 from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import DynamicStateIndex, StateIndex
@@ -83,6 +84,9 @@ class BatchLQRTracker:
         :param stopping_velocity: [m/s] The velocity below which we are deemed to be stopping and we don't use LQR.
         :param vehicle: Vehicle parameters
         """
+        # Fail early if the linear algebra backend returns wrong results (checked once per process).
+        check_pinv_reliability()
+
         # Longitudinal LQR Parameters
         assert len(q_longitudinal) == 1, "q_longitudinal should have 1 element (velocity)."
         assert len(r_longitudinal) == 1, "r_longitudinal should have 1 element (acceleration)."
