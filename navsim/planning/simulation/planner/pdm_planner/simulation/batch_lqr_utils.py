@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Tuple
 
 import numpy as np
@@ -15,6 +16,35 @@ INITIAL_CURVATURE_PENALTY = 1e-10
 
 # helper function to apply matrix multiplication over a batch-dim
 batch_matmul = lambda a, b: np.einsum("bij, bjk -> bik", a, b)
+
+# Size of the least squares systems that are solved with np.linalg.pinv below,
+# for the default proposal sampling (4s at 0.1s), and tolerance of the self-check.
+PINV_CHECK_SIZE = 40
+PINV_CHECK_TOLERANCE = 1e-6
+
+
+@lru_cache(maxsize=None)
+def check_pinv_reliability() -> None:
+    """
+    Verifies that np.linalg.pinv is correct on this machine, and raises an error otherwise.
+    The profile fits below rely on np.linalg.pinv. Some NumPy builds silently return wrong results,
+    e.g. the NumPy 1.23 wheels (OpenBLAS 0.3.20) on CPUs with AVX512-BF16, such as Intel Sapphire Rapids.
+    The tracker then simulates invalid trajectories, which leads to invalid metric caches and PDM scores.
+    See docs/install.md (Troubleshooting) and https://github.com/autonomousvision/navsim/issues/28
+    """
+    # Well-conditioned (tridiagonal) matrix, for which the pseudo-inverse is the exact inverse.
+    matrix = 4.0 * np.eye(PINV_CHECK_SIZE) - np.eye(PINV_CHECK_SIZE, k=1) - np.eye(PINV_CHECK_SIZE, k=-1)
+    matrix = matrix[None, ...]
+    deviation = np.abs(batch_matmul(np.linalg.pinv(matrix), matrix) - np.eye(PINV_CHECK_SIZE)).max()
+
+    if not deviation < PINV_CHECK_TOLERANCE:
+        raise RuntimeError(
+            f"np.linalg.pinv returns wrong results on this machine (deviation from identity: {deviation:.1e}). "
+            "The LQR tracker of the PDM simulator relies on it, so metric caches and PDM scores would be invalid. "
+            "A known cause is the OpenBLAS 0.3.20 of the NumPy 1.23 wheels on CPUs with AVX512-BF16 "
+            "(e.g. Intel Sapphire Rapids). Run `export OPENBLAS_CORETYPE=Haswell` before starting Python, "
+            "and re-create metric caches that were computed without it. See docs/install.md (Troubleshooting)."
+        )
 
 
 def _generate_profile_from_initial_condition_and_derivatives(
